@@ -2,22 +2,25 @@
 
 @layer base {
   :root {
-    --primary: #D9534F;
-    --primary-hover: #C93B37;
+    --primary: #E91E63;
+    --primary-hover: #D81B60;
+    --primary-dark: #C2185B;
     --secondary: #1B4D3E;
-    --secondary-hover: #133A2E;
-    --accent: #E6A100;
+    --secondary-dark: #133A2E;
+    --accent-gold: #FFB300;
     --bg-cream: #FAF7F2;
+    --bg-blush: #FFF5F8;
     --card-bg: #FFFFFF;
-    --text-dark: #1F2937;
-    --text-muted: #6B7280;
+    --text-heading: #2A1B3D;
+    --text-dark: #372A45;
+    --text-muted: #6B5B7B;
   }
 }
 
 body {
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   background-color: #FAF7F2;
-  color: #1F2937;
+  color: #372A45;
   overflow-x: hidden;
   margin: 0;
   padding: 0;
@@ -32,41 +35,41 @@ body {
   background: #FAF7F2;
 }
 ::-webkit-scrollbar-thumb {
-  background: #D1D5DB;
+  background: #E0D5E5;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #9CA3AF;
+  background: #E91E63;
 }
 
 /* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-@keyframes pulseGlow {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.85; transform: scale(1.03); }
+@keyframes floatSlow {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
 }
 
-.animate-pulse-glow {
-  animation: pulseGlow 2.5s infinite ease-in-out;
+.animate-float {
+  animation: floatSlow 4s ease-in-out infinite;
 }
 
-/* Glassmorphism */
-.glass-card {
-  background: rgba(255, 255, 255, 0.85);
+/* Glassmorphism & Soft Cards */
+.glass-pink {
+  background: rgba(255, 245, 248, 0.9);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(229, 231, 235, 0.6);
+  border: 1px solid rgba(233, 30, 99, 0.15);
 }
 
-.glass-dark {
-  background: rgba(27, 77, 62, 0.92);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.glass-nav {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(233, 30, 99, 0.08);
 }
