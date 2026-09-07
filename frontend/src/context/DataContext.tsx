@@ -30,6 +30,19 @@ import {
   query,
   limit
 } from 'firebase/firestore';
+import {
+  fetchNearbyTailors,
+  fetchOrdersApi,
+  fetchCustomRequestsApi,
+  createApiOrder,
+  updateApiOrderStatus,
+  createApiCustomRequest,
+  submitApiQuoteOffer,
+  acceptApiQuoteOffer,
+  verifyTailorApi,
+  updateTailorAvailabilityApi,
+  registerUserApi
+} from '../services/api';
 
 interface DataContextType {
   locations: StateLocation[];
@@ -158,82 +171,71 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => localStorage.setItem('sakhisilai_notifications', JSON.stringify(notifications)), [notifications]);
   useEffect(() => localStorage.setItem('sakhisilai_measurements', JSON.stringify(measurements)), [measurements]);
 
-  // Fetch from persistent SQLite backend API or Cloud Firestore when available
-useEffect(() => {
-  if (isFirebaseConfigured) {
-    console.log('🔥 Cloud Firestore Realtime Sync Active (Scalable to 1,000+ users/day)');
-
-    // 1. Realtime Tailors Collection Listener (Limited for max query performance)
-    const tailorsQuery = query(collection(firestore, 'tailors'), limit(100));
-    const unsubTailors = onSnapshot(tailorsQuery, snapshot => {
-      const fetched: TailorProfile[] = [];
-      snapshot.forEach(docSnap => {
-        fetched.push({ id: docSnap.id, ...docSnap.data() } as TailorProfile);
-      });
-      if (fetched.length > 0) {
-        setTailors(fetched);
+  // Fetch from persistent SQLite backend API and Cloud Firestore
+  useEffect(() => {
+    // 1. Initial sync with Express SQLite Backend API
+    fetchNearbyTailors(selectedState, selectedDistrict, selectedVillage).then(data => {
+      if (data && Array.isArray(data) && data.length > 0) {
+        setTailors(data);
       }
-    }, err => console.warn('Firestore tailors listener error:', err));
+    });
 
-    // 2. Realtime Orders Collection Listener
-    const ordersQuery = query(collection(firestore, 'orders'), limit(100));
-    const unsubOrders = onSnapshot(ordersQuery, snapshot => {
-      const fetched: Order[] = [];
-      snapshot.forEach(docSnap => {
-        fetched.push({ id: docSnap.id, ...docSnap.data() } as Order);
-      });
-      if (fetched.length > 0) {
-        setOrders(fetched);
+    fetchOrdersApi().then(data => {
+      if (data && Array.isArray(data) && data.length > 0) {
+        setOrders(data);
       }
-    }, err => console.warn('Firestore orders listener error:', err));
+    });
 
-    // 3. Realtime Custom Requests Listener
-    const customReqQuery = query(collection(firestore, 'customRequests'), limit(100));
-    const unsubCustomReq = onSnapshot(customReqQuery, snapshot => {
-      const fetched: CustomDesignRequest[] = [];
-      snapshot.forEach(docSnap => {
-        fetched.push({ id: docSnap.id, ...docSnap.data() } as CustomDesignRequest);
-      });
-      if (fetched.length > 0) {
-        setCustomRequests(fetched);
+    fetchCustomRequestsApi().then(data => {
+      if (data && Array.isArray(data) && data.length > 0) {
+        setCustomRequests(data);
       }
-    }, err => console.warn('Firestore custom requests listener error:', err));
+    });
 
-    return () => {
-      unsubTailors();
-      unsubOrders();
-      unsubCustomReq();
-    };
-  }
+    // 2. Realtime Cloud Firestore Listeners if Firebase is active
+    if (isFirebaseConfigured) {
+      console.log('🔥 Cloud Firestore Realtime Sync Active (Scalable to 1,000+ users/day)');
 
-  // Fallback to SQLite backend API
-  fetch('http://localhost:5000/api/tailors/nearby')
-    .then(res => res.json())
-    .then(data => {
-      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-        setTailors(data.data);
-      }
-    })
-    .catch(() => {});
+      const tailorsQuery = query(collection(firestore, 'tailors'), limit(100));
+      const unsubTailors = onSnapshot(tailorsQuery, snapshot => {
+        const fetched: TailorProfile[] = [];
+        snapshot.forEach(docSnap => {
+          fetched.push({ id: docSnap.id, ...docSnap.data() } as TailorProfile);
+        });
+        if (fetched.length > 0) {
+          setTailors(fetched);
+        }
+      }, err => console.warn('Firestore tailors listener notice:', err));
 
-  fetch('http://localhost:5000/api/orders')
-    .then(res => res.json())
-    .then(data => {
-      if (data.success && Array.isArray(data.data)) {
-        setOrders(data.data);
-      }
-    })
-    .catch(() => {});
+      const ordersQuery = query(collection(firestore, 'orders'), limit(100));
+      const unsubOrders = onSnapshot(ordersQuery, snapshot => {
+        const fetched: Order[] = [];
+        snapshot.forEach(docSnap => {
+          fetched.push({ id: docSnap.id, ...docSnap.data() } as Order);
+        });
+        if (fetched.length > 0) {
+          setOrders(fetched);
+        }
+      }, err => console.warn('Firestore orders listener notice:', err));
 
-  fetch('http://localhost:5000/api/custom-requests')
-    .then(res => res.json())
-    .then(data => {
-      if (data.success && Array.isArray(data.data)) {
-        setCustomRequests(data.data);
-      }
-    })
-    .catch(() => {});
-}, []);
+      const customReqQuery = query(collection(firestore, 'customRequests'), limit(100));
+      const unsubCustomReq = onSnapshot(customReqQuery, snapshot => {
+        const fetched: CustomDesignRequest[] = [];
+        snapshot.forEach(docSnap => {
+          fetched.push({ id: docSnap.id, ...docSnap.data() } as CustomDesignRequest);
+        });
+        if (fetched.length > 0) {
+          setCustomRequests(fetched);
+        }
+      }, err => console.warn('Firestore custom requests listener notice:', err));
+
+      return () => {
+        unsubTailors();
+        unsubOrders();
+        unsubCustomReq();
+      };
+    }
+  }, [selectedState, selectedDistrict, selectedVillage]);
 
   const setSelectedLocation = (state: string, district: string, village: string) => {
     setSelectedState(state);
@@ -289,11 +291,7 @@ useEffect(() => {
     setOrders(prev => [newOrder, ...prev]);
 
     // Send order to backend API for SQLite DB persistence
-    fetch('http://localhost:5000/api/orders', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newOrder)
-    }).catch(() => {});
+    createApiOrder(newOrder);
 
     // Update tailor current active count
     setTailors(prev =>
@@ -367,6 +365,9 @@ useEffect(() => {
       })
     );
 
+    // Sync status update with SQLite Backend API
+    updateApiOrderStatus(orderId, newStatus, statusLabels[newStatus].en, statusLabels[newStatus].hi);
+
     if (newStatus === 'completed' || newStatus === 'cancelled') {
       const targetOrd = orders.find(o => o.id === orderId);
       if (targetOrd) {
@@ -387,6 +388,7 @@ useEffect(() => {
 
   const updateTailorAvailability = (tailorId: string, availability: TailorAvailability) => {
     setTailors(prev => prev.map(t => (t.id === tailorId ? { ...t, availability } : t)));
+    updateTailorAvailabilityApi(tailorId, availability);
   };
 
   const updateTailorCapacity = (tailorId: string, maxActiveOrders: number) => {
@@ -476,6 +478,9 @@ useEffect(() => {
     };
     setCustomRequests(prev => [newReq, ...prev]);
 
+    // Send to backend API
+    createApiCustomRequest(newReq);
+
     // Notify nearby tailors
     sendNotification({
       targetRole: 'tailor',
@@ -499,6 +504,9 @@ useEffect(() => {
     setCustomRequests(prev =>
       prev.map(r => (r.id === requestId ? { ...r, offers: [...r.offers, newOffer] } : r))
     );
+
+    // Send to backend API
+    submitApiQuoteOffer(requestId, newOffer);
 
     const targetReq = customRequests.find(r => r.id === requestId);
     if (targetReq) {
@@ -525,6 +533,9 @@ useEffect(() => {
       prev.map(r => (r.id === requestId ? { ...r, status: 'quote_accepted', acceptedQuoteId: offerId } : r))
     );
 
+    // Send to backend API
+    acceptApiQuoteOffer(requestId, offerId);
+
     // Create active order from custom quote
     return createOrder({
       customerId: targetReq.customerId,
@@ -547,6 +558,7 @@ useEffect(() => {
 
   const verifyTailor = (tailorId: string, isVerified: boolean) => {
     setTailors(prev => prev.map(t => (t.id === tailorId ? { ...t, isVerified } : t)));
+    verifyTailorApi(tailorId, isVerified);
   };
 
   const registerTailor = (
@@ -563,6 +575,16 @@ useEffect(() => {
     };
 
     setTailors(prev => [newTailor, ...prev]);
+
+    // Send to backend API
+    registerUserApi({
+      name: newTailor.name,
+      phone: newTailor.phone,
+      role: 'tailor',
+      village: newTailor.village,
+      district: newTailor.district,
+      state: newTailor.state
+    });
 
     // Admin notification
     sendNotification({
