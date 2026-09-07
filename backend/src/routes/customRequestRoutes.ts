@@ -37,10 +37,10 @@ customRequestRouter.post('/', (req: Request, res: Response) => {
     offers: []
   };
 
-  db.customRequests.unshift(newReq);
+  db.addCustomRequest(newReq);
 
   // Notify tailors in area
-  db.notifications.unshift({
+  db.addNotification({
     id: 'n_' + Date.now(),
     targetRole: 'tailor',
     titleEn: 'New Custom Photo Request Posted',
@@ -52,7 +52,7 @@ customRequestRouter.post('/', (req: Request, res: Response) => {
     type: 'quote'
   });
 
-  res.status(201).json({ success: true, message: 'Custom request posted', data: newReq });
+  res.status(201).json({ success: true, message: 'Custom request posted to database', data: newReq });
 });
 
 // POST /api/custom-requests/:id/quotes (Tailor submits quote)
@@ -78,10 +78,10 @@ customRequestRouter.post('/:id/quotes', (req: Request, res: Response) => {
     createdAt: new Date().toISOString()
   };
 
-  requestObj.offers.push(newOffer);
+  db.addOfferToCustomRequest(id, newOffer);
 
   // Notify customer
-  db.notifications.unshift({
+  db.addNotification({
     id: 'n_' + Date.now(),
     targetRole: 'customer',
     recipientId: requestObj.customerId,
@@ -111,9 +111,6 @@ customRequestRouter.post('/:id/accept-quote', (req: Request, res: Response) => {
   if (!offer) {
     return res.status(404).json({ success: false, message: 'Offer not found' });
   }
-
-  requestObj.status = 'quote_accepted';
-  requestObj.acceptedQuoteId = offerId;
 
   // Convert to order
   const now = new Date().toISOString();
@@ -151,11 +148,11 @@ customRequestRouter.post('/:id/accept-quote', (req: Request, res: Response) => {
     ]
   };
 
-  db.orders.unshift(createdOrder);
+  db.addOrder(createdOrder);
 
   res.json({
     success: true,
-    message: 'Quote accepted and order created successfully',
+    message: 'Quote accepted and order created in database successfully',
     data: createdOrder
   });
 });

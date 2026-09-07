@@ -32,6 +32,7 @@ app.get('/health', (_req: Request, res: Response) => {
     status: 'ok',
     service: 'SakhiSilai Hyperlocal Women Tailoring Backend API',
     tagline: 'Ghar Se Hunar, Apni Kamai.',
+    database: 'SQLite Persistent (sakhisilai.db)',
     timestamp: new Date().toISOString()
   });
 });
@@ -54,6 +55,7 @@ app.use((_req: Request, res: Response) => {
 // Start API Server
 app.listen(PORT, () => {
   console.log(`🧵 SakhiSilai API Server listening on port ${PORT}`);
+  console.log(`  Database:     SQLite Persistent (sakhisilai.db)`);
   console.log(`  Health Check: http://localhost:${PORT}/health`);
   console.log(`  Tailors API:  http://localhost:${PORT}/api/tailors/nearby`);
   console.log(`  Orders API:   http://localhost:${PORT}/api/orders`);

@@ -62,11 +62,11 @@ authRouter.post('/register-tailor', (req: Request, res: Response) => {
     joinedDate: new Date().toISOString().split('T')[0]
   };
 
-  db.users.push(newUser);
-  db.tailors.push(newTailor);
+  db.addUser(newUser);
+  db.addTailor(newTailor);
 
   // Notify admin
-  db.notifications.unshift({
+  db.addNotification({
     id: 'n_' + Date.now(),
     targetRole: 'all',
     titleEn: 'New Tailor Registration Pending Approval',

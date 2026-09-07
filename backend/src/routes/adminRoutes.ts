@@ -36,13 +36,12 @@ adminRouter.patch('/tailors/:id/verify', (req: Request, res: Response) => {
     return res.status(404).json({ success: false, message: 'Tailor profile not found' });
   }
 
-  tailor.isVerified = Boolean(isVerified);
-  const user = db.users.find(u => u.id === tailor.userId);
-  if (user) user.isVerified = Boolean(isVerified);
+  db.verifyTailor(id, Boolean(isVerified));
+  const updatedTailor = db.tailors.find(t => t.id === id);
 
   res.json({
     success: true,
     message: `Tailor ${tailor.name} ${isVerified ? 'verified & approved' : 'suspended'}`,
-    data: tailor
+    data: updatedTailor
   });
 });

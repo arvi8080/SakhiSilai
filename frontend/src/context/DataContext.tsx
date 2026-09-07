@@ -151,6 +151,36 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => localStorage.setItem('sakhisilai_notifications', JSON.stringify(notifications)), [notifications]);
   useEffect(() => localStorage.setItem('sakhisilai_measurements', JSON.stringify(measurements)), [measurements]);
 
+  // Fetch from persistent SQLite backend API when available
+  useEffect(() => {
+    fetch('http://localhost:5000/api/tailors/nearby')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          setTailors(data.data);
+        }
+      })
+      .catch(() => {});
+
+    fetch('http://localhost:5000/api/orders')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.data)) {
+          setOrders(data.data);
+        }
+      })
+      .catch(() => {});
+
+    fetch('http://localhost:5000/api/custom-requests')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.data)) {
+          setCustomRequests(data.data);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const setSelectedLocation = (state: string, district: string, village: string) => {
     setSelectedState(state);
     setSelectedDistrict(district);
@@ -203,6 +233,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     setOrders(prev => [newOrder, ...prev]);
+
+    // Send order to backend API for SQLite DB persistence
+    fetch('http://localhost:5000/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newOrder)
+    }).catch(() => {});
 
     // Update tailor current active count
     setTailors(prev =>
