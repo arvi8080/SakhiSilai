@@ -20,7 +20,7 @@ interface AuthPagesProps {
 
 export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode = 'register' }) => {
   const { registerTailor, selectedState, selectedDistrict, selectedVillage } = useData();
-  const { setRole, updateUserProfile, loginAsAdmin } = useAuth();
+  const { setRole, updateUserProfile, loginAsAdmin, loginAsCustomer, loginAsTailor } = useAuth();
 
   // Mode: 'login' or 'register'
   const [authMode, setAuthMode] = useState<'login' | 'register'>(initialMode === 'login' ? 'login' : 'register');
@@ -45,13 +45,44 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
   const [tailorPendingSuccess, setTailorPendingSuccess] = useState(false);
   const [customerRegSuccess, setCustomerRegSuccess] = useState(false);
 
-  // LOGIN SUBMIT
+  // LOGIN ROLE SELECTOR STATE
+  const [loginRole, setLoginRole] = useState<'auto' | 'customer' | 'tailor' | 'admin'>('auto');
+
+  // LOGIN SUBMIT HANDLER - SINGLE LOGIN PAGE WITH AUTOMATIC REDIRECT
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (phone) {
-      updateUserProfile({ phone });
+    const cleanPhone = phone.trim().toLowerCase();
+    const cleanPass = password.trim().toLowerCase();
+
+    // 1. ADMIN REDIRECT CHECK
+    if (
+      loginRole === 'admin' ||
+      cleanPhone === '9999900000' ||
+      cleanPhone.includes('admin') ||
+      cleanPass === 'admin' ||
+      cleanPass === 'admin123'
+    ) {
+      loginAsAdmin();
+      setActiveTab('dashboard');
+      return;
     }
-    setRole('customer');
+
+    // 2. TAILOR REDIRECT CHECK
+    if (
+      loginRole === 'tailor' ||
+      cleanPhone === '9876543210' ||
+      cleanPhone.includes('tailor')
+    ) {
+      loginAsTailor();
+      setActiveTab('dashboard');
+      return;
+    }
+
+    // 3. CUSTOMER REDIRECT CHECK (DEFAULT)
+    if (cleanPhone) {
+      updateUserProfile({ phone: cleanPhone });
+    }
+    loginAsCustomer();
     setActiveTab('dashboard');
   };
 
@@ -151,30 +182,87 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
       </div>
 
       {/* ========================================================================= */}
-      {/* 1. LOGIN MODE FORM */}
+      {/* 1. LOGIN MODE FORM (SINGLE UNIFIED LOGIN FOR ALL ROLES) */}
       {/* ========================================================================= */}
       {authMode === 'login' && (
         <div className="bg-white p-6 sm:p-8 rounded-3xl border border-pink-100 shadow-xl space-y-6">
           <div className="text-center space-y-1">
             <h2 className="text-2xl font-black text-[#2A1B3D]">वापसी पर स्वागत है!</h2>
-            <p className="text-xs text-stone-500">अपना रजिस्टर्ड मोबाइल नंबर दर्ज करके लॉगिन करें</p>
+            <p className="text-xs text-stone-500">सिंगल लॉगिन पोर्टल — ग्राहक, टेलर या एडमिन के रूप में प्रवेश करें</p>
+          </div>
+
+          {/* LOGIN ROLE TARGET SELECTION */}
+          <div className="space-y-1.5">
+            <label className="block text-[11px] font-extrabold text-stone-600">लॉगिन प्रकार चुनिए (Target Account Role):</label>
+            <div className="grid grid-cols-3 gap-2 text-center text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => {
+                  setLoginRole('customer');
+                  setPhone('9812345678');
+                  setPassword('123456');
+                }}
+                className={`py-2 px-1 rounded-xl border transition flex flex-col items-center gap-1 ${
+                  loginRole === 'customer'
+                    ? 'border-[#E91E63] bg-pink-50 text-[#E91E63] font-black'
+                    : 'border-stone-200 text-stone-600 hover:bg-stone-50'
+                }`}
+              >
+                <span className="text-base">👤</span>
+                <span>ग्राहक (User)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setLoginRole('tailor');
+                  setPhone('9876543210');
+                  setPassword('123456');
+                }}
+                className={`py-2 px-1 rounded-xl border transition flex flex-col items-center gap-1 ${
+                  loginRole === 'tailor'
+                    ? 'border-[#E91E63] bg-pink-50 text-[#E91E63] font-black'
+                    : 'border-stone-200 text-stone-600 hover:bg-stone-50'
+                }`}
+              >
+                <span className="text-base">👩🧵</span>
+                <span>टेलर (Tailor)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setLoginRole('admin');
+                  setPhone('9999900000');
+                  setPassword('admin');
+                }}
+                className={`py-2 px-1 rounded-xl border transition flex flex-col items-center gap-1 ${
+                  loginRole === 'admin'
+                    ? 'border-amber-500 bg-amber-50 text-amber-900 font-black'
+                    : 'border-stone-200 text-stone-600 hover:bg-stone-50'
+                }`}
+              >
+                <span className="text-base">🛡️</span>
+                <span>एडमिन (Admin)</span>
+              </button>
+            </div>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4 text-xs font-bold">
             <div>
-              <label className="block text-stone-700 mb-1.5">मोबाइल नंबर (Mobile Number)</label>
+              <label className="block text-stone-700 mb-1.5">मोबाइल नंबर (Mobile Number / User ID)</label>
               <input
-                type="tel"
+                type="text"
                 value={phone}
                 onChange={e => setPhone(e.target.value)}
-                placeholder="10 अंकों का मोबाइल नंबर"
+                placeholder="उदा. 9812345678 या admin"
                 className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3.5 text-sm text-[#2A1B3D] focus:ring-2 focus:ring-[#E91E63] focus:outline-none"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-stone-700 mb-1.5">पासवर्ड या पिन (Password / PIN)</label>
+              <label className="block text-stone-700 mb-1.5">पासवर्ड (Password)</label>
               <div className="relative">
                 <input
                   type="password"
@@ -192,10 +280,49 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
               type="submit"
               className="w-full py-4 bg-[#E91E63] hover:bg-[#D81B60] text-white font-black rounded-2xl shadow-lg shadow-pink-500/25 transition active:scale-95 text-xs flex items-center justify-center gap-2"
             >
-              <span>लॉगिन करें (Sign In)</span>
+              <span>लॉगिन करें और आगे बढ़ें (Sign In)</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
+
+          {/* 1-CLICK QUICK DEMO LOGIN BUTTONS */}
+          <div className="pt-3 border-t border-stone-100 space-y-2">
+            <span className="text-[10px] font-extrabold text-stone-400 block text-center uppercase tracking-wider">
+              क्विक 1-क्लिक टेस्ट (Quick Demo Access):
+            </span>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  loginAsCustomer();
+                  setActiveTab('dashboard');
+                }}
+                className="py-2.5 px-2 bg-pink-50 hover:bg-pink-100 text-[#E91E63] font-black text-[11px] rounded-xl border border-pink-200 transition text-center"
+              >
+                👤 Customer
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  loginAsTailor();
+                  setActiveTab('dashboard');
+                }}
+                className="py-2.5 px-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-black text-[11px] rounded-xl border border-emerald-200 transition text-center"
+              >
+                👩🧵 Tailor
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  loginAsAdmin();
+                  setActiveTab('dashboard');
+                }}
+                className="py-2.5 px-2 bg-amber-50 hover:bg-amber-100 text-amber-900 font-black text-[11px] rounded-xl border border-amber-200 transition text-center"
+              >
+                🛡️ Admin
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
