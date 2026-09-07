@@ -1,32 +1,51 @@
 import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
-import { useLanguage } from '../../context/LanguageContext';
-import { Scissors, UserCheck, CheckCircle, ArrowRight } from 'lucide-react';
+import {
+  Scissors,
+  UserCheck,
+  CheckCircle,
+  ArrowRight,
+  ShieldCheck,
+  Clock,
+  UserPlus,
+  LogIn,
+  Lock
+} from 'lucide-react';
 
 interface AuthPagesProps {
   setActiveTab: (tab: string) => void;
-  initialMode?: 'login' | 'register_customer' | 'register_tailor';
+  initialMode?: 'login' | 'register' | 'register_tailor';
 }
 
-export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode = 'login' }) => {
+export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode = 'register' }) => {
   const { registerTailor, selectedState, selectedDistrict, selectedVillage } = useData();
-  const { setRole, updateUserProfile } = useAuth();
-  const { t } = useLanguage();
+  const { setRole, updateUserProfile, loginAsAdmin } = useAuth();
 
-  const [mode, setMode] = useState<'login' | 'register_customer' | 'register_tailor'>(initialMode);
+  // Mode: 'login' or 'register'
+  const [authMode, setAuthMode] = useState<'login' | 'register'>(initialMode === 'login' ? 'login' : 'register');
 
-  // Form Fields
+  // Role choice for Create Account: 'customer' or 'tailor'
+  const [registerRole, setRegisterRole] = useState<'customer' | 'tailor'>(initialMode === 'register_tailor' ? 'tailor' : 'customer');
+
+  // Common Form Fields
   const [phone, setPhone] = useState('9812345678');
   const [name, setName] = useState('');
-  const [village, setVillage] = useState(selectedVillage);
-  const [district, setDistrict] = useState(selectedDistrict);
-  const [stateVal] = useState(selectedState);
+  const [password, setPassword] = useState('123456');
+  const [village, setVillage] = useState(selectedVillage || 'Mohanlalganj');
+  const [district, setDistrict] = useState(selectedDistrict || 'Lucknow');
+  const [stateVal] = useState(selectedState || 'Uttar Pradesh');
+
+  // Tailor Specific Fields
   const [experience, setExperience] = useState('5');
   const [startingPrice, setStartingPrice] = useState('300');
-  const [bio, setBio] = useState('Experienced home tailor specializing in blouse & suit stitching.');
-  const [regSuccess, setRegSuccess] = useState(false);
+  const [bio, setBio] = useState('अनुभवी दर्जी बहन - ब्लाउज, सूट एवं लहंगा सिलाई में विशेषज्ञ।');
 
+  // Status screens
+  const [tailorPendingSuccess, setTailorPendingSuccess] = useState(false);
+  const [customerRegSuccess, setCustomerRegSuccess] = useState(false);
+
+  // LOGIN SUBMIT
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (phone) {
@@ -36,202 +55,419 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
     setActiveTab('dashboard');
   };
 
+  // REGISTER CUSTOMER SUBMIT
+  const handleRegisterCustomer = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateUserProfile({
+      name: name || 'Sakhi Customer',
+      phone,
+      village,
+      district,
+      state: stateVal,
+      role: 'customer'
+    });
+    setRole('customer');
+    setCustomerRegSuccess(true);
+
+    setTimeout(() => {
+      setActiveTab('dashboard');
+    }, 1200);
+  };
+
+  // REGISTER TAILOR SUBMIT (REQUIRES ADMIN VERIFICATION)
   const handleRegisterTailor = (e: React.FormEvent) => {
     e.preventDefault();
+    
     registerTailor({
       userId: 'u_' + Date.now(),
-      name,
+      name: name || 'Sunita Devi',
       phone,
       avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&auto=format&fit=crop&q=80',
       state: stateVal,
       district,
       village,
-      addressApprox: `Near Chaupal, ${village}`,
+      addressApprox: `गौतम बुद्ध मार्ग, chaupal near ${village}`,
       bio,
-      experienceYears: Number(experience),
+      experienceYears: Number(experience) || 3,
       availability: 'available',
-      maxActiveOrders: 4,
-      servicesOffered: ['Blouse Stitching', 'Suit & Salwar Stitching'],
-      startingPrice: Number(startingPrice),
+      maxActiveOrders: 5,
+      servicesOffered: ['ब्लाउज सिलाई', 'सूट सिलाई', 'ड्रेस सिलाई'],
+      startingPrice: Number(startingPrice) || 300,
       estCompletionDays: 3,
-      skills: ['Princess Cut', 'Bridal Suit'],
+      skills: ['प्रिंसेंस कट', 'राजपूती सूट', 'अल्टरेशन'],
       galleryImages: ['https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80'],
-      isVerified: false
+      isVerified: false // MUST BE VERIFIED BY ADMIN
     });
 
-    setRegSuccess(true);
-    setTimeout(() => {
-      setRole('tailor');
-      setActiveTab('dashboard');
-    }, 1500);
+    setTailorPendingSuccess(true);
   };
 
   return (
-    <div className="max-w-md mx-auto px-4 space-y-6 animate-fade-in pb-16 pt-4">
-      {/* MODE TABS */}
-      <div className="flex bg-stone-200 p-1.5 rounded-2xl border border-stone-300">
+    <div className="max-w-xl mx-auto px-4 space-y-6 animate-fade-in pb-16 pt-4">
+      {/* BRAND BANNER HEADER */}
+      <div className="text-center space-y-2">
+        <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#E91E63] to-[#FF4081] text-white flex items-center justify-center mx-auto shadow-lg shadow-pink-500/25">
+          <Scissors className="w-7 h-7 rotate-45" />
+        </div>
+        <h1 className="text-3xl font-black text-[#2A1B3D]">
+          Sakhi<span className="text-[#E91E63]">Silai</span>
+        </h1>
+        <p className="text-xs font-extrabold text-[#E91E63] tracking-wide italic">
+          “Ghar Se Hunar, Apni Kamai.”
+        </p>
+      </div>
+
+      {/* TOP TOGGLE: LOGIN vs CREATE ACCOUNT */}
+      <div className="flex bg-stone-100 p-1.5 rounded-full border border-stone-200 shadow-inner">
         <button
-          onClick={() => setMode('login')}
-          className={`flex-1 py-2.5 rounded-xl font-bold text-xs transition ${
-            mode === 'login' ? 'bg-[#D9534F] text-white shadow' : 'text-stone-700'
+          onClick={() => {
+            setAuthMode('login');
+            setTailorPendingSuccess(false);
+          }}
+          className={`flex-1 py-3 rounded-full font-black text-xs transition flex items-center justify-center gap-2 ${
+            authMode === 'login'
+              ? 'bg-white text-[#2A1B3D] shadow-md border border-stone-200'
+              : 'text-stone-500 hover:text-[#2A1B3D]'
           }`}
         >
-          {t('login')}
+          <LogIn className="w-4 h-4 text-[#E91E63]" />
+          <span>लॉगिन (Login)</span>
         </button>
 
         <button
-          onClick={() => setMode('register_tailor')}
-          className={`flex-1 py-2.5 rounded-xl font-bold text-xs transition ${
-            mode === 'register_tailor' ? 'bg-[#1B4D3E] text-white shadow' : 'text-stone-700'
+          onClick={() => {
+            setAuthMode('register');
+            setTailorPendingSuccess(false);
+          }}
+          className={`flex-1 py-3 rounded-full font-black text-xs transition flex items-center justify-center gap-2 ${
+            authMode === 'register'
+              ? 'bg-[#E91E63] text-white shadow-lg shadow-pink-500/25'
+              : 'text-stone-500 hover:text-[#2A1B3D]'
           }`}
         >
-          {t('joinAsTailor')}
+          <UserPlus className="w-4 h-4" />
+          <span>खाता बनाएं (Create Account)</span>
         </button>
       </div>
 
-      {/* LOGIN FORM */}
-      {mode === 'login' && (
-        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-stone-200 shadow-xl space-y-6">
+      {/* ========================================================================= */}
+      {/* 1. LOGIN MODE FORM */}
+      {/* ========================================================================= */}
+      {authMode === 'login' && (
+        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-pink-100 shadow-xl space-y-6">
           <div className="text-center space-y-1">
-            <div className="w-12 h-12 rounded-2xl bg-amber-100 text-[#D9534F] flex items-center justify-center mx-auto">
-              <Scissors className="w-6 h-6 rotate-45" />
-            </div>
-            <h2 className="text-2xl font-black text-stone-900">Welcome Back</h2>
-            <p className="text-xs text-stone-500">Enter mobile number to sign in to SakhiSilai</p>
+            <h2 className="text-2xl font-black text-[#2A1B3D]">वापसी पर स्वागत है!</h2>
+            <p className="text-xs text-stone-500">अपना रजिस्टर्ड मोबाइल नंबर दर्ज करके लॉगिन करें</p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-4 text-xs">
+          <form onSubmit={handleLogin} className="space-y-4 text-xs font-bold">
             <div>
-              <label className="block font-bold text-stone-700 mb-1">Mobile Number</label>
+              <label className="block text-stone-700 mb-1.5">मोबाइल नंबर (Mobile Number)</label>
               <input
                 type="tel"
                 value={phone}
                 onChange={e => setPhone(e.target.value)}
-                placeholder="10-digit mobile number"
-                className="w-full bg-stone-50 border border-stone-300 rounded-xl p-3 font-bold text-sm focus:ring-2 focus:ring-[#D9534F] focus:outline-none"
+                placeholder="10 अंकों का मोबाइल नंबर"
+                className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3.5 text-sm text-[#2A1B3D] focus:ring-2 focus:ring-[#E91E63] focus:outline-none"
                 required
               />
             </div>
 
+            <div>
+              <label className="block text-stone-700 mb-1.5">पासवर्ड या पिन (Password / PIN)</label>
+              <div className="relative">
+                <input
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="******"
+                  className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3.5 text-sm text-[#2A1B3D] focus:ring-2 focus:ring-[#E91E63] focus:outline-none"
+                  required
+                />
+                <Lock className="w-4 h-4 text-stone-400 absolute right-4 top-4" />
+              </div>
+            </div>
+
             <button
               type="submit"
-              className="w-full py-3.5 bg-[#D9534F] hover:bg-[#C93B37] text-white font-extrabold rounded-xl shadow-lg transition active:scale-95 text-xs flex items-center justify-center gap-2"
+              className="w-full py-4 bg-[#E91E63] hover:bg-[#D81B60] text-white font-black rounded-2xl shadow-lg shadow-pink-500/25 transition active:scale-95 text-xs flex items-center justify-center gap-2"
             >
-              <span>Login & Continue</span>
+              <span>लॉगिन करें (Sign In)</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
         </div>
       )}
 
-      {/* REGISTER TAILOR WIZARD */}
-      {mode === 'register_tailor' && (
-        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-stone-200 shadow-xl space-y-6">
+      {/* ========================================================================= */}
+      {/* 2. CREATE ACCOUNT MODE FORM */}
+      {/* ========================================================================= */}
+      {authMode === 'register' && !tailorPendingSuccess && (
+        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-pink-100 shadow-xl space-y-6">
           <div className="text-center space-y-1">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-[#1B4D3E] flex items-center justify-center mx-auto">
-              <UserCheck className="w-6 h-6" />
-            </div>
-            <h2 className="text-2xl font-black text-stone-900">{t('joinAsTailor')}</h2>
-            <p className="text-xs text-stone-500">Earn from home using your stitching skills (0% Commission)</p>
+            <h2 className="text-2xl font-black text-[#2A1B3D]">नया खाता बनाएं</h2>
+            <p className="text-xs text-stone-500">SakhiSilai प्लेटफ़ॉर्म पर अपनी भूमिका चुनें</p>
           </div>
 
-          {regSuccess && (
-            <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 text-xs font-bold text-emerald-900 flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-emerald-700" />
-              <span>Registration Submitted! Redirecting to Tailor Work Center...</span>
+          {/* ROLE SELECTOR CARDS */}
+          <div className="grid grid-cols-2 gap-3">
+            <div
+              onClick={() => setRegisterRole('customer')}
+              className={`p-4 rounded-2xl border-2 transition cursor-pointer text-center space-y-2 ${
+                registerRole === 'customer'
+                  ? 'border-[#E91E63] bg-pink-50/60 shadow-md'
+                  : 'border-stone-200 hover:border-stone-300 bg-stone-50/50'
+              }`}
+            >
+              <div className="w-10 h-10 rounded-xl bg-pink-100 text-[#E91E63] flex items-center justify-center mx-auto text-xl">
+                👤
+              </div>
+              <div>
+                <h4 className="font-black text-xs text-[#2A1B3D]">ग्राहक (Customer)</h4>
+                <p className="text-[10px] text-stone-500 font-medium">कपड़े सिलवाने के लिए</p>
+              </div>
+            </div>
+
+            <div
+              onClick={() => setRegisterRole('tailor')}
+              className={`p-4 rounded-2xl border-2 transition cursor-pointer text-center space-y-2 ${
+                registerRole === 'tailor'
+                  ? 'border-[#E91E63] bg-pink-50/60 shadow-md'
+                  : 'border-stone-200 hover:border-stone-300 bg-stone-50/50'
+              }`}
+            >
+              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center mx-auto text-xl">
+                👩🧵
+              </div>
+              <div>
+                <h4 className="font-black text-xs text-[#2A1B3D]">दर्जी बहन (Tailor)</h4>
+                <p className="text-[10px] text-stone-500 font-medium">घर बैठे सिलाई कमाई के लिए</p>
+              </div>
+            </div>
+          </div>
+
+          {customerRegSuccess && (
+            <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 text-xs font-bold text-emerald-900 flex items-center gap-2 animate-bounce">
+              <CheckCircle className="w-5 h-5 text-emerald-600" />
+              <span>खाता सफलतापूर्वक बन गया! डैशबोर्ड पर रिडायरेक्ट हो रहे हैं...</span>
             </div>
           )}
 
-          <form onSubmit={handleRegisterTailor} className="space-y-3 text-xs">
-            <div>
-              <label className="block font-bold text-stone-700 mb-1">Full Name</label>
-              <input
-                type="text"
-                placeholder="e.g. Sunita Devi"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2.5 font-bold"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block font-bold text-stone-700 mb-1">Mobile Phone Number</label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={e => setPhone(e.target.value)}
-                className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2.5 font-bold"
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
+          {/* CUSTOMER REGISTRATION FORM */}
+          {registerRole === 'customer' && (
+            <form onSubmit={handleRegisterCustomer} className="space-y-4 text-xs font-bold">
               <div>
-                <label className="block font-bold text-stone-700 mb-1">Village</label>
+                <label className="block text-stone-700 mb-1">आपका पूरा नाम (Full Name)</label>
                 <input
                   type="text"
-                  value={village}
-                  onChange={e => setVillage(e.target.value)}
-                  className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2.5 font-bold"
+                  placeholder="उदा. प्रिया सिंह"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-sm text-[#2A1B3D]"
                   required
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-stone-700 mb-1">District</label>
+                <label className="block text-stone-700 mb-1">मोबाइल नंबर (Mobile Number)</label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                  className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-sm text-[#2A1B3D]"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-stone-700 mb-1">गाँव / क्षेत्र (Village)</label>
+                  <input
+                    type="text"
+                    value={village}
+                    onChange={e => setVillage(e.target.value)}
+                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-sm text-[#2A1B3D]"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-stone-700 mb-1">ज़िला (District)</label>
+                  <input
+                    type="text"
+                    value={district}
+                    onChange={e => setDistrict(e.target.value)}
+                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-sm text-[#2A1B3D]"
+                    required
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-4 bg-[#E91E63] hover:bg-[#D81B60] text-white font-black rounded-2xl shadow-lg shadow-pink-500/25 transition active:scale-95 text-xs flex items-center justify-center gap-2"
+              >
+                <span>ग्राहक खाता बनाएं (Register Customer)</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </form>
+          )}
+
+          {/* TAILOR REGISTRATION FORM (ADMIN VERIFICATION REQUIREMENT) */}
+          {registerRole === 'tailor' && (
+            <form onSubmit={handleRegisterTailor} className="space-y-3.5 text-xs font-bold">
+              {/* ADMIN VERIFICATION NOTICE */}
+              <div className="bg-amber-50 p-3.5 rounded-2xl border border-amber-200 text-amber-900 space-y-1">
+                <div className="flex items-center gap-1.5 font-black text-xs text-amber-800">
+                  <ShieldCheck className="w-4 h-4 text-amber-600" />
+                  <span>एडमिन सत्यापन आवश्यक (Admin Verification Policy)</span>
+                </div>
+                <p className="text-[11px] font-medium leading-relaxed text-amber-800">
+                  पंजीकरण के बाद आपकी प्रोफ़ाइल SakhiSilai एडमिन के पास सत्यापन के लिए जाएगी। स्वीकृति मिलते ही आपकी प्रोफ़ाइल ग्राहकों को दिखेगी।
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-stone-700 mb-1">दर्जी बहन का नाम (Full Name)</label>
                 <input
                   type="text"
-                  value={district}
-                  onChange={e => setDistrict(e.target.value)}
-                  className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2.5 font-bold"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="block font-bold text-stone-700 mb-1">Experience (Years)</label>
-                <input
-                  type="number"
-                  value={experience}
-                  onChange={e => setExperience(e.target.value)}
-                  className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2.5 font-bold"
+                  placeholder="उदा. सुनिता देवी"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-sm text-[#2A1B3D]"
                   required
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-stone-700 mb-1">Starting Rate (₹)</label>
+                <label className="block text-stone-700 mb-1">मोबाइल नंबर (Mobile Phone)</label>
                 <input
-                  type="number"
-                  value={startingPrice}
-                  onChange={e => setStartingPrice(e.target.value)}
-                  className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2.5 font-bold"
+                  type="tel"
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                  className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-sm text-[#2A1B3D]"
                   required
                 />
               </div>
-            </div>
 
-            <div>
-              <label className="block font-bold text-stone-700 mb-1">Bio / About Your Work</label>
-              <textarea
-                rows={2}
-                value={bio}
-                onChange={e => setBio(e.target.value)}
-                className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2.5 font-medium"
-              ></textarea>
-            </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-stone-700 mb-1">गाँव / मोहल्ला (Village)</label>
+                  <input
+                    type="text"
+                    value={village}
+                    onChange={e => setVillage(e.target.value)}
+                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-sm text-[#2A1B3D]"
+                    required
+                  />
+                </div>
 
+                <div>
+                  <label className="block text-stone-700 mb-1">ज़िला (District)</label>
+                  <input
+                    type="text"
+                    value={district}
+                    onChange={e => setDistrict(e.target.value)}
+                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-sm text-[#2A1B3D]"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-stone-700 mb-1">अनुभव (Experience - Years)</label>
+                  <input
+                    type="number"
+                    value={experience}
+                    onChange={e => setExperience(e.target.value)}
+                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-sm text-[#2A1B3D]"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-stone-700 mb-1">शुरुआती सिलाई दर (₹)</label>
+                  <input
+                    type="number"
+                    value={startingPrice}
+                    onChange={e => setStartingPrice(e.target.value)}
+                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-sm text-[#2A1B3D]"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-stone-700 mb-1">विशेषज्ञता एवं विवरण (About Skills)</label>
+                <textarea
+                  rows={2}
+                  value={bio}
+                  onChange={e => setBio(e.target.value)}
+                  className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-xs text-[#2A1B3D] font-medium"
+                ></textarea>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-4 bg-[#E91E63] hover:bg-[#D81B60] text-white font-black rounded-2xl shadow-lg shadow-pink-500/25 transition active:scale-95 text-xs flex items-center justify-center gap-2"
+              >
+                <UserCheck className="w-4 h-4" />
+                <span>दर्जी प्रोफ़ाइल जमा करें (Submit Tailor Profile)</span>
+              </button>
+            </form>
+          )}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 3. TAILOR PENDING ADMIN VERIFICATION SUCCESS SCREEN */}
+      {/* ========================================================================= */}
+      {tailorPendingSuccess && (
+        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-amber-200 shadow-xl space-y-6 text-center animate-fade-in">
+          <div className="w-16 h-16 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center mx-auto shadow-md">
+            <Clock className="w-8 h-8 animate-pulse" />
+          </div>
+
+          <div className="space-y-2">
+            <span className="bg-amber-100 text-amber-800 font-extrabold text-[10px] px-3 py-1 rounded-full uppercase tracking-wider">
+              सत्यापन लंबित (Pending Verification)
+            </span>
+            <h2 className="text-2xl font-black text-[#2A1B3D]">दर्जी पंजीकरण सफलतापूर्वक जमा हो गया!</h2>
+            <p className="text-xs text-stone-600 leading-relaxed max-w-md mx-auto">
+              आपकी प्रोफ़ाइल **SakhiSilai एडमिन (Admin Verification)** के पास पहुँच गई है। एडमिन द्वारा अनुमोदन (Approval) मिलते ही आपकी प्रोफ़ाइल आस-पास के ग्राहकों को दिखना शुरू हो जाएगी।
+            </p>
+          </div>
+
+          <div className="bg-stone-50 p-4 rounded-2xl border border-stone-200 text-left space-y-2 text-xs font-bold text-stone-700">
+            <h4 className="text-stone-900 font-black">प्रोफ़ाइल विवरण (Submitted Profile Summary):</h4>
+            <div className="flex justify-between border-b border-stone-200 pb-1">
+              <span>नाम:</span> <span>{name || 'Sunita Devi'}</span>
+            </div>
+            <div className="flex justify-between border-b border-stone-200 pb-1">
+              <span>गाँव / स्थान:</span> <span>{village}, {district}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>सत्यापन स्थिति:</span> <span className="text-amber-600 font-extrabold">⏳ एडमिन जांच जारी</span>
+            </div>
+          </div>
+
+          {/* QUICK DEMO ACTION TO TEST ADMIN APPROVAL */}
+          <div className="pt-2 border-t border-stone-100 space-y-3">
+            <p className="text-[11px] font-bold text-stone-500">
+              डेमो टेस्ट के लिए: आप तुरंत एडमिन पैनल में जाकर इस प्रोफ़ाइल को स्वीकृत (Approve) कर सकते हैं।
+            </p>
             <button
-              type="submit"
-              className="w-full py-3.5 bg-[#1B4D3E] hover:bg-[#133A2E] text-white font-extrabold rounded-xl shadow-lg transition active:scale-95 text-xs flex items-center justify-center gap-2"
+              onClick={() => {
+                loginAsAdmin();
+                setActiveTab('admin_dashboard');
+              }}
+              className="w-full py-3.5 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs rounded-2xl shadow transition flex items-center justify-center gap-2"
             >
-              <span>Submit & Start Earning</span>
-              <ArrowRight className="w-4 h-4" />
+              <ShieldCheck className="w-4 h-4" />
+              <span>एडमिन के रूप में लॉगिन करें व प्रोफ़ाइल स्वीकृत करें (Open Admin Console)</span>
             </button>
-          </form>
+          </div>
         </div>
       )}
     </div>
