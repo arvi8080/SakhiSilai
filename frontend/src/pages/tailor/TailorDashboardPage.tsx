@@ -11,7 +11,8 @@ import {
   Sliders,
   Sparkles,
   PlusCircle,
-  MapPin
+  MapPin,
+  Trash2
 } from 'lucide-react';
 
 interface TailorDashboardPageProps {
@@ -19,9 +20,9 @@ interface TailorDashboardPageProps {
 }
 
 export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
-  const { tailors, orders, customRequests, updateOrderStatus, updateTailorAvailability, updateTailorCapacity, addDesign, submitQuoteOffer } = useData();
+  const { tailors, designs, orders, customRequests, updateOrderStatus, updateTailorAvailability, updateTailorCapacity, addDesign, deleteDesign, submitQuoteOffer } = useData();
   const { currentUser } = useAuth();
-  const { t } = useLanguage();
+  const { lang, t } = useLanguage();
 
   const [activeTabSub, setActiveTabSub] = useState<'requests' | 'active' | 'catalog' | 'earnings'>('requests');
   const [showAddDesignModal, setShowAddDesignModal] = useState(false);
@@ -34,10 +35,11 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
 
   // New Design Form
   const [designTitle, setDesignTitle] = useState('');
-  const [designPrice, setDesignPrice] = useState(400);
-  const [designDays, setDesignDays] = useState(3);
+  const [designPrice, setDesignPrice] = useState<number>(450);
+  const [designDays, setDesignDays] = useState<number>(3);
   const [designDesc, setDesignDesc] = useState('');
   const [designCategory, setDesignCategory] = useState('Blouse Stitching');
+  const [designImage, setDesignImage] = useState('https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80');
 
   const tailor = tailors.find(t => t.id === 't_sunita' || t.userId === currentUser.id) || tailors[0];
   const tailorOrders = orders.filter(o => o.tailorId === tailor.id);
@@ -55,22 +57,25 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
   // Earnings calculations (100% tailor payout model)
   const totalEarned = completedOrders.reduce((sum, o) => sum + o.price, 0);
 
+  const tailorDesigns = designs.filter(d => d.tailorId === tailor.id || d.tailorId === 't_sunita');
+
   const handleCreateDesign = (e: React.FormEvent) => {
     e.preventDefault();
     addDesign({
       tailorId: tailor.id,
       tailorName: tailor.name,
-      categoryId: 'blouse',
+      categoryId: designCategory.toLowerCase().includes('blouse') ? 'blouse' : 'suit',
       categoryName: designCategory,
-      title: designTitle,
-      image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80',
-      price: Number(designPrice),
-      estDays: Number(designDays),
-      description: designDesc,
+      title: designTitle || (lang === 'hi' ? 'विशेष सिलाई डिज़ाइन' : 'Custom Designer Style'),
+      image: designImage || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80',
+      price: Number(designPrice) || 400,
+      estDays: Number(designDays) || 3,
+      description: designDesc || (lang === 'hi' ? 'उच्च गुणवत्ता सिलाई, परफेक्ट फिटिंग और सुंदर फिनिशिंग।' : 'High quality custom stitching with perfect fitting.'),
       isAvailable: true
     });
     setShowAddDesignModal(false);
     setDesignTitle('');
+    setDesignDesc('');
   };
 
   const handleSendQuote = (e: React.FormEvent) => {
@@ -412,25 +417,64 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
         </div>
       )}
 
-      {/* TAB 3: PRICING CATALOG EDITOR */}
+      {/* TAB 3: PRICING & MULTIPLE DESIGN CATALOG EDITOR */}
       {activeTabSub === 'catalog' && (
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="font-extrabold text-lg text-stone-900">My Service Rates Catalog</h3>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="font-black text-xl text-stone-900">
+                {lang === 'hi' ? 'मेरी सिलाई डिज़ाइन दर सूची (Design Catalog)' : 'My Stitching Design Catalog & Rates'}
+              </h3>
+              <p className="text-xs text-stone-500">
+                {lang === 'hi'
+                  ? 'अपनी पसंदीदा सिलाई डिज़ाएन्स, फोटो, विवरण और दरें जोड़ें'
+                  : 'Add custom design photos, descriptions, and stitching prices for customers'}
+              </p>
+            </div>
             <button
               onClick={() => setShowAddDesignModal(true)}
-              className="px-4 py-2 bg-[#1B4D3E] text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow"
+              className="px-5 py-2.5 bg-[#E91E63] hover:bg-[#D81B60] text-white font-extrabold text-xs rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-pink-500/25 transition active:scale-95"
             >
               <PlusCircle className="w-4 h-4" />
-              <span>Add New Design Catalog Rate</span>
+              <span>{lang === 'hi' ? '+ नया डिज़ाइन जोड़ें' : '+ Add New Design'}</span>
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {tailor.servicesOffered.map((svc, idx) => (
-              <div key={idx} className="bg-white p-4 rounded-2xl border border-stone-200 flex items-center justify-between text-xs">
-                <span className="font-bold text-stone-900">{svc}</span>
-                <span className="font-extrabold text-emerald-800">Available</span>
+          {/* DESIGN CATALOG GRID */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {tailorDesigns.map(d => (
+              <div key={d.id} className="bg-white rounded-3xl border border-stone-200 shadow-md hover:shadow-xl transition overflow-hidden flex flex-col justify-between group">
+                <div>
+                  <div className="relative h-44 overflow-hidden bg-stone-100">
+                    <img src={d.image} alt={d.title} className="w-full h-full object-cover group-hover:scale-105 transition" />
+                    <div className="absolute top-3 left-3 bg-[#2A1B3D]/80 backdrop-blur-md text-white font-extrabold text-[10px] px-2.5 py-0.5 rounded-full shadow">
+                      {d.categoryName}
+                    </div>
+                    <button
+                      onClick={() => deleteDesign(d.id)}
+                      className="absolute top-3 right-3 p-2 bg-red-600/90 hover:bg-red-600 text-white rounded-full shadow transition"
+                      title="Delete Design"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  <div className="p-4 space-y-2">
+                    <h4 className="font-black text-base text-[#2A1B3D]">{lang === 'hi' ? (d.titleHi || d.title) : d.title}</h4>
+                    <p className="text-xs text-stone-600 line-clamp-2 leading-relaxed">{d.description}</p>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-stone-50 border-t border-stone-100 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] text-stone-400 font-bold block">{lang === 'hi' ? 'सिलाई दर' : 'Stitching Rate'}</span>
+                    <span className="font-black text-lg text-[#E91E63]">₹{d.price}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-stone-400 font-bold block">{lang === 'hi' ? 'समय' : 'Turnaround'}</span>
+                    <span className="font-extrabold text-xs text-stone-800">~{d.estDays} {lang === 'hi' ? 'दिन' : 'Days'}</span>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -507,57 +551,158 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
         </div>
       )}
 
-      {/* ADD CATALOG DESIGN MODAL */}
+      {/* ADD CATALOG DESIGN MODAL WITH IMAGE, DESCRIPTION & PRICE */}
       {showAddDesignModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
-            <h3 className="font-bold text-base text-stone-900">Add New Design Catalog Price</h3>
-            <form onSubmit={handleCreateDesign} className="space-y-3 text-xs">
-              <div className="grid grid-cols-2 gap-2">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-5 border border-pink-100 max-h-[90vh] overflow-y-auto">
+            <div className="text-center space-y-1">
+              <h3 className="font-black text-xl text-[#2A1B3D]">
+                {lang === 'hi' ? 'नया सिलाई डिज़ाइन जोड़ें' : 'Add New Design Catalog'}
+              </h3>
+              <p className="text-xs text-stone-500">
+                {lang === 'hi' ? 'डिज़ाइन का नाम, फोटो, सिलाई दर और विवरण भरें' : 'Enter design title, photo, stitching price & description'}
+              </p>
+            </div>
+
+            <form onSubmit={handleCreateDesign} className="space-y-4 text-xs font-bold">
+              <div>
+                <label className="block text-stone-700 mb-1">
+                  {lang === 'hi' ? 'डिज़ाइन का नाम (Design Title)' : 'Design Title'}
+                </label>
                 <input
                   type="text"
-                  placeholder="Design Title (e.g. Princess Cut Blouse)"
+                  placeholder={lang === 'hi' ? 'उदा. प्रिंसेस कट ब्लाउज / डिजाइनर सूट' : 'e.g. Designer Cutwork Blouse'}
                   value={designTitle}
                   onChange={e => setDesignTitle(e.target.value)}
-                  className="bg-stone-50 border border-stone-300 rounded-xl p-2.5 font-bold"
+                  className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-sm text-[#2A1B3D]"
                   required
                 />
-                <select
-                  value={designCategory}
-                  onChange={e => setDesignCategory(e.target.value)}
-                  className="bg-stone-50 border border-stone-300 rounded-xl p-2.5 font-bold"
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-stone-700 mb-1">
+                    {lang === 'hi' ? 'श्रेणी (Category)' : 'Category'}
+                  </label>
+                  <select
+                    value={designCategory}
+                    onChange={e => setDesignCategory(e.target.value)}
+                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-xs text-[#2A1B3D] font-bold"
+                  >
+                    <option value="Blouse Stitching">👚 Blouse Stitching</option>
+                    <option value="Suit & Salwar Stitching">👗 Suit & Salwar</option>
+                    <option value="Dress & Kurti">👘 Dress & Kurti</option>
+                    <option value="Kids Clothing">🧒 Kids Clothing</option>
+                    <option value="Alterations">✂️ Alterations</option>
+                    <option value="Custom Design">🎨 Custom Design</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-stone-700 mb-1">
+                    {lang === 'hi' ? 'सिलाई दर (Price ₹)' : 'Stitching Rate (₹)'}
+                  </label>
+                  <input
+                    type="number"
+                    value={designPrice}
+                    onChange={e => setDesignPrice(Number(e.target.value))}
+                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-xs text-[#2A1B3D]"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-stone-700 mb-1">
+                    {lang === 'hi' ? 'अनुमानित दिन (Days)' : 'Est. Completion Days'}
+                  </label>
+                  <input
+                    type="number"
+                    value={designDays}
+                    onChange={e => setDesignDays(Number(e.target.value))}
+                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-xs text-[#2A1B3D]"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-stone-700 mb-1">
+                    {lang === 'hi' ? 'फोटो URL (Image URL)' : 'Design Photo URL'}
+                  </label>
+                  <input
+                    type="text"
+                    value={designImage}
+                    onChange={e => setDesignImage(e.target.value)}
+                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-xs text-[#2A1B3D]"
+                  />
+                </div>
+              </div>
+
+              {/* SAMPLE PHOTO SELECTOR PRESETS */}
+              <div className="space-y-1.5">
+                <label className="block text-[11px] text-stone-500">
+                  {lang === 'hi' ? 'या फोटो सैंपल चुनें (Sample Photos):' : 'Or Pick Sample Photo:'}
+                </label>
+                <div className="grid grid-cols-4 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setDesignImage('https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80')}
+                    className="p-1 border rounded-xl hover:border-[#E91E63] overflow-hidden text-[10px] text-center"
+                  >
+                    👚 Blouse
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDesignImage('https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&auto=format&fit=crop&q=80')}
+                    className="p-1 border rounded-xl hover:border-[#E91E63] overflow-hidden text-[10px] text-center"
+                  >
+                    👗 Suit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDesignImage('https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=600&auto=format&fit=crop&q=80')}
+                    className="p-1 border rounded-xl hover:border-[#E91E63] overflow-hidden text-[10px] text-center"
+                  >
+                    👘 Dress
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDesignImage('https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=600&auto=format&fit=crop&q=80')}
+                    className="p-1 border rounded-xl hover:border-[#E91E63] overflow-hidden text-[10px] text-center"
+                  >
+                    🧒 Kids
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-stone-700 mb-1">
+                  {lang === 'hi' ? 'विवरण एवं विशेषताएं (Description & Details)' : 'Description & Details'}
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder={lang === 'hi' ? 'उदा. बैक नेक डोरी, प्रिंसेंस कट, अस्तर/लाइनिंग के साथ' : 'e.g. Princess cut blouse with back neck dori & lining'}
+                  value={designDesc}
+                  onChange={e => setDesignDesc(e.target.value)}
+                  className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-xs text-[#2A1B3D] font-medium"
+                ></textarea>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddDesignModal(false)}
+                  className="flex-1 py-3.5 border border-stone-300 rounded-2xl font-black text-stone-600 hover:bg-stone-50"
                 >
-                  <option value="Blouse Stitching">Blouse Stitching</option>
-                  <option value="Suit & Salwar Stitching">Suit & Salwar</option>
-                  <option value="Dress & Kurti">Dress & Kurti</option>
-                  <option value="Kids Clothing">Kids Clothing</option>
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="number"
-                  placeholder="Price (₹)"
-                  value={designPrice}
-                  onChange={e => setDesignPrice(Number(e.target.value))}
-                  className="bg-stone-50 border border-stone-300 rounded-xl p-2.5 font-bold"
-                />
-                <input
-                  type="number"
-                  placeholder="Days (3)"
-                  value={designDays}
-                  onChange={e => setDesignDays(Number(e.target.value))}
-                  className="bg-stone-50 border border-stone-300 rounded-xl p-2.5 font-bold"
-                />
-              </div>
-              <textarea
-                placeholder="Description & features"
-                value={designDesc}
-                onChange={e => setDesignDesc(e.target.value)}
-                className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2.5 font-medium"
-              ></textarea>
-              <div className="flex gap-2 pt-2">
-                <button type="button" onClick={() => setShowAddDesignModal(false)} className="flex-1 py-2.5 border rounded-xl font-bold">Cancel</button>
-                <button type="submit" className="flex-1 py-2.5 bg-[#1B4D3E] text-white rounded-xl font-bold shadow">Save Design Catalog</button>
+                  {lang === 'hi' ? 'रद्द करें' : 'Cancel'}
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3.5 bg-[#E91E63] hover:bg-[#D81B60] text-white font-black rounded-2xl shadow-lg shadow-pink-500/25 transition active:scale-95"
+                >
+                  {lang === 'hi' ? 'डिज़ाइन सहेजें (Save Design)' : 'Save Design Catalog'}
+                </button>
               </div>
             </form>
           </div>
