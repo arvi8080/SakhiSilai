@@ -35,48 +35,48 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
               </div>
             </div>
 
-            {/* DESKTOP NAVIGATION LINKS (HINDI PRIMARY) */}
+            {/* DESKTOP NAVIGATION LINKS */}
             <nav className="hidden md:flex items-center gap-6 text-xs font-extrabold text-[#2A1B3D]">
               <button
                 onClick={() => setActiveTab('home')}
                 className={`hover:text-[#E91E63] transition ${activeTab === 'home' ? 'text-[#E91E63] font-black' : ''}`}
               >
-                होम
+                {lang === 'hi' ? 'होम' : 'Home'}
               </button>
 
               <button
                 onClick={() => setActiveTab('how_it_works')}
                 className={`hover:text-[#E91E63] transition ${activeTab === 'how_it_works' ? 'text-[#E91E63] font-black' : ''}`}
               >
-                कैसे काम करता है
+                {lang === 'hi' ? 'कैसे काम करता है' : 'How It Works'}
               </button>
 
               <button
                 onClick={() => setActiveTab('services')}
                 className={`hover:text-[#E91E63] transition ${activeTab === 'services' ? 'text-[#E91E63] font-black' : ''}`}
               >
-                सेवाएं
+                {lang === 'hi' ? 'सेवाएं' : 'Services'}
               </button>
 
               <button
                 onClick={() => setActiveTab('find_tailors')}
                 className={`hover:text-[#E91E63] transition ${activeTab === 'find_tailors' ? 'text-[#E91E63] font-black' : ''}`}
               >
-                डिज़ाइन देखें
+                {lang === 'hi' ? 'डिज़ाइन देखें' : 'Browse Designs'}
               </button>
 
               <button
                 onClick={() => setActiveTab('about_contact')}
                 className={`hover:text-[#E91E63] transition ${activeTab === 'about_contact' ? 'text-[#E91E63] font-black' : ''}`}
               >
-                हमारे बारे में
+                {lang === 'hi' ? 'हमारे बारे में' : 'About Us'}
               </button>
 
               <button
                 onClick={() => setActiveTab('about_contact')}
                 className={`hover:text-[#E91E63] transition ${activeTab === 'about_contact' ? 'text-[#E91E63] font-black' : ''}`}
               >
-                संपर्क करें
+                {lang === 'hi' ? 'संपर्क करें' : 'Contact Us'}
               </button>
             </nav>
 
@@ -85,9 +85,9 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
               {/* Language Selector */}
               <button
                 onClick={() => setLang(lang === 'hi' ? 'en' : 'hi')}
-                className="bg-pink-50 hover:bg-pink-100 text-[#E91E63] px-3 py-1.5 rounded-full text-xs font-bold border border-pink-200/60 transition"
+                className="bg-pink-50 hover:bg-pink-100 text-[#E91E63] px-3.5 py-1.5 rounded-full text-xs font-bold border border-pink-200/60 transition flex items-center gap-1 shadow-sm"
               >
-                {lang === 'hi' ? 'हिंदी' : 'English'}
+                <span>{lang === 'hi' ? '🇮🇳 English' : '🌐 हिंदी'}</span>
               </button>
 
               {/* Login Button */}
@@ -96,7 +96,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
                 className="hidden sm:flex items-center gap-1.5 text-stone-700 hover:text-[#E91E63] px-3 py-1.5 rounded-full text-xs font-bold transition"
               >
                 <LogIn className="w-3.5 h-3.5" />
-                <span>लॉगिन</span>
+                <span>{lang === 'hi' ? 'लॉगिन' : 'Login'}</span>
               </button>
 
               {/* Primary Pink CTA Button */}
@@ -105,7 +105,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
                 className="px-5 py-2 bg-gradient-to-r from-[#E91E63] to-[#D81B60] hover:from-[#D81B60] hover:to-[#C2185B] text-white font-extrabold text-xs rounded-full shadow-md shadow-pink-500/25 transition active:scale-95 flex items-center gap-1.5"
               >
                 <UserPlus className="w-3.5 h-3.5" />
-                <span>जुड़ें</span>
+                <span>{lang === 'hi' ? 'जुड़ें' : 'Join Now'}</span>
               </button>
 
               {/* Mobile Hamburger */}
@@ -129,7 +129,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
               }}
               className="w-full text-left py-2 px-3 hover:bg-pink-50 rounded-xl"
             >
-              होम (Home)
+              {lang === 'hi' ? 'होम' : 'Home'}
             </button>
             <button
               onClick={() => {
@@ -138,7 +138,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
               }}
               className="w-full text-left py-2 px-3 hover:bg-pink-50 rounded-xl"
             >
-              कैसे काम करता है (How It Works)
+              {lang === 'hi' ? 'कैसे काम करता है' : 'How It Works'}
             </button>
             <button
               onClick={() => {
@@ -147,7 +147,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
               }}
               className="w-full text-left py-2 px-3 hover:bg-pink-50 rounded-xl"
             >
-              सेवाएं (Services)
+              {lang === 'hi' ? 'सेवाएं' : 'Services'}
             </button>
             <button
               onClick={() => {
@@ -156,7 +156,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
               }}
               className="w-full text-left py-2 px-3 hover:bg-pink-50 rounded-xl"
             >
-              डिज़ाइन देखें (Browse Designs)
+              {lang === 'hi' ? 'डिज़ाइन देखें' : 'Browse Designs'}
             </button>
             <button
               onClick={() => {
@@ -165,7 +165,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
               }}
               className="w-full text-left py-2 px-3 hover:bg-pink-50 rounded-xl"
             >
-              हमारे बारे में & संपर्क करें
+              {lang === 'hi' ? 'हमारे बारे में और संपर्क' : 'About & Contact Us'}
             </button>
           </div>
         )}

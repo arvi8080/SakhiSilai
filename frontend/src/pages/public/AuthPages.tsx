@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import {
   Scissors,
   UserCheck,
@@ -21,6 +22,7 @@ interface AuthPagesProps {
 export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode = 'register' }) => {
   const { registerTailor, selectedState, selectedDistrict, selectedVillage } = useData();
   const { setRole, updateUserProfile, loginAsAdmin, loginAsCustomer, loginAsTailor } = useAuth();
+  const { lang } = useLanguage();
 
   // Mode: 'login' or 'register'
   const [authMode, setAuthMode] = useState<'login' | 'register'>(initialMode === 'login' ? 'login' : 'register');
@@ -162,7 +164,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
           }`}
         >
           <LogIn className="w-4 h-4 text-[#E91E63]" />
-          <span>लॉगिन (Login)</span>
+          <span>{lang === 'hi' ? 'लॉगिन' : 'Login'}</span>
         </button>
 
         <button
@@ -177,7 +179,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
           }`}
         >
           <UserPlus className="w-4 h-4" />
-          <span>खाता बनाएं (Create Account)</span>
+          <span>{lang === 'hi' ? 'खाता बनाएं' : 'Create Account'}</span>
         </button>
       </div>
 
@@ -187,8 +189,14 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
       {authMode === 'login' && (
         <div className="bg-white p-6 sm:p-8 rounded-3xl border border-pink-100 shadow-xl space-y-6">
           <div className="text-center space-y-1">
-            <h2 className="text-2xl font-black text-[#2A1B3D]">वापसी पर स्वागत है!</h2>
-            <p className="text-xs text-stone-500">सिंगल लॉगिन पोर्टल — ग्राहक, टेलर या एडमिन के रूप में प्रवेश करें</p>
+            <h2 className="text-2xl font-black text-[#2A1B3D]">
+              {lang === 'hi' ? 'वापसी पर स्वागत है!' : 'Welcome Back!'}
+            </h2>
+            <p className="text-xs text-stone-500">
+              {lang === 'hi'
+                ? 'सिंगल लॉगिन पोर्टल — ग्राहक, टेलर या एडमिन के रूप में प्रवेश करें'
+                : 'Single login portal — Sign in as Customer, Tailor, or Admin'}
+            </p>
           </div>
 
           {/* LOGIN ROLE TARGET SELECTION */}
