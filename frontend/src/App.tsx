@@ -22,8 +22,10 @@ import { CustomerDashboardPage } from './pages/customer/CustomerDashboardPage';
 import { TailorDashboardPage } from './pages/tailor/TailorDashboardPage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 
+const PROTECTED_TABS = ['create_order', 'custom_request', 'order_tracking', 'dashboard', 'admin_dashboard'];
+
 const AppContent: React.FC = () => {
-  const { currentRole } = useAuth();
+  const { currentRole, isLoggedIn, setPendingRedirectTab, setPendingTailorId, setRedirectNotice } = useAuth();
 
   const [activeTab, setActiveTab] = useState<string>('home');
   const [selectedTailorId, setSelectedTailorId] = useState<string>('t_sunita');
@@ -31,25 +33,60 @@ const AppContent: React.FC = () => {
   const [selectedOrderId, setSelectedOrderId] = useState<string>('ord_101');
   const [categoryFilter, setCategoryFilter] = useState<string | undefined>(undefined);
 
+  const handleNavigate = (tab: string, extraData?: { tailorId?: string; designId?: string; orderId?: string }) => {
+    // Check if target tab is protected and user is not logged in
+    if (!isLoggedIn && PROTECTED_TABS.includes(tab)) {
+      setPendingRedirectTab(tab);
+      if (extraData?.tailorId) {
+        setPendingTailorId(extraData.tailorId);
+        setSelectedTailorId(extraData.tailorId);
+      } else if (selectedTailorId) {
+        setPendingTailorId(selectedTailorId);
+      }
+      if (extraData?.designId) {
+        setSelectedDesignId(extraData.designId);
+      }
+      
+      let noticeMsg = "🔐 आगे बढ़ने के लिए कृपया पहले लॉगिन या पंजीकरण करें (Please login or register to continue)";
+      if (tab === 'create_order') {
+        noticeMsg = "🔐 'Book Now' / सिलाई ऑर्डर बुक करने के लिए कृपया पहले लॉगिन या खाता बनाएं (Please login to book an order)";
+      } else if (tab === 'custom_request') {
+        noticeMsg = "🔐 कस्टम डिज़ाइन अपलोड करने के लिए कृपया पहले लॉगिन करें (Please login to upload custom design)";
+      } else if (tab === 'order_tracking') {
+        noticeMsg = "🔐 अपने पर्सनल ऑर्डर ट्रैक करने के लिए कृपया लॉगिन करें (Please login to track your orders)";
+      } else if (tab === 'dashboard') {
+        noticeMsg = "🔐 डैशबोर्ड या प्रोफ़ाइल देखने के लिए कृपया लॉगिन करें (Please login to access dashboard)";
+      }
+      setRedirectNotice(noticeMsg);
+      setActiveTab('auth');
+      return;
+    }
+
+    // Direct navigation if public or logged in
+    if (extraData?.tailorId) setSelectedTailorId(extraData.tailorId);
+    if (extraData?.designId !== undefined) setSelectedDesignId(extraData.designId);
+    if (extraData?.orderId) setSelectedOrderId(extraData.orderId);
+
+    setActiveTab(tab);
+  };
+
   const handleSelectTailor = (tailorId: string) => {
     setSelectedTailorId(tailorId);
     setActiveTab('tailor_profile');
   };
 
   const handleBookDesign = (tailorId: string, designId?: string) => {
-    setSelectedTailorId(tailorId);
-    setSelectedDesignId(designId);
-    setActiveTab('create_order');
+    handleNavigate('create_order', { tailorId, designId });
   };
 
   const handleOrderCreated = (orderId: string) => {
     setSelectedOrderId(orderId);
-    setActiveTab('order_tracking');
+    handleNavigate('order_tracking', { orderId });
   };
 
   const handleTrackOrder = (orderId: string) => {
     setSelectedOrderId(orderId);
-    setActiveTab('order_tracking');
+    handleNavigate('order_tracking', { orderId });
   };
 
   const handleSelectCategory = (catId: string) => {
@@ -64,13 +101,13 @@ const AppContent: React.FC = () => {
         <RoleSwitcherBar />
 
         {/* Navigation Bar */}
-        <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
+        <Navbar activeTab={activeTab} setActiveTab={handleNavigate} />
 
         {/* Main Content Area */}
         <main className="pt-6">
           {activeTab === 'home' && (
             <Home
-              setActiveTab={setActiveTab}
+              setActiveTab={handleNavigate}
               onSelectTailor={handleSelectTailor}
               onSelectCategory={handleSelectCategory}
             />
@@ -78,19 +115,19 @@ const AppContent: React.FC = () => {
 
           {activeTab === 'services' && (
             <ServicesPage
-              setActiveTab={setActiveTab}
+              setActiveTab={handleNavigate}
               onSelectCategory={handleSelectCategory}
             />
           )}
 
           {activeTab === 'how_it_works' && (
             <HowItWorksPage
-              setActiveTab={setActiveTab}
+              setActiveTab={handleNavigate}
             />
           )}
 
           {activeTab === 'about' && (
-            <AboutPage setActiveTab={setActiveTab} />
+            <AboutPage setActiveTab={handleNavigate} />
           )}
 
           {activeTab === 'contact' && (
@@ -99,14 +136,14 @@ const AppContent: React.FC = () => {
 
           {activeTab === 'auth' && (
             <AuthPages
-              setActiveTab={setActiveTab}
+              setActiveTab={handleNavigate}
               initialMode="register_tailor"
             />
           )}
 
           {activeTab === 'find_tailors' && (
             <FindTailorsPage
-              setActiveTab={setActiveTab}
+              setActiveTab={handleNavigate}
               onSelectTailor={handleSelectTailor}
               selectedCategoryFilter={categoryFilter}
             />
@@ -115,7 +152,7 @@ const AppContent: React.FC = () => {
           {activeTab === 'tailor_profile' && (
             <TailorProfilePage
               tailorId={selectedTailorId}
-              setActiveTab={setActiveTab}
+              setActiveTab={handleNavigate}
               onBookDesign={handleBookDesign}
             />
           )}
@@ -124,7 +161,7 @@ const AppContent: React.FC = () => {
             <CreateOrderPage
               tailorId={selectedTailorId}
               preSelectedDesignId={selectedDesignId}
-              setActiveTab={setActiveTab}
+              setActiveTab={handleNavigate}
               onOrderCreated={handleOrderCreated}
             />
           )}
@@ -132,13 +169,13 @@ const AppContent: React.FC = () => {
           {activeTab === 'order_tracking' && (
             <OrderTrackingPage
               orderId={selectedOrderId}
-              setActiveTab={setActiveTab}
+              setActiveTab={handleNavigate}
             />
           )}
 
           {activeTab === 'custom_request' && (
             <CustomDesignRequestPage
-              setActiveTab={setActiveTab}
+              setActiveTab={handleNavigate}
               onOrderCreated={handleOrderCreated}
             />
           )}
@@ -147,20 +184,20 @@ const AppContent: React.FC = () => {
             <>
               {currentRole === 'customer' && (
                 <CustomerDashboardPage
-                  setActiveTab={setActiveTab}
+                  setActiveTab={handleNavigate}
                   onTrackOrder={handleTrackOrder}
                 />
               )}
 
               {currentRole === 'tailor' && (
                 <TailorDashboardPage
-                  setActiveTab={setActiveTab}
+                  setActiveTab={handleNavigate}
                 />
               )}
 
               {currentRole === 'admin' && (
                 <AdminDashboardPage
-                  setActiveTab={setActiveTab}
+                  setActiveTab={handleNavigate}
                 />
               )}
             </>

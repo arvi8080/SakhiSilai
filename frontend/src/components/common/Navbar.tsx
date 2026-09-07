@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
+import { useAuth } from '../../context/AuthContext';
 import { LocationSelectorModal } from './LocationSelectorModal';
-import { Scissors, Menu, X, LogIn, UserPlus } from 'lucide-react';
+import { Scissors, Menu, X, LogIn, UserPlus, LogOut, LayoutDashboard } from 'lucide-react';
 
 interface NavbarProps {
   activeTab: string;
@@ -10,6 +11,7 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
   const { lang, setLang } = useLanguage();
+  const { isLoggedIn, currentUser, currentRole, logout } = useAuth();
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -90,23 +92,47 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
                 <span>{lang === 'hi' ? '🇮🇳 English' : '🌐 हिंदी'}</span>
               </button>
 
-              {/* Login Button */}
-              <button
-                onClick={() => setActiveTab('auth')}
-                className="hidden sm:flex items-center gap-1.5 text-stone-700 hover:text-[#E91E63] px-3 py-1.5 rounded-full text-xs font-bold transition"
-              >
-                <LogIn className="w-3.5 h-3.5" />
-                <span>{lang === 'hi' ? 'लॉगिन' : 'Login'}</span>
-              </button>
+              {isLoggedIn ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setActiveTab('dashboard')}
+                    className="flex items-center gap-1.5 bg-pink-50 hover:bg-pink-100 text-[#E91E63] px-3.5 py-1.5 rounded-full text-xs font-extrabold border border-pink-200 transition"
+                  >
+                    <LayoutDashboard className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">{currentUser?.name?.split(' ')[0]} ({currentRole})</span>
+                    <span className="sm:hidden">{lang === 'hi' ? 'डैशबोर्ड' : 'Dashboard'}</span>
+                  </button>
 
-              {/* Primary Pink CTA Button */}
-              <button
-                onClick={() => setActiveTab('auth')}
-                className="px-5 py-2 bg-gradient-to-r from-[#E91E63] to-[#D81B60] hover:from-[#D81B60] hover:to-[#C2185B] text-white font-extrabold text-xs rounded-full shadow-md shadow-pink-500/25 transition active:scale-95 flex items-center gap-1.5"
-              >
-                <UserPlus className="w-3.5 h-3.5" />
-                <span>{lang === 'hi' ? 'जुड़ें' : 'Join Now'}</span>
-              </button>
+                  <button
+                    onClick={() => {
+                      logout();
+                      setActiveTab('home');
+                    }}
+                    title={lang === 'hi' ? 'लॉगआउट' : 'Logout'}
+                    className="p-1.5 text-stone-500 hover:text-red-600 rounded-full hover:bg-stone-100 transition"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setActiveTab('auth')}
+                    className="hidden sm:flex items-center gap-1.5 text-stone-700 hover:text-[#E91E63] px-3 py-1.5 rounded-full text-xs font-bold transition"
+                  >
+                    <LogIn className="w-3.5 h-3.5" />
+                    <span>{lang === 'hi' ? 'लॉगिन' : 'Login'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveTab('auth')}
+                    className="px-5 py-2 bg-gradient-to-r from-[#E91E63] to-[#D81B60] hover:from-[#D81B60] hover:to-[#C2185B] text-white font-extrabold text-xs rounded-full shadow-md shadow-pink-500/25 transition active:scale-95 flex items-center gap-1.5"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>{lang === 'hi' ? 'जुड़ें' : 'Join Now'}</span>
+                  </button>
+                </>
+              )}
 
               {/* Mobile Hamburger */}
               <button
@@ -176,6 +202,27 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
             >
               {lang === 'hi' ? 'संपर्क करें' : 'Contact Us'}
             </button>
+            {isLoggedIn ? (
+              <button
+                onClick={() => {
+                  setActiveTab('dashboard');
+                  setIsMobileMenuOpen(false);
+                }}
+                className="w-full text-left py-2 px-3 bg-pink-50 text-[#E91E63] font-black rounded-xl"
+              >
+                {lang === 'hi' ? 'मेरा डैशबोर्ड' : 'My Dashboard'}
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setActiveTab('auth');
+                  setIsMobileMenuOpen(false);
+                }}
+                className="w-full text-left py-2 px-3 bg-[#E91E63] text-white font-black rounded-xl"
+              >
+                {lang === 'hi' ? 'लॉगिन / साइन-अप' : 'Login / Sign Up'}
+              </button>
+            )}
           </div>
         )}
       </header>

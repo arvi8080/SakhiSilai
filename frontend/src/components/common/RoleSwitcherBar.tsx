@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { User, Scissors, ShieldAlert } from 'lucide-react';
 
 export const RoleSwitcherBar: React.FC = () => {
-  const { currentRole, setRole } = useAuth();
+  const { currentRole, setRole, isLoggedIn, loginAsGuest } = useAuth();
 
   return (
     <div className="bg-stone-900 text-white px-4 py-2 text-xs flex flex-wrap items-center justify-between gap-2 shadow-md">
@@ -12,16 +12,27 @@ export const RoleSwitcherBar: React.FC = () => {
           Demo Mode
         </span>
         <span className="text-stone-300 hidden sm:inline">
-          Switch role to test full workflow:
+          Switch role to test auth flow & browsing:
         </span>
       </div>
 
       <div className="flex items-center gap-1.5 bg-stone-800 p-1 rounded-lg border border-stone-700">
         <button
+          onClick={loginAsGuest}
+          className={`px-2.5 py-1 rounded-md transition flex items-center gap-1.5 font-medium ${
+            !isLoggedIn
+              ? 'bg-purple-600 text-white shadow font-bold'
+              : 'text-stone-300 hover:text-white'
+          }`}
+        >
+          <span>🌐 Guest Mode (No Login)</span>
+        </button>
+
+        <button
           onClick={() => setRole('customer')}
           className={`px-2.5 py-1 rounded-md transition flex items-center gap-1.5 font-medium ${
-            currentRole === 'customer'
-              ? 'bg-[#D9534F] text-white shadow'
+            isLoggedIn && currentRole === 'customer'
+              ? 'bg-[#E91E63] text-white shadow font-bold'
               : 'text-stone-300 hover:text-white'
           }`}
         >
@@ -32,8 +43,8 @@ export const RoleSwitcherBar: React.FC = () => {
         <button
           onClick={() => setRole('tailor')}
           className={`px-2.5 py-1 rounded-md transition flex items-center gap-1.5 font-medium ${
-            currentRole === 'tailor'
-              ? 'bg-[#1B4D3E] text-white shadow'
+            isLoggedIn && currentRole === 'tailor'
+              ? 'bg-[#1B4D3E] text-white shadow font-bold'
               : 'text-stone-300 hover:text-white'
           }`}
         >
@@ -44,8 +55,8 @@ export const RoleSwitcherBar: React.FC = () => {
         <button
           onClick={() => setRole('admin')}
           className={`px-2.5 py-1 rounded-md transition flex items-center gap-1.5 font-medium ${
-            currentRole === 'admin'
-              ? 'bg-amber-600 text-white shadow'
+            isLoggedIn && currentRole === 'admin'
+              ? 'bg-amber-600 text-white shadow font-bold'
               : 'text-stone-300 hover:text-white'
           }`}
         >

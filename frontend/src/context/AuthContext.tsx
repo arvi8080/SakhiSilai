@@ -1,15 +1,23 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { User, UserRole, TailorProfile } from '../types';
+import type { User, UserRole } from '../types';
 
 interface AuthContextType {
   currentUser: User;
   currentRole: UserRole;
+  isLoggedIn: boolean;
   setRole: (role: UserRole) => void;
   loginAsCustomer: () => void;
-  loginAsTailor: (tailorId?: string) => void;
+  loginAsTailor: () => void;
   loginAsAdmin: () => void;
+  loginAsGuest: () => void;
+  logout: () => void;
   updateUserProfile: (updates: Partial<User>) => void;
-  activeTailorProfile?: TailorProfile;
+  pendingRedirectTab: string | null;
+  setPendingRedirectTab: (tab: string | null) => void;
+  pendingTailorId: string | null;
+  setPendingTailorId: (id: string | null) => void;
+  redirectNotice: string | null;
+  setRedirectNotice: (notice: string | null) => void;
 }
 
 const DEFAULT_CUSTOMER: User = {
@@ -60,14 +68,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return saved ? JSON.parse(saved) : DEFAULT_CUSTOMER;
   });
 
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
+    const savedLoggedIn = localStorage.getItem('sakhisilai_is_logged_in');
+    return savedLoggedIn === 'true';
+  });
+
   const [currentRole, setCurrentRoleState] = useState<UserRole>(currentUser.role || 'customer');
+  const [pendingRedirectTab, setPendingRedirectTab] = useState<string | null>(null);
+  const [pendingTailorId, setPendingTailorId] = useState<string | null>(null);
+  const [redirectNotice, setRedirectNotice] = useState<string | null>(null);
 
   useEffect(() => {
     localStorage.setItem('sakhisilai_auth_user', JSON.stringify(currentUser));
-  }, [currentUser]);
+    localStorage.setItem('sakhisilai_is_logged_in', isLoggedIn ? 'true' : 'false');
+  }, [currentUser, isLoggedIn]);
 
   const setRole = (role: UserRole) => {
     setCurrentRoleState(role);
+    setIsLoggedIn(true);
     if (role === 'customer') {
       setCurrentUser(DEFAULT_CUSTOMER);
     } else if (role === 'tailor') {
@@ -77,11 +95,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const loginAsCustomer = () => setRole('customer');
-  const loginAsTailor = () => setRole('tailor');
-  const loginAsAdmin = () => setRole('admin');
+  const loginAsCustomer = () => {
+    setIsLoggedIn(true);
+    setRole('customer');
+  };
+
+  const loginAsTailor = () => {
+    setIsLoggedIn(true);
+    setRole('tailor');
+  };
+
+  const loginAsAdmin = () => {
+    setIsLoggedIn(true);
+    setRole('admin');
+  };
+
+  const loginAsGuest = () => {
+    setIsLoggedIn(false);
+    localStorage.setItem('sakhisilai_is_logged_in', 'false');
+  };
+
+  const logout = () => {
+    setIsLoggedIn(false);
+    localStorage.setItem('sakhisilai_is_logged_in', 'false');
+  };
 
   const updateUserProfile = (updates: Partial<User>) => {
+    setIsLoggedIn(true);
     setCurrentUser(prev => ({ ...prev, ...updates }));
   };
 
@@ -90,11 +130,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         currentUser,
         currentRole,
+        isLoggedIn,
         setRole,
         loginAsCustomer,
         loginAsTailor,
         loginAsAdmin,
-        updateUserProfile
+        loginAsGuest,
+        logout,
+        updateUserProfile,
+        pendingRedirectTab,
+        setPendingRedirectTab,
+        pendingTailorId,
+        setPendingTailorId,
+        redirectNotice,
+        setRedirectNotice
       }}
     >
       {children}

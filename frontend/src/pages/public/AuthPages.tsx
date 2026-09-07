@@ -21,8 +21,29 @@ interface AuthPagesProps {
 
 export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode = 'register' }) => {
   const { registerTailor, selectedState, selectedDistrict, selectedVillage } = useData();
-  const { setRole, updateUserProfile, loginAsAdmin, loginAsCustomer, loginAsTailor } = useAuth();
+  const {
+    setRole,
+    updateUserProfile,
+    loginAsAdmin,
+    loginAsCustomer,
+    loginAsTailor,
+    pendingRedirectTab,
+    setPendingRedirectTab,
+    redirectNotice,
+    setRedirectNotice
+  } = useAuth();
   const { lang } = useLanguage();
+
+  const completeAuthRedirect = (defaultTab: string = 'dashboard') => {
+    if (pendingRedirectTab) {
+      const target = pendingRedirectTab;
+      setPendingRedirectTab(null);
+      setRedirectNotice(null);
+      setActiveTab(target);
+    } else {
+      setActiveTab(defaultTab);
+    }
+  };
 
   // Mode: 'login' or 'register'
   const [authMode, setAuthMode] = useState<'login' | 'register'>(initialMode === 'login' ? 'login' : 'register');
@@ -65,7 +86,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
       cleanPass === 'admin123'
     ) {
       loginAsAdmin();
-      setActiveTab('dashboard');
+      completeAuthRedirect('dashboard');
       return;
     }
 
@@ -76,7 +97,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
       cleanPhone.includes('tailor')
     ) {
       loginAsTailor();
-      setActiveTab('dashboard');
+      completeAuthRedirect('dashboard');
       return;
     }
 
@@ -85,7 +106,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
       updateUserProfile({ phone: cleanPhone });
     }
     loginAsCustomer();
-    setActiveTab('dashboard');
+    completeAuthRedirect();
   };
 
   // REGISTER CUSTOMER SUBMIT
@@ -103,7 +124,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
     setCustomerRegSuccess(true);
 
     setTimeout(() => {
-      setActiveTab('dashboard');
+      completeAuthRedirect();
     }, 1200);
   };
 
@@ -137,6 +158,21 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
 
   return (
     <div className="max-w-xl mx-auto px-4 space-y-6 animate-fade-in pb-16 pt-4">
+      {/* AUTH REDIRECT NOTICE BANNER */}
+      {redirectNotice && (
+        <div className="bg-[#E91E63] text-white p-4 rounded-3xl shadow-xl border border-pink-700 space-y-1 animate-pulse">
+          <div className="flex items-center gap-2 font-black text-xs sm:text-sm">
+            <Lock className="w-5 h-5 text-amber-300 shrink-0" />
+            <span>{redirectNotice}</span>
+          </div>
+          <p className="text-[11px] text-pink-100 font-medium leading-relaxed pl-7">
+            {lang === 'hi'
+              ? 'सफलतापूर्वक लॉगिन या पंजीकरण करने के बाद आप स्वचालित रूप से अपनी पसंदीदा प्रक्रिया/पेज पर पहुँच जाएंगे।'
+              : 'After successful login or registration, you will be automatically returned to your original booking action.'}
+          </p>
+        </div>
+      )}
+
       {/* BRAND BANNER HEADER */}
       <div className="text-center space-y-2">
         <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#E91E63] to-[#FF4081] text-white flex items-center justify-center mx-auto shadow-lg shadow-pink-500/25">
@@ -303,7 +339,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
                 type="button"
                 onClick={() => {
                   loginAsCustomer();
-                  setActiveTab('dashboard');
+                  completeAuthRedirect();
                 }}
                 className="py-2.5 px-2 bg-pink-50 hover:bg-pink-100 text-[#E91E63] font-black text-[11px] rounded-xl border border-pink-200 transition text-center"
               >
@@ -313,7 +349,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
                 type="button"
                 onClick={() => {
                   loginAsTailor();
-                  setActiveTab('dashboard');
+                  completeAuthRedirect();
                 }}
                 className="py-2.5 px-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-black text-[11px] rounded-xl border border-emerald-200 transition text-center"
               >
@@ -323,7 +359,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
                 type="button"
                 onClick={() => {
                   loginAsAdmin();
-                  setActiveTab('dashboard');
+                  completeAuthRedirect('dashboard');
                 }}
                 className="py-2.5 px-2 bg-amber-50 hover:bg-amber-100 text-amber-900 font-black text-[11px] rounded-xl border border-amber-200 transition text-center"
               >

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useAuth } from '../../context/AuthContext';
 import {
   Star,
   MapPin,
@@ -8,7 +9,10 @@ import {
   Scissors,
   ShieldCheck,
   ArrowLeft,
-  Sparkles
+  Sparkles,
+  Bookmark,
+  MessageSquarePlus,
+  Check
 } from 'lucide-react';
 
 interface TailorProfilePageProps {
@@ -20,11 +24,39 @@ interface TailorProfilePageProps {
 export const TailorProfilePage: React.FC<TailorProfilePageProps> = ({ tailorId, setActiveTab, onBookDesign }) => {
   const { tailors, designs, reviews, selectedVillage } = useData();
   const { lang } = useLanguage();
+  const { isLoggedIn, setPendingRedirectTab, setPendingTailorId, setRedirectNotice } = useAuth();
+
+  const [isSaved, setIsSaved] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [newRating, setNewRating] = useState(5);
+  const [newComment, setNewComment] = useState('');
 
   const tailor = tailors.find(t => t.id === tailorId) || tailors[0];
   const tailorDesigns = designs.filter(d => d.tailorId === tailor.id);
   const tailorReviews = reviews.filter(r => r.tailorId === tailor.id);
   const isSameVillage = tailor.village.toLowerCase() === selectedVillage.toLowerCase();
+
+  const handleSaveTailor = () => {
+    if (!isLoggedIn) {
+      setPendingRedirectTab('tailor_profile');
+      setPendingTailorId(tailor.id);
+      setRedirectNotice("🔐 दर्जी सहेजने (Bookmark Tailor) के लिए कृपया पहले लॉगिन करें (Please sign in to save tailors)");
+      setActiveTab('auth');
+      return;
+    }
+    setIsSaved(!isSaved);
+  };
+
+  const handleWriteReviewClick = () => {
+    if (!isLoggedIn) {
+      setPendingRedirectTab('tailor_profile');
+      setPendingTailorId(tailor.id);
+      setRedirectNotice("🔐 समीक्षा (Review) लिखने के लिए कृपया पहले लॉगिन करें (Please sign in to write a review)");
+      setActiveTab('auth');
+      return;
+    }
+    setShowReviewModal(true);
+  };
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-8 animate-fade-in pb-16">
@@ -78,13 +110,27 @@ export const TailorProfilePage: React.FC<TailorProfilePageProps> = ({ tailorId, 
               </div>
             </div>
 
-            <button
-              onClick={() => onBookDesign(tailor.id)}
-              className="w-full sm:w-auto px-6 py-3 bg-[#D9534F] hover:bg-[#C93B37] text-white font-bold text-sm rounded-xl shadow-lg transition active:scale-95 flex items-center justify-center gap-2"
-            >
-              <Scissors className="w-4 h-4 rotate-45" />
-              <span>Book Order with {tailor.name.split(' ')[0]}</span>
-            </button>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <button
+                onClick={handleSaveTailor}
+                className={`px-4 py-3 font-bold text-xs rounded-xl border transition flex items-center gap-1.5 ${
+                  isSaved
+                    ? 'bg-pink-50 border-[#E91E63] text-[#E91E63]'
+                    : 'bg-stone-50 border-stone-200 text-stone-700 hover:bg-stone-100'
+                }`}
+              >
+                <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-[#E91E63]' : ''}`} />
+                <span>{isSaved ? (lang === 'hi' ? 'सहेजा गया' : 'Saved') : (lang === 'hi' ? 'सहेजें' : 'Save')}</span>
+              </button>
+
+              <button
+                onClick={() => onBookDesign(tailor.id)}
+                className="flex-1 sm:flex-none px-6 py-3 bg-[#E91E63] hover:bg-[#D81B60] text-white font-black text-sm rounded-xl shadow-lg transition active:scale-95 flex items-center justify-center gap-2"
+              >
+                <Scissors className="w-4 h-4 rotate-45" />
+                <span>Book Order with {tailor.name.split(' ')[0]}</span>
+              </button>
+            </div>
           </div>
 
           <p className="text-xs sm:text-sm text-stone-700 leading-relaxed bg-stone-50 p-4 rounded-2xl border border-stone-100 mb-6">
@@ -124,7 +170,7 @@ export const TailorProfilePage: React.FC<TailorProfilePageProps> = ({ tailorId, 
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-extrabold text-stone-900 flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-[#D9534F]" />
+              <Sparkles className="w-5 h-5 text-[#E91E63]" />
               <span>{tailor.name}'s Design Catalog & Rates</span>
             </h2>
             <p className="text-xs text-stone-500">Transparent prices set directly by tailor</p>
@@ -149,13 +195,13 @@ export const TailorProfilePage: React.FC<TailorProfilePageProps> = ({ tailorId, 
 
                 <div className="flex items-center justify-between pt-2 border-t border-stone-100 mt-2">
                   <div>
-                    <span className="font-extrabold text-base text-[#D9534F]">₹{d.price}</span>
+                    <span className="font-extrabold text-base text-[#E91E63]">₹{d.price}</span>
                     <span className="text-[10px] text-stone-400 block">{d.estDays} Days Est.</span>
                   </div>
 
                   <button
                     onClick={() => onBookDesign(tailor.id, d.id)}
-                    className="px-3 py-1.5 bg-[#1B4D3E] hover:bg-[#133A2E] text-white font-bold text-xs rounded-lg shadow"
+                    className="px-3 py-1.5 bg-[#E91E63] hover:bg-[#D81B60] text-white font-bold text-xs rounded-lg shadow"
                   >
                     Select Design
                   </button>
@@ -178,7 +224,17 @@ export const TailorProfilePage: React.FC<TailorProfilePageProps> = ({ tailorId, 
 
       {/* REVIEWS & RATINGS */}
       <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm space-y-4">
-        <h3 className="font-bold text-base text-stone-900">Customer Feedback ({tailorReviews.length})</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="font-bold text-base text-stone-900">Customer Feedback ({tailorReviews.length})</h3>
+          <button
+            onClick={handleWriteReviewClick}
+            className="px-3.5 py-1.5 bg-pink-50 hover:bg-pink-100 text-[#E91E63] font-bold text-xs rounded-full border border-pink-200 transition flex items-center gap-1.5"
+          >
+            <MessageSquarePlus className="w-4 h-4" />
+            <span>{lang === 'hi' ? 'समीक्षा लिखें' : 'Write Review'}</span>
+          </button>
+        </div>
+
         {tailorReviews.length === 0 ? (
           <p className="text-xs text-stone-400">No reviews yet for this tailor.</p>
         ) : (
@@ -199,6 +255,64 @@ export const TailorProfilePage: React.FC<TailorProfilePageProps> = ({ tailorId, 
           </div>
         )}
       </div>
+
+      {/* WRITE REVIEW MODAL */}
+      {showReviewModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white p-6 rounded-3xl max-w-md w-full space-y-4 border border-pink-100 shadow-2xl animate-fade-in">
+            <h3 className="font-black text-lg text-[#2A1B3D]">
+              {lang === 'hi' ? `${tailor.name} के लिए समीक्षा लिखें` : `Write Review for ${tailor.name}`}
+            </h3>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-stone-700">रेटिंग चुनें (Rating):</label>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map(star => (
+                  <button
+                    key={star}
+                    onClick={() => setNewRating(star)}
+                    className="p-1 text-2xl transition"
+                  >
+                    <Star className={`w-7 h-7 ${star <= newRating ? 'text-amber-400 fill-amber-400' : 'text-stone-300'}`} />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-bold text-stone-700">आपकी टिप्पणी (Your Comment):</label>
+              <textarea
+                rows={3}
+                value={newComment}
+                onChange={e => setNewComment(e.target.value)}
+                placeholder="बहुत बढ़िया सिलाई कार्य, सही समय पर मिला..."
+                className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-xs font-medium focus:ring-2 focus:ring-[#E91E63] focus:outline-none"
+              ></textarea>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                onClick={() => setShowReviewModal(false)}
+                className="px-4 py-2 text-xs font-bold text-stone-600 hover:bg-stone-100 rounded-xl"
+              >
+                रद्द करें (Cancel)
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowReviewModal(false);
+                  setNewComment('');
+                  alert('समीक्षा सफलतापूर्वक जमा की गई! (Review submitted successfully!)');
+                }}
+                className="px-5 py-2 bg-[#E91E63] text-white text-xs font-black rounded-xl shadow flex items-center gap-1"
+              >
+                <Check className="w-4 h-4" />
+                <span>जमा करें (Submit Review)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
