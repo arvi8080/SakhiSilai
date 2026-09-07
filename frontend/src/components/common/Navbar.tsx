@@ -66,15 +66,15 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
               </button>
 
               <button
-                onClick={() => setActiveTab('about_contact')}
-                className={`hover:text-[#E91E63] transition ${activeTab === 'about_contact' ? 'text-[#E91E63] font-black' : ''}`}
+                onClick={() => setActiveTab('about')}
+                className={`hover:text-[#E91E63] transition ${activeTab === 'about' ? 'text-[#E91E63] font-black' : ''}`}
               >
                 {lang === 'hi' ? 'हमारे बारे में' : 'About Us'}
               </button>
 
               <button
-                onClick={() => setActiveTab('about_contact')}
-                className={`hover:text-[#E91E63] transition ${activeTab === 'about_contact' ? 'text-[#E91E63] font-black' : ''}`}
+                onClick={() => setActiveTab('contact')}
+                className={`hover:text-[#E91E63] transition ${activeTab === 'contact' ? 'text-[#E91E63] font-black' : ''}`}
               >
                 {lang === 'hi' ? 'संपर्क करें' : 'Contact Us'}
               </button>
@@ -160,12 +160,21 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
             </button>
             <button
               onClick={() => {
-                setActiveTab('about_contact');
+                setActiveTab('about');
                 setIsMobileMenuOpen(false);
               }}
               className="w-full text-left py-2 px-3 hover:bg-pink-50 rounded-xl"
             >
-              {lang === 'hi' ? 'हमारे बारे में और संपर्क' : 'About & Contact Us'}
+              {lang === 'hi' ? 'हमारे बारे में' : 'About Us'}
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('contact');
+                setIsMobileMenuOpen(false);
+              }}
+              className="w-full text-left py-2 px-3 hover:bg-pink-50 rounded-xl"
+            >
+              {lang === 'hi' ? 'संपर्क करें' : 'Contact Us'}
             </button>
           </div>
         )}

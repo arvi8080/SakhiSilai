@@ -10,7 +10,8 @@ import { Footer } from './components/common/Footer';
 import { Home } from './pages/public/Home';
 import { ServicesPage } from './pages/public/ServicesPage';
 import { HowItWorksPage } from './pages/public/HowItWorksPage';
-import { AboutContactPage } from './pages/public/AboutContactPage';
+import { AboutPage } from './pages/public/AboutPage';
+import { ContactPage } from './pages/public/ContactPage';
 import { AuthPages } from './pages/public/AuthPages';
 import { FindTailorsPage } from './pages/customer/FindTailorsPage';
 import { TailorProfilePage } from './pages/customer/TailorProfilePage';
@@ -88,8 +89,12 @@ const AppContent: React.FC = () => {
             />
           )}
 
-          {activeTab === 'about_contact' && (
-            <AboutContactPage />
+          {activeTab === 'about' && (
+            <AboutPage setActiveTab={setActiveTab} />
+          )}
+
+          {activeTab === 'contact' && (
+            <ContactPage />
           )}
 
           {activeTab === 'auth' && (
