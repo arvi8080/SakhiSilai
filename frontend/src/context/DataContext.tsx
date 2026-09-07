@@ -23,6 +23,13 @@ import {
   INITIAL_REVIEWS,
   INITIAL_NOTIFICATIONS
 } from '../data/mockSeedData';
+import { firestore, isFirebaseConfigured } from '../config/firebase';
+import {
+  collection,
+  onSnapshot,
+  query,
+  limit
+} from 'firebase/firestore';
 
 interface DataContextType {
   locations: StateLocation[];
@@ -151,35 +158,82 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => localStorage.setItem('sakhisilai_notifications', JSON.stringify(notifications)), [notifications]);
   useEffect(() => localStorage.setItem('sakhisilai_measurements', JSON.stringify(measurements)), [measurements]);
 
-  // Fetch from persistent SQLite backend API when available
-  useEffect(() => {
-    fetch('http://localhost:5000/api/tailors/nearby')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-          setTailors(data.data);
-        }
-      })
-      .catch(() => {});
+  // Fetch from persistent SQLite backend API or Cloud Firestore when available
+useEffect(() => {
+  if (isFirebaseConfigured) {
+    console.log('🔥 Cloud Firestore Realtime Sync Active (Scalable to 1,000+ users/day)');
 
-    fetch('http://localhost:5000/api/orders')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && Array.isArray(data.data)) {
-          setOrders(data.data);
-        }
-      })
-      .catch(() => {});
+    // 1. Realtime Tailors Collection Listener (Limited for max query performance)
+    const tailorsQuery = query(collection(firestore, 'tailors'), limit(100));
+    const unsubTailors = onSnapshot(tailorsQuery, snapshot => {
+      const fetched: TailorProfile[] = [];
+      snapshot.forEach(docSnap => {
+        fetched.push({ id: docSnap.id, ...docSnap.data() } as TailorProfile);
+      });
+      if (fetched.length > 0) {
+        setTailors(fetched);
+      }
+    }, err => console.warn('Firestore tailors listener error:', err));
 
-    fetch('http://localhost:5000/api/custom-requests')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && Array.isArray(data.data)) {
-          setCustomRequests(data.data);
-        }
-      })
-      .catch(() => {});
-  }, []);
+    // 2. Realtime Orders Collection Listener
+    const ordersQuery = query(collection(firestore, 'orders'), limit(100));
+    const unsubOrders = onSnapshot(ordersQuery, snapshot => {
+      const fetched: Order[] = [];
+      snapshot.forEach(docSnap => {
+        fetched.push({ id: docSnap.id, ...docSnap.data() } as Order);
+      });
+      if (fetched.length > 0) {
+        setOrders(fetched);
+      }
+    }, err => console.warn('Firestore orders listener error:', err));
+
+    // 3. Realtime Custom Requests Listener
+    const customReqQuery = query(collection(firestore, 'customRequests'), limit(100));
+    const unsubCustomReq = onSnapshot(customReqQuery, snapshot => {
+      const fetched: CustomDesignRequest[] = [];
+      snapshot.forEach(docSnap => {
+        fetched.push({ id: docSnap.id, ...docSnap.data() } as CustomDesignRequest);
+      });
+      if (fetched.length > 0) {
+        setCustomRequests(fetched);
+      }
+    }, err => console.warn('Firestore custom requests listener error:', err));
+
+    return () => {
+      unsubTailors();
+      unsubOrders();
+      unsubCustomReq();
+    };
+  }
+
+  // Fallback to SQLite backend API
+  fetch('http://localhost:5000/api/tailors/nearby')
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+        setTailors(data.data);
+      }
+    })
+    .catch(() => {});
+
+  fetch('http://localhost:5000/api/orders')
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && Array.isArray(data.data)) {
+        setOrders(data.data);
+      }
+    })
+    .catch(() => {});
+
+  fetch('http://localhost:5000/api/custom-requests')
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && Array.isArray(data.data)) {
+        setCustomRequests(data.data);
+      }
+    })
+    .catch(() => {});
+}, []);
 
   const setSelectedLocation = (state: string, district: string, village: string) => {
     setSelectedState(state);

@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { User, UserRole } from '../types';
+import { auth, isFirebaseConfigured } from '../config/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 interface AuthContextType {
   currentUser: User;
@@ -82,6 +84,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('sakhisilai_auth_user', JSON.stringify(currentUser));
     localStorage.setItem('sakhisilai_is_logged_in', isLoggedIn ? 'true' : 'false');
   }, [currentUser, isLoggedIn]);
+
+  // Realtime Firebase Auth Listener
+  useEffect(() => {
+    if (!isFirebaseConfigured) return;
+
+    const unsubscribe = onAuthStateChanged(auth, fbUser => {
+      if (fbUser) {
+        setIsLoggedIn(true);
+        setCurrentUser(prev => ({
+          ...prev,
+          id: fbUser.uid,
+          phone: fbUser.phoneNumber || prev.phone,
+          email: fbUser.email || prev.email,
+          name: fbUser.displayName || prev.name
+        }));
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const setRole = (role: UserRole) => {
     setCurrentRoleState(role);

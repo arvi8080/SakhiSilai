@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
-import { PlusCircle, Sparkles, Star, MessageSquare } from 'lucide-react';
+import { uploadImageToFirebase } from '../../config/firebase';
+import { PlusCircle, Sparkles, Star, MessageSquare, UploadCloud, Loader2 } from 'lucide-react';
 
 interface CustomDesignRequestPageProps {
   setActiveTab: (tab: string) => void;
@@ -15,6 +16,7 @@ export const CustomDesignRequestPage: React.FC<CustomDesignRequestPageProps> = (
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('Dress & Kurti');
   const [imageUrl, setImageUrl] = useState('https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=600&auto=format&fit=crop&q=80');
+  const [isUploading, setIsUploading] = useState(false);
   const [notes, setNotes] = useState('');
   const [requiredDate, setRequiredDate] = useState(
     new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
@@ -26,6 +28,22 @@ export const CustomDesignRequestPage: React.FC<CustomDesignRequestPageProps> = (
     'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80',
     'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&auto=format&fit=crop&q=80'
   ];
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const storagePath = `custom_requests/${Date.now()}_${file.name}`;
+      const downloadUrl = await uploadImageToFirebase(file, storagePath);
+      setImageUrl(downloadUrl);
+    } catch (err) {
+      console.error('File upload error:', err);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,20 +123,40 @@ export const CustomDesignRequestPage: React.FC<CustomDesignRequestPageProps> = (
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1">Upload Photo / Choose Reference Sample</label>
-              <div className="flex gap-2 mb-2">
-                {sampleImages.map((img, idx) => (
-                  <img
-                    key={idx}
-                    src={img}
-                    alt="Sample"
-                    onClick={() => setImageUrl(img)}
-                    className={`w-16 h-16 rounded-xl object-cover cursor-pointer border-2 transition ${
-                      imageUrl === img ? 'border-[#D9534F] ring-2 ring-red-100 scale-105' : 'border-stone-200'
-                    }`}
+              <label className="block text-xs font-bold text-stone-700 mb-1">Upload Dress Photo / Reference Design</label>
+              
+              <div className="flex flex-col sm:flex-row gap-3 items-center mb-3">
+                <label className="w-full sm:w-auto px-4 py-2.5 bg-pink-50 hover:bg-pink-100 text-[#E91E63] font-bold text-xs rounded-xl border border-pink-200 cursor-pointer transition flex items-center justify-center gap-2">
+                  {isUploading ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-[#E91E63]" />
+                  ) : (
+                    <UploadCloud className="w-4 h-4 text-[#E91E63]" />
+                  )}
+                  <span>{isUploading ? 'Uploading to Firebase Storage...' : 'Upload Photo (Firebase Cloud)'}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    disabled={isUploading}
                   />
-                ))}
+                </label>
+
+                <div className="flex gap-2">
+                  {sampleImages.map((img, idx) => (
+                    <img
+                      key={idx}
+                      src={img}
+                      alt="Sample"
+                      onClick={() => setImageUrl(img)}
+                      className={`w-10 h-10 rounded-xl object-cover cursor-pointer border-2 transition ${
+                        imageUrl === img ? 'border-[#E91E63] ring-2 ring-pink-100 scale-105' : 'border-stone-200'
+                      }`}
+                    />
+                  ))}
+                </div>
               </div>
+
               <input
                 type="url"
                 placeholder="Or paste image URL"
