@@ -22,6 +22,10 @@ frontend/.env
 frontend/.env.local
 backend/.env
 backend/.env.local
+firebase.ts
+**/firebase.ts
+!**/firebase.ts.example
+
 
 # Persistent Local Database Files & Journals
 backend/data/*.db
