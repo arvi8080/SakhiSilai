@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
-import { Heart, ShieldCheck, Phone, Mail, MapPin, Scissors, Send, Sparkles, CheckCircle } from 'lucide-react';
+import { Heart, ShieldCheck, Phone, Mail, MapPin, Send, CheckCircle } from 'lucide-react';
 
 export const AboutContactPage: React.FC = () => {
-  const { t, lang } = useLanguage();
+  const { t } = useLanguage();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');

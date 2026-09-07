@@ -40,7 +40,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
                     Sakhi<span className="text-[#D9534F]">Silai</span>
                   </span>
                   <span className="bg-amber-100 text-[#1B4D3E] text-[10px] font-bold px-2 py-0.5 rounded-full uppercase border border-amber-200">
-                    Rural Hyperlocal
+                    Hyperlocal
                   </span>
                 </div>
                 <p className="text-[11px] font-semibold text-[#1B4D3E] tracking-wide italic">
@@ -52,54 +52,68 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
             {/* Location Selector Button */}
             <button
               onClick={() => setIsLocationModalOpen(true)}
-              className="hidden md:flex items-center gap-2 bg-stone-100 hover:bg-stone-200 text-stone-800 px-3.5 py-1.5 rounded-full text-xs font-semibold border border-stone-200 transition"
+              className="hidden lg:flex items-center gap-2 bg-stone-100 hover:bg-stone-200 text-stone-800 px-3.5 py-1.5 rounded-full text-xs font-semibold border border-stone-200 transition"
             >
               <MapPin className="w-3.5 h-3.5 text-[#D9534F]" />
-              <span className="max-w-[150px] truncate">{selectedVillage}, {selectedDistrict}</span>
+              <span className="max-w-[140px] truncate">{selectedVillage}, {selectedDistrict}</span>
               <span className="text-[10px] text-stone-500 underline">Change</span>
             </button>
 
             {/* Desktop Nav Links */}
-            <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
+            <nav className="hidden md:flex items-center gap-5 text-xs font-bold">
               <button
                 onClick={() => setActiveTab('home')}
-                className={`hover:text-[#D9534F] transition ${activeTab === 'home' ? 'text-[#D9534F] font-bold' : 'text-stone-700'}`}
+                className={`hover:text-[#D9534F] transition ${activeTab === 'home' ? 'text-[#D9534F]' : 'text-stone-700'}`}
               >
                 Home
               </button>
               
               <button
                 onClick={() => setActiveTab('find_tailors')}
-                className={`hover:text-[#D9534F] transition ${activeTab === 'find_tailors' ? 'text-[#D9534F] font-bold' : 'text-stone-700'}`}
+                className={`hover:text-[#D9534F] transition ${activeTab === 'find_tailors' ? 'text-[#D9534F]' : 'text-stone-700'}`}
               >
                 {t('findTailors')}
               </button>
 
               <button
                 onClick={() => setActiveTab('services')}
-                className={`hover:text-[#D9534F] transition ${activeTab === 'services' ? 'text-[#D9534F] font-bold' : 'text-stone-700'}`}
+                className={`hover:text-[#D9534F] transition ${activeTab === 'services' ? 'text-[#D9534F]' : 'text-stone-700'}`}
               >
                 {t('services')}
               </button>
 
               <button
+                onClick={() => setActiveTab('how_it_works')}
+                className={`hover:text-[#D9534F] transition ${activeTab === 'how_it_works' ? 'text-[#D9534F]' : 'text-stone-700'}`}
+              >
+                How It Works
+              </button>
+
+              <button
                 onClick={() => setActiveTab('custom_request')}
                 className={`hover:text-[#D9534F] transition flex items-center gap-1 ${
-                  activeTab === 'custom_request' ? 'text-[#D9534F] font-bold' : 'text-stone-700'
+                  activeTab === 'custom_request' ? 'text-[#D9534F]' : 'text-stone-700'
                 }`}
               >
-                <PlusCircle className="w-4 h-4 text-[#D9534F]" />
+                <PlusCircle className="w-3.5 h-3.5 text-[#D9534F]" />
                 <span>Upload Design</span>
               </button>
 
               <button
+                onClick={() => setActiveTab('about_contact')}
+                className={`hover:text-[#D9534F] transition ${activeTab === 'about_contact' ? 'text-[#D9534F]' : 'text-stone-700'}`}
+              >
+                About & Support
+              </button>
+
+              <button
                 onClick={() => setActiveTab('dashboard')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition ${
                   currentRole === 'tailor'
-                    ? 'bg-[#1B4D3E] text-white border-[#1B4D3E]'
+                    ? 'bg-[#1B4D3E] text-white'
                     : currentRole === 'admin'
-                    ? 'bg-amber-600 text-white border-amber-600'
-                    : 'bg-[#D9534F] text-white border-[#D9534F]'
+                    ? 'bg-amber-600 text-white'
+                    : 'bg-[#D9534F] text-white'
                 }`}
               >
                 <LayoutDashboard className="w-3.5 h-3.5" />
@@ -195,7 +209,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
                   setActiveTab('home');
                   setIsMobileMenuOpen(false);
                 }}
-                className="py-2 px-3 bg-stone-100 rounded-xl font-semibold text-xs text-stone-800"
+                className="py-2.5 px-3 bg-stone-100 rounded-xl font-bold text-xs text-stone-800"
               >
                 Home
               </button>
@@ -204,7 +218,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
                   setActiveTab('find_tailors');
                   setIsMobileMenuOpen(false);
                 }}
-                className="py-2 px-3 bg-stone-100 rounded-xl font-semibold text-xs text-stone-800"
+                className="py-2.5 px-3 bg-stone-100 rounded-xl font-bold text-xs text-stone-800"
               >
                 {t('findTailors')}
               </button>
@@ -213,18 +227,36 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
                   setActiveTab('services');
                   setIsMobileMenuOpen(false);
                 }}
-                className="py-2 px-3 bg-stone-100 rounded-xl font-semibold text-xs text-stone-800"
+                className="py-2.5 px-3 bg-stone-100 rounded-xl font-bold text-xs text-stone-800"
               >
                 {t('services')}
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('how_it_works');
+                  setIsMobileMenuOpen(false);
+                }}
+                className="py-2.5 px-3 bg-stone-100 rounded-xl font-bold text-xs text-stone-800"
+              >
+                How It Works
               </button>
               <button
                 onClick={() => {
                   setActiveTab('custom_request');
                   setIsMobileMenuOpen(false);
                 }}
-                className="py-2 px-3 bg-stone-100 rounded-xl font-semibold text-xs text-stone-800"
+                className="py-2.5 px-3 bg-stone-100 rounded-xl font-bold text-xs text-stone-800"
               >
                 Upload Design
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('about_contact');
+                  setIsMobileMenuOpen(false);
+                }}
+                className="py-2.5 px-3 bg-stone-100 rounded-xl font-bold text-xs text-stone-800"
+              >
+                About & Support
               </button>
             </div>
 

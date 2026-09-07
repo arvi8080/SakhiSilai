@@ -9,6 +9,9 @@ import { Footer } from './components/common/Footer';
 // Pages
 import { Home } from './pages/public/Home';
 import { ServicesPage } from './pages/public/ServicesPage';
+import { HowItWorksPage } from './pages/public/HowItWorksPage';
+import { AboutContactPage } from './pages/public/AboutContactPage';
+import { AuthPages } from './pages/public/AuthPages';
 import { FindTailorsPage } from './pages/customer/FindTailorsPage';
 import { TailorProfilePage } from './pages/customer/TailorProfilePage';
 import { CreateOrderPage } from './pages/customer/CreateOrderPage';
@@ -76,6 +79,23 @@ const AppContent: React.FC = () => {
             <ServicesPage
               setActiveTab={setActiveTab}
               onSelectCategory={handleSelectCategory}
+            />
+          )}
+
+          {activeTab === 'how_it_works' && (
+            <HowItWorksPage
+              setActiveTab={setActiveTab}
+            />
+          )}
+
+          {activeTab === 'about_contact' && (
+            <AboutContactPage />
+          )}
+
+          {activeTab === 'auth' && (
+            <AuthPages
+              setActiveTab={setActiveTab}
+              initialMode="register_tailor"
             />
           )}
 

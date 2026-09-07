@@ -1,24 +1,13 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
-import {
-  MapPin,
-  Scissors,
-  Truck,
-  CheckCircle,
-  Heart,
-  ShieldCheck,
-  Phone,
-  Sparkles,
-  ArrowRight,
-  UserCheck
-} from 'lucide-react';
+import { Scissors, ArrowRight } from 'lucide-react';
 
 interface HowItWorksPageProps {
   setActiveTab: (tab: string) => void;
 }
 
 export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({ setActiveTab }) => {
-  const { t, lang } = useLanguage();
+  const { lang } = useLanguage();
   const [activeRoleTab, setActiveRoleTab] = useState<'customer' | 'tailor'>('customer');
 
   return (
@@ -104,7 +93,7 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({ setActiveTab }) 
               </span>
               <h3 className="font-extrabold text-lg text-stone-900">Live Timeline & Completion</h3>
               <p className="text-xs text-stone-600 leading-relaxed">
-                Track your order through 8 real-time stages (Cutting -> Stitching -> Ready). Pay 100% directly to tailor upon satisfaction.
+                Track your order through 8 real-time stages (Cutting &rarr; Stitching &rarr; Ready). Pay 100% directly to tailor upon satisfaction.
               </p>
             </div>
           </div>
