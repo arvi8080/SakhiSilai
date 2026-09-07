@@ -10,6 +10,7 @@ import { locationRouter } from './routes/locationRoutes';
 import { categoryRouter } from './routes/categoryRoutes';
 import { notificationRouter } from './routes/notificationRoutes';
 import { adminRouter } from './routes/adminRoutes';
+import { setupSwagger } from './config/swagger';
 
 dotenv.config();
 
@@ -19,6 +20,9 @@ const PORT = process.env.PORT || 5000;
 // Middlewares
 app.use(cors());
 app.use(express.json());
+
+// Setup Swagger UI Documentation
+setupSwagger(app);
 
 // Request logger middleware
 app.use((req: Request, _res: Response, next) => {
@@ -33,6 +37,7 @@ app.get('/health', (_req: Request, res: Response) => {
     service: 'SakhiSilai Hyperlocal Women Tailoring Backend API',
     tagline: 'Ghar Se Hunar, Apni Kamai.',
     database: 'SQLite Persistent (sakhisilai.db)',
+    swaggerDocs: 'http://localhost:5000/api-docs',
     timestamp: new Date().toISOString()
   });
 });
@@ -56,6 +61,8 @@ app.use((_req: Request, res: Response) => {
 app.listen(PORT, () => {
   console.log(`🧵 SakhiSilai API Server listening on port ${PORT}`);
   console.log(`  Database:     SQLite Persistent (sakhisilai.db)`);
+  console.log(`  Swagger UI:   http://localhost:${PORT}/api-docs`);
+  console.log(`  Swagger JSON: http://localhost:${PORT}/api-docs.json`);
   console.log(`  Health Check: http://localhost:${PORT}/health`);
   console.log(`  Tailors API:  http://localhost:${PORT}/api/tailors/nearby`);
   console.log(`  Orders API:   http://localhost:${PORT}/api/orders`);
