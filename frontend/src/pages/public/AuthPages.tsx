@@ -52,9 +52,9 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
   const [registerRole, setRegisterRole] = useState<'customer' | 'tailor'>(initialMode === 'register_tailor' ? 'tailor' : 'customer');
 
   // Common Form Fields
-  const [phone, setPhone] = useState('9812345678');
+  const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
-  const [password, setPassword] = useState('123456');
+  const [password, setPassword] = useState('');
   const [village, setVillage] = useState(selectedVillage || 'Mohanlalganj');
   const [district, setDistrict] = useState(selectedDistrict || 'Lucknow');
   const [stateVal] = useState(selectedState || 'Uttar Pradesh');
@@ -113,7 +113,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
   const handleRegisterCustomer = (e: React.FormEvent) => {
     e.preventDefault();
     updateUserProfile({
-      name: name || 'Sakhi Customer',
+      name: name || 'Customer',
       phone,
       village,
       district,

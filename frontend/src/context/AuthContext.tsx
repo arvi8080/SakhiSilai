@@ -22,17 +22,17 @@ interface AuthContextType {
   setRedirectNotice: (notice: string | null) => void;
 }
 
-const DEFAULT_CUSTOMER: User = {
-  id: 'u_pria',
-  name: 'Priya Singh',
-  phone: '9812345678',
-  email: 'priya@example.com',
+const NEW_CUSTOMER: User = {
+  id: 'u_customer',
+  name: 'Customer',
+  phone: '',
+  email: '',
   role: 'customer',
   state: 'Uttar Pradesh',
   district: 'Lucknow',
   village: 'Mohanlalganj',
-  avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&auto=format&fit=crop&q=80',
-  createdAt: '2025-01-10'
+  avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop&q=80',
+  createdAt: new Date().toISOString().split('T')[0]
 };
 
 const DEFAULT_TAILOR_USER: User = {
@@ -67,7 +67,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User>(() => {
     const saved = localStorage.getItem('sakhisilai_auth_user');
-    return saved ? JSON.parse(saved) : DEFAULT_CUSTOMER;
+    return saved ? JSON.parse(saved) : NEW_CUSTOMER;
   });
 
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
@@ -109,7 +109,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCurrentRoleState(role);
     setIsLoggedIn(true);
     if (role === 'customer') {
-      setCurrentUser(DEFAULT_CUSTOMER);
+      setCurrentUser(prev => (prev && prev.name && prev.name !== 'Guest User' ? prev : NEW_CUSTOMER));
     } else if (role === 'tailor') {
       setCurrentUser(DEFAULT_TAILOR_USER);
     } else {
@@ -119,7 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginAsCustomer = () => {
     setIsLoggedIn(true);
-    setRole('customer');
+    setCurrentRoleState('customer');
   };
 
   const loginAsTailor = () => {
