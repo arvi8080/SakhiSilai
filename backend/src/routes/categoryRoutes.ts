@@ -24,17 +24,18 @@ categoryRouter.post('/', (req: Request, res: Response) => {
     estDays: Number(estDays) || 3
   };
 
-  db.categories.push(newCat);
-  res.status(201).json({ success: true, message: 'Category created', data: newCat });
+  db.addCategory(newCat);
+  res.status(201).json({ success: true, message: 'Category created in database', data: newCat });
 });
 
 // DELETE /api/categories/:id
 categoryRouter.delete('/:id', (req: Request, res: Response) => {
   const { id } = req.params;
-  const idx = db.categories.findIndex(c => c.id === id);
-  if (idx === -1) {
+  const existing = db.categories.find(c => c.id === id);
+  if (!existing) {
     return res.status(404).json({ success: false, message: 'Category not found' });
   }
-  const deleted = db.categories.splice(idx, 1);
-  res.json({ success: true, message: 'Category deleted', data: deleted[0] });
+  db.deleteCategory(id);
+  res.json({ success: true, message: 'Category deleted from database', data: existing });
 });
+

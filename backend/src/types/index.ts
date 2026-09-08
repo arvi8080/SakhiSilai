@@ -190,3 +190,17 @@ export interface LocationState {
     villages: string[];
   }[];
 }
+
+export interface PaymentRecord {
+  id: string;
+  orderId: string;
+  customerId: string;
+  tailorId: string;
+  amount: number;
+  paymentMethod: 'cod' | 'upi' | 'partial_advance';
+  paymentStatus: 'pending' | 'advance_paid' | 'fully_paid';
+  transactionId: string;
+  timestamp: string;
+  receiptUrl?: string;
+}
+

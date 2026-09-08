@@ -10,6 +10,7 @@ import { locationRouter } from './routes/locationRoutes';
 import { categoryRouter } from './routes/categoryRoutes';
 import { notificationRouter } from './routes/notificationRoutes';
 import { adminRouter } from './routes/adminRoutes';
+import { paymentRouter } from './routes/paymentRoutes';
 import { setupSwagger } from './config/swagger';
 
 dotenv.config();
@@ -51,6 +52,8 @@ app.use('/api/locations', locationRouter);
 app.use('/api/categories', categoryRouter);
 app.use('/api/notifications', notificationRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/payments', paymentRouter);
+
 
 // 404 Handler
 app.use((_req: Request, res: Response) => {

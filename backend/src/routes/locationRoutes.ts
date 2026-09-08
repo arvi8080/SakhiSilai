@@ -12,23 +12,19 @@ locationRouter.get('/', (_req: Request, res: Response) => {
 locationRouter.post('/villages', (req: Request, res: Response) => {
   const { stateId, districtId, villageName } = req.body;
 
-  const targetState = db.locations.find(s => s.id === stateId || s.name === stateId);
-  if (!targetState) {
-    return res.status(404).json({ success: false, message: 'State not found' });
+  if (!stateId || !districtId || !villageName) {
+    return res.status(400).json({ success: false, message: 'stateId, districtId and villageName are required' });
   }
 
-  const targetDistrict = targetState.districts.find(d => d.id === districtId || d.name === districtId);
-  if (!targetDistrict) {
-    return res.status(404).json({ success: false, message: 'District not found' });
-  }
-
-  if (!targetDistrict.villages.includes(villageName)) {
-    targetDistrict.villages.push(villageName);
+  const success = db.addVillage(stateId, districtId, villageName);
+  if (!success) {
+    return res.status(404).json({ success: false, message: 'State or district not found' });
   }
 
   res.status(201).json({
     success: true,
-    message: `Village ${villageName} added to ${targetDistrict.name}`,
+    message: `Village ${villageName} added successfully to database`,
     data: db.locations
   });
 });
+

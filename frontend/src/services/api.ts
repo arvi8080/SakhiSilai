@@ -197,3 +197,137 @@ export async function registerUserApi(userData: any) {
     return null;
   }
 }
+
+// Payment API
+export async function processPaymentApi(paymentData: { orderId: string; paymentMethod: string; amount: number; transactionId?: string }) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/payments/process`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(paymentData)
+    });
+    return await res.json();
+  } catch (err) {
+    console.warn('Backend payment process fallback:', err);
+    return null;
+  }
+}
+
+export async function fetchPaymentsByOrderApi(orderId: string) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/payments/order/${orderId}`);
+    if (!res.ok) throw new Error('Failed to fetch payments');
+    const data = await res.json();
+    return data.data;
+  } catch (err) {
+    return null;
+  }
+}
+
+export async function generateUpiQrApi(orderId: string, amount: number, note?: string) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/payments/qr-generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId, amount, note })
+    });
+    const data = await res.json();
+    return data.data;
+  } catch (err) {
+    return null;
+  }
+}
+
+// Locations API
+export async function fetchLocationsApi() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/locations`);
+    if (!res.ok) throw new Error('Failed to fetch locations');
+    const data = await res.json();
+    return data.data;
+  } catch (err) {
+    return null;
+  }
+}
+
+export async function addVillageApi(stateId: string, districtId: string, villageName: string) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/locations/villages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stateId, districtId, villageName })
+    });
+    return await res.json();
+  } catch (err) {
+    return null;
+  }
+}
+
+// Categories API
+export async function fetchCategoriesApi() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/categories`);
+    if (!res.ok) throw new Error('Failed to fetch categories');
+    const data = await res.json();
+    return data.data;
+  } catch (err) {
+    return null;
+  }
+}
+
+export async function createCategoryApi(categoryData: any) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/categories`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(categoryData)
+    });
+    return await res.json();
+  } catch (err) {
+    return null;
+  }
+}
+
+export async function deleteCategoryApi(categoryId: string) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/categories/${categoryId}`, {
+      method: 'DELETE'
+    });
+    return await res.json();
+  } catch (err) {
+    return null;
+  }
+}
+
+// Notifications API
+export async function fetchNotificationsApi(role?: string, recipientId?: string) {
+  try {
+    let url = `${API_BASE_URL}/notifications`;
+    const params = new URLSearchParams();
+    if (role) params.append('role', role);
+    if (recipientId) params.append('recipientId', recipientId);
+    if (params.toString()) url += `?${params.toString()}`;
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Failed to fetch notifications');
+    const data = await res.json();
+    return data.data;
+  } catch (err) {
+    return null;
+  }
+}
+
+export async function broadcastNotificationApi(notifData: any) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/notifications/broadcast`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(notifData)
+    });
+    return await res.json();
+  } catch (err) {
+    return null;
+  }
+}
+
+

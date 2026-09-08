@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { useLanguage } from '../../context/LanguageContext';
 import type { OrderStatus } from '../../types';
+import { PaymentModal } from '../../components/PaymentModal';
 import confetti from 'canvas-confetti';
 import {
   Clock,
@@ -10,7 +11,8 @@ import {
   MapPin,
   Star,
   ArrowLeft,
-  Sparkles
+  Sparkles,
+  QrCode
 } from 'lucide-react';
 
 interface OrderTrackingPageProps {
@@ -22,12 +24,14 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({ orderId, s
   const { orders, tailors, addReview } = useData();
   const { t, lang } = useLanguage();
 
-  const [rating, setRating] = React.useState(5);
-  const [comment, setComment] = React.useState('');
-  const [reviewSubmitted, setReviewSubmitted] = React.useState(false);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState('');
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [showPayModal, setShowPayModal] = useState(false);
 
   const order = orders.find(o => o.id === orderId) || orders[0];
   const tailor = tailors.find(t => t.id === order.tailorId);
+  const balanceDue = order.price - (order.advancePaid || 0);
 
   const steps: { status: OrderStatus; labelEn: string; labelHi: string }[] = [
     { status: 'requested', labelEn: 'Order Requested', labelHi: 'ऑर्डर भेजा गया' },
@@ -85,15 +89,30 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({ orderId, s
             <p className="text-xs text-stone-300">Stitching by: <strong>{order.tailorName}</strong> ({order.tailorVillage})</p>
           </div>
 
-          <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/15 text-right">
+          <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/15 text-right flex flex-col items-end gap-1 w-full sm:w-auto">
             <span className="text-[10px] text-stone-300 block font-bold uppercase">Price & Payment</span>
-            <span className="font-extrabold text-xl text-amber-400">₹{order.price}</span>
-            <span className="text-[10px] text-emerald-300 block uppercase font-bold mt-0.5">
-              {order.paymentStatus === 'fully_paid' ? 'Fully Paid' : 'Cash on Completion'}
+            <span className="font-extrabold text-xl text-amber-400">Total: ₹{order.price}</span>
+            <span className="text-[10px] text-emerald-300 uppercase font-bold">
+              {order.paymentStatus === 'fully_paid'
+                ? '✅ Fully Paid'
+                : order.paymentStatus === 'advance_paid'
+                ? `⚡ Advance ₹${order.advancePaid} Paid (Due ₹${balanceDue})`
+                : `💵 Cash / Due: ₹${order.price}`}
             </span>
+
+            {order.paymentStatus !== 'fully_paid' && (
+              <button
+                onClick={() => setShowPayModal(true)}
+                className="mt-1 px-3 py-1 bg-amber-400 hover:bg-amber-300 text-stone-900 font-extrabold text-[11px] rounded-xl flex items-center gap-1 shadow transition"
+              >
+                <QrCode className="w-3.5 h-3.5" />
+                <span>Pay Balance Online (UPI)</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
+
 
       {/* VISUAL TIMELINE TRACKER */}
       <div className="bg-white rounded-3xl border border-stone-200 shadow-md p-6 sm:p-8 space-y-6">
@@ -241,6 +260,21 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({ orderId, s
           )}
         </div>
       )}
+
+      {/* PAYMENT MODAL FOR BALANCE PAYMENT */}
+      <PaymentModal
+        isOpen={showPayModal}
+        onClose={() => setShowPayModal(false)}
+        orderId={order.id}
+        orderNumber={order.orderNumber}
+        amount={balanceDue > 0 ? balanceDue : order.price}
+        tailorName={order.tailorName}
+        initialMethod="upi"
+        onPaymentSuccess={() => {
+          setShowPayModal(false);
+        }}
+      />
     </div>
   );
 };
+

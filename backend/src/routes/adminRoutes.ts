@@ -26,8 +26,7 @@ adminRouter.get('/stats', (_req: Request, res: Response) => {
   });
 });
 
-// PATCH /api/admin/tailors/:id/verify
-adminRouter.patch('/tailors/:id/verify', (req: Request, res: Response) => {
+const handleVerifyTailor = (req: Request, res: Response) => {
   const { id } = req.params;
   const { isVerified } = req.body;
 
@@ -44,4 +43,11 @@ adminRouter.patch('/tailors/:id/verify', (req: Request, res: Response) => {
     message: `Tailor ${tailor.name} ${isVerified ? 'verified & approved' : 'suspended'}`,
     data: updatedTailor
   });
-});
+};
+
+// PATCH /api/admin/tailors/:id/verify
+adminRouter.patch('/tailors/:id/verify', handleVerifyTailor);
+
+// POST /api/admin/tailors/:id/verify (For frontend compatibility)
+adminRouter.post('/tailors/:id/verify', handleVerifyTailor);
+

@@ -16,6 +16,38 @@ authRouter.post('/login', (req: Request, res: Response) => {
   res.json({ success: true, message: 'Authenticated successfully', data: user });
 });
 
+// POST /api/auth/register (General Customer / User registration)
+authRouter.post('/register', (req: Request, res: Response) => {
+  const { name, phone, email, role, state, district, village } = req.body;
+
+  const existingUser = db.users.find(u => u.phone === phone);
+  if (existingUser) {
+    return res.json({ success: true, message: 'User already exists', data: existingUser });
+  }
+
+  const newUserId = 'u_' + Date.now();
+  const newUser: User = {
+    id: newUserId,
+    name: name || 'User ' + phone.slice(-4),
+    phone,
+    email: email || '',
+    role: role || 'customer',
+    state: state || 'Uttar Pradesh',
+    district: district || 'Lucknow',
+    village: village || 'Mohanlalganj',
+    createdAt: new Date().toISOString(),
+    isVerified: true
+  };
+
+  db.addUser(newUser);
+
+  res.status(201).json({
+    success: true,
+    message: 'User registered successfully in database',
+    data: newUser
+  });
+});
+
 // POST /api/auth/register-tailor
 authRouter.post('/register-tailor', (req: Request, res: Response) => {
   const { name, phone, state, district, village, addressApprox, bio, experienceYears, servicesOffered, startingPrice } = req.body;
@@ -84,3 +116,4 @@ authRouter.post('/register-tailor', (req: Request, res: Response) => {
     data: newTailor
   });
 });
+

@@ -337,8 +337,18 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
                     <h4 className="font-extrabold text-base text-stone-900">{ord.designTitle}</h4>
                     <p className="text-xs text-stone-500">Customer: <strong>{ord.customerName}</strong> ({ord.customerVillage}) • <a href={`tel:${ord.customerPhone}`} className="text-[#D9534F] underline">Call Customer</a></p>
                   </div>
-                  <span className="font-black text-xl text-[#D9534F]">₹{ord.price}</span>
+                  <div className="text-right">
+                    <span className="font-black text-xl text-[#D9534F] block">₹{ord.price}</span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded uppercase inline-block bg-emerald-100 text-emerald-800">
+                      {ord.paymentStatus === 'fully_paid'
+                        ? '✅ Fully Paid'
+                        : ord.paymentStatus === 'advance_paid'
+                        ? `⚡ Advance ₹${ord.advancePaid} Paid (Due ₹${ord.price - (ord.advancePaid || 0)})`
+                        : `💵 COD Due ₹${ord.price}`}
+                    </span>
+                  </div>
                 </div>
+
 
                 {/* WORKFLOW STATUS STEPPER UPDATE BUTTONS */}
                 <div className="space-y-2">

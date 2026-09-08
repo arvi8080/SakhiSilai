@@ -9,7 +9,8 @@ import type {
   QuoteOffer,
   LocationState,
   Review,
-  SystemNotification
+  SystemNotification,
+  PaymentRecord
 } from '../types';
 
 // Ensure SQLite schemas and initial seeds are present
@@ -84,35 +85,12 @@ class SQLiteDatabaseProxy {
   }
 
   get locations(): LocationState[] {
-    return [
-      {
-        id: 'up',
-        name: 'Uttar Pradesh',
-        districts: [
-          {
-            id: 'lucknow',
-            name: 'Lucknow',
-            villages: ['Mohanlalganj', 'Bakshi Ka Talab', 'Goshainganj', 'Kakori', 'Chinhat']
-          },
-          {
-            id: 'barabanki',
-            name: 'Barabanki',
-            villages: ['Zaidpur', 'Haidergarh', 'Fatehpur', 'Daryabad']
-          }
-        ]
-      },
-      {
-        id: 'rajasthan',
-        name: 'Rajasthan',
-        districts: [
-          {
-            id: 'jaipur',
-            name: 'Jaipur',
-            villages: ['Sanganer', 'Chatsu', 'Chomu', 'Amer']
-          }
-        ]
-      }
-    ];
+    const rows = sqlite.prepare('SELECT * FROM locations').all() as any[];
+    return rows.map(r => ({
+      id: r.id,
+      name: r.name,
+      districts: r.districts ? JSON.parse(r.districts) : []
+    }));
   }
 
   // ------------------------------------------------------------------
@@ -231,15 +209,77 @@ class SQLiteDatabaseProxy {
     sqlite.prepare('UPDATE custom_requests SET offers = ? WHERE id = ?').run(JSON.stringify(offers), requestId);
   }
 
+  updateTailorAvailability(tailorId: string, availability: string) {
+    sqlite.prepare('UPDATE tailors SET availability = ? WHERE id = ?').run(availability, tailorId);
+  }
+
+  addCategory(cat: ServiceCategory) {
+    const stmt = sqlite.prepare(`
+      INSERT OR REPLACE INTO categories (id, nameEn, nameHi, iconName, descriptionEn, descriptionHi, startingPrice, estDays, popular)
+      VALUES (@id, @nameEn, @nameHi, @iconName, @descriptionEn, @descriptionHi, @startingPrice, @estDays, @popular)
+    `);
+    stmt.run({
+      ...cat,
+      popular: cat.popular ? 1 : 0
+    });
+  }
+
+  deleteCategory(id: string) {
+    sqlite.prepare('DELETE FROM categories WHERE id = ?').run(id);
+  }
+
+  addVillage(stateId: string, districtId: string, villageName: string): boolean {
+    const row = sqlite.prepare('SELECT districts FROM locations WHERE id = ? OR name = ?').get(stateId, stateId) as any;
+    if (!row) return false;
+
+    const districts = row.districts ? JSON.parse(row.districts) : [];
+    const targetDist = districts.find((d: any) => d.id === districtId || d.name === districtId);
+    if (!targetDist) return false;
+
+    if (!targetDist.villages.includes(villageName)) {
+      targetDist.villages.push(villageName);
+      sqlite.prepare('UPDATE locations SET districts = ? WHERE id = ? OR name = ?').run(JSON.stringify(districts), stateId, stateId);
+    }
+    return true;
+  }
+
   addNotification(notif: SystemNotification) {
     const stmt = sqlite.prepare(`
-      INSERT INTO notifications (id, targetRole, titleEn, titleHi, messageEn, messageHi, timestamp, isRead, type)
-      VALUES (@id, @targetRole, @titleEn, @titleHi, @messageEn, @messageHi, @timestamp, @isRead, @type)
+      INSERT INTO notifications (id, targetRole, recipientId, titleEn, titleHi, messageEn, messageHi, timestamp, isRead, type)
+      VALUES (@id, @targetRole, @recipientId, @titleEn, @titleHi, @messageEn, @messageHi, @timestamp, @isRead, @type)
     `);
     stmt.run({
       ...notif,
+      recipientId: notif.recipientId || '',
       isRead: notif.isRead ? 1 : 0
     });
+  }
+
+  get payments(): PaymentRecord[] {
+    return sqlite.prepare('SELECT * FROM payments ORDER BY timestamp DESC').all() as PaymentRecord[];
+  }
+
+  getPaymentsByOrder(orderId: string): PaymentRecord[] {
+    return sqlite.prepare('SELECT * FROM payments WHERE orderId = ? ORDER BY timestamp DESC').all(orderId) as PaymentRecord[];
+  }
+
+  addPayment(payment: PaymentRecord) {
+    const stmt = sqlite.prepare(`
+      INSERT INTO payments (id, orderId, customerId, tailorId, amount, paymentMethod, paymentStatus, transactionId, timestamp, receiptUrl)
+      VALUES (@id, @orderId, @customerId, @tailorId, @amount, @paymentMethod, @paymentStatus, @transactionId, @timestamp, @receiptUrl)
+    `);
+    stmt.run({
+      ...payment,
+      receiptUrl: payment.receiptUrl || ''
+    });
+  }
+
+  updateOrderPayment(orderId: string, paymentStatus: string, advancePaid: number) {
+    sqlite.prepare(`
+      UPDATE orders
+      SET paymentStatus = ?, advancePaid = ?, updatedAt = ?
+      WHERE id = ?
+    `).run(paymentStatus, advancePaid, new Date().toISOString(), orderId);
   }
 }
 

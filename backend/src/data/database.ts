@@ -158,6 +158,7 @@ export function initDatabase() {
     CREATE TABLE IF NOT EXISTS notifications (
       id TEXT PRIMARY KEY,
       targetRole TEXT NOT NULL,
+      recipientId TEXT,
       titleEn TEXT NOT NULL,
       titleHi TEXT NOT NULL,
       messageEn TEXT NOT NULL,
@@ -166,7 +167,33 @@ export function initDatabase() {
       isRead INTEGER DEFAULT 0,
       type TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS locations (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      districts TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS payments (
+      id TEXT PRIMARY KEY,
+      orderId TEXT NOT NULL,
+      customerId TEXT NOT NULL,
+      tailorId TEXT NOT NULL,
+      amount INTEGER NOT NULL,
+      paymentMethod TEXT NOT NULL,
+      paymentStatus TEXT NOT NULL,
+      transactionId TEXT NOT NULL,
+      timestamp TEXT NOT NULL,
+      receiptUrl TEXT
+    );
   `);
+
+  // Migration for existing databases: ensure recipientId column exists in notifications
+  try {
+    sqlite.exec('ALTER TABLE notifications ADD COLUMN recipientId TEXT;');
+  } catch (e) {
+    // recipientId column already exists
+  }
 
   // Seed initial data if tables are empty
   seedIfEmpty();
@@ -470,13 +497,14 @@ function seedIfEmpty() {
 
     // 7. Notifications
     const insertNotif = sqlite.prepare(`
-      INSERT INTO notifications (id, targetRole, titleEn, titleHi, messageEn, messageHi, timestamp, isRead, type)
-      VALUES (@id, @targetRole, @titleEn, @titleHi, @messageEn, @messageHi, @timestamp, @isRead, @type)
+      INSERT INTO notifications (id, targetRole, recipientId, titleEn, titleHi, messageEn, messageHi, timestamp, isRead, type)
+      VALUES (@id, @targetRole, @recipientId, @titleEn, @titleHi, @messageEn, @messageHi, @timestamp, @isRead, @type)
     `);
 
     insertNotif.run({
       id: 'n_1',
       targetRole: 'all',
+      recipientId: '',
       titleEn: 'Welcome to SakhiSilai API!',
       titleHi: 'सखीसिलाई एपीआई में आपका स्वागत है!',
       messageEn: 'Hyperlocal women tailoring backend server active with SQLite persistent database.',
@@ -487,5 +515,53 @@ function seedIfEmpty() {
     });
 
     console.log('✅ SQLite database successfully seeded with initial SakhiSilai dataset!');
+  }
+
+  // Ensure locations are always seeded if table is empty
+  const locCount = (sqlite.prepare('SELECT COUNT(*) as cnt FROM locations').get() as any).cnt;
+  if (locCount === 0) {
+    seedLocations();
+  }
+}
+
+function seedLocations() {
+  console.log('🌱 Seeding initial SakhiSilai location records...');
+  const insertLoc = sqlite.prepare(`
+    INSERT INTO locations (id, name, districts)
+    VALUES (@id, @name, @districts)
+  `);
+
+  const locationsData = [
+    {
+      id: 'up',
+      name: 'Uttar Pradesh',
+      districts: JSON.stringify([
+        {
+          id: 'lucknow',
+          name: 'Lucknow',
+          villages: ['Mohanlalganj', 'Bakshi Ka Talab', 'Goshainganj', 'Kakori', 'Chinhat']
+        },
+        {
+          id: 'barabanki',
+          name: 'Barabanki',
+          villages: ['Zaidpur', 'Haidergarh', 'Fatehpur', 'Daryabad']
+        }
+      ])
+    },
+    {
+      id: 'rajasthan',
+      name: 'Rajasthan',
+      districts: JSON.stringify([
+        {
+          id: 'jaipur',
+          name: 'Jaipur',
+          villages: ['Sanganer', 'Chatsu', 'Chomu', 'Amer']
+        }
+      ])
+    }
+  ];
+
+  for (const loc of locationsData) {
+    insertLoc.run(loc);
   }
 }

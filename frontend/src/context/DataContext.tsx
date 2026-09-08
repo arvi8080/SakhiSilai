@@ -41,7 +41,14 @@ import {
   acceptApiQuoteOffer,
   verifyTailorApi,
   updateTailorAvailabilityApi,
-  registerUserApi
+  registerUserApi,
+  fetchLocationsApi,
+  fetchCategoriesApi,
+  fetchNotificationsApi,
+  createCategoryApi,
+  deleteCategoryApi,
+  addVillageApi,
+  broadcastNotificationApi
 } from '../services/api';
 
 interface DataContextType {
@@ -189,6 +196,24 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchCustomRequestsApi().then(data => {
       if (data && Array.isArray(data) && data.length > 0) {
         setCustomRequests(data);
+      }
+    });
+
+    fetchLocationsApi().then(data => {
+      if (data && Array.isArray(data) && data.length > 0) {
+        setLocations(data);
+      }
+    });
+
+    fetchCategoriesApi().then(data => {
+      if (data && Array.isArray(data) && data.length > 0) {
+        setCategories(data);
+      }
+    });
+
+    fetchNotificationsApi().then(data => {
+      if (data && Array.isArray(data) && data.length > 0) {
+        setNotifications(data);
       }
     });
 
@@ -417,6 +442,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       id: 'cat_' + Date.now()
     };
     setCategories(prev => [...prev, newCat]);
+    createCategoryApi(newCat);
   };
 
   const updateCategory = (id: string, updates: Partial<ServiceCategory>) => {
@@ -425,6 +451,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const deleteCategory = (id: string) => {
     setCategories(prev => prev.filter(c => c.id !== id));
+    deleteCategoryApi(id);
   };
 
   const addVillageToDistrict = (stateId: string, districtId: string, villageName: string) => {
@@ -441,6 +468,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
       })
     );
+    addVillageApi(stateId, districtId, villageName);
   };
 
   const addDistrictToState = (stateId: string, districtName: string) => {
@@ -643,6 +671,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isRead: false
     };
     setNotifications(prev => [newNotif, ...prev]);
+    broadcastNotificationApi(newNotif);
   };
 
   const markNotificationRead = (id: string) => {

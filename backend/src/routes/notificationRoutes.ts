@@ -35,6 +35,7 @@ notificationRouter.post('/broadcast', (req: Request, res: Response) => {
     type: 'admin'
   };
 
-  db.notifications.unshift(newNotif);
-  res.status(201).json({ success: true, message: 'Broadcast notification sent', data: newNotif });
+  db.addNotification(newNotif);
+  res.status(201).json({ success: true, message: 'Broadcast notification sent to database', data: newNotif });
 });
+

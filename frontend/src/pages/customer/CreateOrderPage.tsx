@@ -3,6 +3,7 @@ import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import type { FabricHandoverMethod } from '../../types';
+import { PaymentModal } from '../../components/PaymentModal';
 import {
   Scissors,
   MapPin,
@@ -44,7 +45,9 @@ export const CreateOrderPage: React.FC<CreateOrderPageProps> = ({
   const [requiredDate, setRequiredDate] = useState<string>(
     new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   );
-  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'partial_advance'>('cod');
+  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'upi' | 'partial_advance'>('upi');
+  const [createdOrderData, setCreatedOrderData] = useState<any>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false);
 
   const activeDesign = designs.find(d => d.id === selectedDesignId) || selectedDesign;
   const price = activeDesign ? activeDesign.price : tailor.startingPrice;
@@ -79,8 +82,8 @@ export const CreateOrderPage: React.FC<CreateOrderPageProps> = ({
       designImage: activeDesign?.image,
       price,
       paymentMethod,
-      advancePaid: paymentMethod === 'partial_advance' ? 200 : 0,
-      paymentStatus: paymentMethod === 'partial_advance' ? 'advance_paid' : 'pending',
+      advancePaid: paymentMethod === 'partial_advance' ? 200 : paymentMethod === 'upi' ? price : 0,
+      paymentStatus: paymentMethod === 'upi' ? 'fully_paid' : paymentMethod === 'partial_advance' ? 'advance_paid' : 'pending',
       handoverMethod,
       hasDeliveryAvailable: isDeliveryAvailable,
       measurements: measurementData,
@@ -88,8 +91,14 @@ export const CreateOrderPage: React.FC<CreateOrderPageProps> = ({
       requiredDate
     });
 
-    onOrderCreated(created.id);
+    setCreatedOrderData(created);
+    if (paymentMethod === 'upi' || paymentMethod === 'partial_advance') {
+      setShowPaymentModal(true);
+    } else {
+      onOrderCreated(created.id);
+    }
   };
+
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-8 animate-fade-in pb-16">
@@ -287,10 +296,11 @@ export const CreateOrderPage: React.FC<CreateOrderPageProps> = ({
               <select
                 value={paymentMethod}
                 onChange={e => setPaymentMethod(e.target.value as any)}
-                className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2.5 text-xs font-semibold"
+                className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2.5 text-xs font-semibold text-[#1B4D3E]"
               >
-                <option value="cod">Cash on Completion (100% Direct)</option>
-                <option value="partial_advance">Partial Advance (₹200)</option>
+                <option value="upi">📱 UPI / QR Code Payment (100% Instant)</option>
+                <option value="partial_advance">⚡ Partial Advance (₹200 Booking)</option>
+                <option value="cod">💵 Cash on Completion (100% Direct)</option>
               </select>
             </div>
 
@@ -318,12 +328,33 @@ export const CreateOrderPage: React.FC<CreateOrderPageProps> = ({
               type="submit"
               className="w-full sm:w-auto px-8 py-4 bg-[#D9534F] hover:bg-[#C93B37] text-white font-extrabold text-base rounded-2xl shadow-xl transition active:scale-95 flex items-center justify-center gap-2"
             >
-              <span>{t('placeOrderBtn')}</span>
+              <span>{paymentMethod === 'cod' ? t('placeOrderBtn') : 'Proceed to Payment & Confirm'}</span>
               <ArrowRight className="w-5 h-5" />
             </button>
           </div>
         </form>
       </div>
+
+      {/* PAYMENT MODAL */}
+      {createdOrderData && (
+        <PaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => {
+            setShowPaymentModal(false);
+            onOrderCreated(createdOrderData.id);
+          }}
+          orderId={createdOrderData.id}
+          orderNumber={createdOrderData.orderNumber}
+          amount={price}
+          tailorName={tailor.name}
+          initialMethod={paymentMethod}
+          onPaymentSuccess={() => {
+            setShowPaymentModal(false);
+            onOrderCreated(createdOrderData.id);
+          }}
+        />
+      )}
     </div>
   );
 };
+
