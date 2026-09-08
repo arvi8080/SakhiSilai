@@ -521,8 +521,10 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
             <h3 className="font-bold text-base text-stone-900">Send Price & ETA Quote</h3>
             <form onSubmit={handleSendQuote} className="space-y-3 text-xs">
               <div>
-                <label className="block font-bold text-stone-700 mb-1">Your Stitching Price (₹)</label>
+                <label htmlFor="quotePrice" className="block font-bold text-stone-700 mb-1">Your Stitching Price (₹)</label>
                 <input
+                  id="quotePrice"
+                  name="quotePrice"
                   type="number"
                   value={quotePrice}
                   onChange={e => setQuotePrice(Number(e.target.value))}
@@ -532,8 +534,10 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-stone-700 mb-1">Estimated Days</label>
+                <label htmlFor="quoteDays" className="block font-bold text-stone-700 mb-1">Estimated Days</label>
                 <input
+                  id="quoteDays"
+                  name="quoteDays"
                   type="number"
                   value={quoteDays}
                   onChange={e => setQuoteDays(Number(e.target.value))}
@@ -543,8 +547,10 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-stone-700 mb-1">Note for Customer</label>
+                <label htmlFor="quoteNote" className="block font-bold text-stone-700 mb-1">Note for Customer</label>
                 <input
+                  id="quoteNote"
+                  name="quoteNote"
                   type="text"
                   value={quoteNote}
                   onChange={e => setQuoteNote(e.target.value)}
@@ -576,10 +582,12 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
 
             <form onSubmit={handleCreateDesign} className="space-y-4 text-xs font-bold">
               <div>
-                <label className="block text-stone-700 mb-1">
+                <label htmlFor="newDesignTitle" className="block text-stone-700 mb-1">
                   {lang === 'hi' ? 'डिज़ाइन का नाम (Design Title)' : 'Design Title'}
                 </label>
                 <input
+                  id="newDesignTitle"
+                  name="newDesignTitle"
                   type="text"
                   placeholder={lang === 'hi' ? 'उदा. प्रिंसेस कट ब्लाउज / डिजाइनर सूट' : 'e.g. Designer Cutwork Blouse'}
                   value={designTitle}
@@ -591,10 +599,12 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-stone-700 mb-1">
+                  <label htmlFor="newDesignCategory" className="block text-stone-700 mb-1">
                     {lang === 'hi' ? 'श्रेणी (Category)' : 'Category'}
                   </label>
                   <select
+                    id="newDesignCategory"
+                    name="newDesignCategory"
                     value={designCategory}
                     onChange={e => setDesignCategory(e.target.value)}
                     className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-xs text-[#2A1B3D] font-bold"
@@ -609,10 +619,12 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
                 </div>
 
                 <div>
-                  <label className="block text-stone-700 mb-1">
+                  <label htmlFor="newDesignPrice" className="block text-stone-700 mb-1">
                     {lang === 'hi' ? 'सिलाई दर (Price ₹)' : 'Stitching Rate (₹)'}
                   </label>
                   <input
+                    id="newDesignPrice"
+                    name="newDesignPrice"
                     type="number"
                     value={designPrice}
                     onChange={e => setDesignPrice(Number(e.target.value))}
@@ -624,10 +636,12 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-stone-700 mb-1">
+                  <label htmlFor="newDesignDays" className="block text-stone-700 mb-1">
                     {lang === 'hi' ? 'अनुमानित दिन (Days)' : 'Est. Completion Days'}
                   </label>
                   <input
+                    id="newDesignDays"
+                    name="newDesignDays"
                     type="number"
                     value={designDays}
                     onChange={e => setDesignDays(Number(e.target.value))}
@@ -637,10 +651,12 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
                 </div>
 
                 <div>
-                  <label className="block text-stone-700 mb-1">
+                  <label htmlFor="newDesignImage" className="block text-stone-700 mb-1">
                     {lang === 'hi' ? 'फोटो URL (Image URL)' : 'Design Photo URL'}
                   </label>
                   <input
+                    id="newDesignImage"
+                    name="newDesignImage"
                     type="text"
                     value={designImage}
                     onChange={e => setDesignImage(e.target.value)}
@@ -687,10 +703,12 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
               </div>
 
               <div>
-                <label className="block text-stone-700 mb-1">
+                <label htmlFor="newDesignDesc" className="block text-stone-700 mb-1">
                   {lang === 'hi' ? 'विवरण एवं विशेषताएं (Description & Details)' : 'Description & Details'}
                 </label>
                 <textarea
+                  id="newDesignDesc"
+                  name="newDesignDesc"
                   rows={2}
                   placeholder={lang === 'hi' ? 'उदा. बैक नेक डोरी, प्रिंसेंस कट, अस्तर/लाइनिंग के साथ' : 'e.g. Princess cut blouse with back neck dori & lining'}
                   value={designDesc}

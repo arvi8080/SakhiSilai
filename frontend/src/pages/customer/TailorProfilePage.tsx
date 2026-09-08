@@ -280,8 +280,10 @@ export const TailorProfilePage: React.FC<TailorProfilePageProps> = ({ tailorId, 
             </div>
 
             <div className="space-y-1">
-              <label className="block text-xs font-bold text-stone-700">आपकी टिप्पणी (Your Comment):</label>
+              <label htmlFor="profileReviewComment" className="block text-xs font-bold text-stone-700">आपकी टिप्पणी (Your Comment):</label>
               <textarea
+                id="profileReviewComment"
+                name="profileReviewComment"
                 rows={3}
                 value={newComment}
                 onChange={e => setNewComment(e.target.value)}

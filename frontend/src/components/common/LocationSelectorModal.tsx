@@ -93,8 +93,10 @@ export const LocationSelectorModal: React.FC<LocationSelectorModalProps> = ({ is
         {/* Selectors */}
         <div className="space-y-4 my-4">
           <div>
-            <label className="block text-xs font-bold text-stone-700 uppercase mb-1">{t('selectState')}</label>
+            <label htmlFor="selectStateLocation" className="block text-xs font-bold text-stone-700 uppercase mb-1">{t('selectState')}</label>
             <select
+              id="selectStateLocation"
+              name="selectStateLocation"
               value={stateVal}
               onChange={e => handleStateChange(e.target.value)}
               className="w-full bg-stone-50 border border-stone-300 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-[#D9534F] focus:outline-none"
@@ -108,8 +110,10 @@ export const LocationSelectorModal: React.FC<LocationSelectorModalProps> = ({ is
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-stone-700 uppercase mb-1">{t('selectDistrict')}</label>
+            <label htmlFor="selectDistrictLocation" className="block text-xs font-bold text-stone-700 uppercase mb-1">{t('selectDistrict')}</label>
             <select
+              id="selectDistrictLocation"
+              name="selectDistrictLocation"
               value={districtVal}
               onChange={e => handleDistrictChange(e.target.value)}
               className="w-full bg-stone-50 border border-stone-300 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-[#D9534F] focus:outline-none"
@@ -123,8 +127,10 @@ export const LocationSelectorModal: React.FC<LocationSelectorModalProps> = ({ is
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-stone-700 uppercase mb-1">{t('selectVillage')}</label>
+            <label htmlFor="selectVillageLocation" className="block text-xs font-bold text-stone-700 uppercase mb-1">{t('selectVillage')}</label>
             <select
+              id="selectVillageLocation"
+              name="selectVillageLocation"
               value={villageVal}
               onChange={e => setVillageVal(e.target.value)}
               className="w-full bg-stone-50 border border-stone-300 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-[#D9534F] focus:outline-none"

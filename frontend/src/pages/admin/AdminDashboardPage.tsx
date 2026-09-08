@@ -216,28 +216,43 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = () => {
           <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-md space-y-4">
             <h3 className="font-bold text-base text-stone-900">Add New Clothing Category</h3>
             <form onSubmit={handleAddCategory} className="space-y-3 text-xs">
-              <input
-                type="text"
-                placeholder="Category Name (English)"
-                value={catEn}
-                onChange={e => setCatEn(e.target.value)}
-                className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2.5 font-bold"
-                required
-              />
-              <input
-                type="text"
-                placeholder="श्रेणी का नाम (हिंदी)"
-                value={catHi}
-                onChange={e => setCatHi(e.target.value)}
-                className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2.5 font-bold"
-              />
-              <input
-                type="number"
-                placeholder="Starting Base Price (₹)"
-                value={catPrice}
-                onChange={e => setCatPrice(Number(e.target.value))}
-                className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2.5 font-bold"
-              />
+              <div>
+                <label htmlFor="catEn" className="block text-stone-700 font-bold mb-1">Category Name (English)</label>
+                <input
+                  id="catEn"
+                  name="catEn"
+                  type="text"
+                  placeholder="Category Name (English)"
+                  value={catEn}
+                  onChange={e => setCatEn(e.target.value)}
+                  className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2.5 font-bold"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="catHi" className="block text-stone-700 font-bold mb-1">श्रेणी का नाम (हिंदी)</label>
+                <input
+                  id="catHi"
+                  name="catHi"
+                  type="text"
+                  placeholder="श्रेणी का नाम (हिंदी)"
+                  value={catHi}
+                  onChange={e => setCatHi(e.target.value)}
+                  className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2.5 font-bold"
+                />
+              </div>
+              <div>
+                <label htmlFor="catPrice" className="block text-stone-700 font-bold mb-1">Starting Base Price (₹)</label>
+                <input
+                  id="catPrice"
+                  name="catPrice"
+                  type="number"
+                  placeholder="Starting Base Price (₹)"
+                  value={catPrice}
+                  onChange={e => setCatPrice(Number(e.target.value))}
+                  className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2.5 font-bold"
+                />
+              </div>
               <button type="submit" className="w-full py-3 bg-[#D9534F] text-white font-bold rounded-xl shadow">
                 Save Dynamic Category
               </button>
@@ -264,36 +279,51 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = () => {
           <h3 className="font-extrabold text-lg text-stone-900">State → District → Village Master Hierarchy</h3>
 
           <form onSubmit={handleAddVillage} className="flex flex-col sm:flex-row gap-3 text-xs">
-            <select
-              value={targetStateId}
-              onChange={e => setTargetStateId(e.target.value)}
-              className="bg-stone-50 border border-stone-300 rounded-xl p-2.5 font-bold"
-            >
-              {locations.map(st => (
-                <option key={st.id} value={st.id}>{st.name}</option>
-              ))}
-            </select>
+            <div className="flex-1">
+              <label htmlFor="targetStateId" className="block font-bold text-stone-700 mb-1">Select State</label>
+              <select
+                id="targetStateId"
+                name="targetStateId"
+                value={targetStateId}
+                onChange={e => setTargetStateId(e.target.value)}
+                className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2.5 font-bold"
+              >
+                {locations.map(st => (
+                  <option key={st.id} value={st.id}>{st.name}</option>
+                ))}
+              </select>
+            </div>
 
-            <select
-              value={targetDistId}
-              onChange={e => setTargetDistId(e.target.value)}
-              className="bg-stone-50 border border-stone-300 rounded-xl p-2.5 font-bold"
-            >
-              {locations.find(st => st.id === targetStateId)?.districts.map(d => (
-                <option key={d.id} value={d.id}>{d.name}</option>
-              ))}
-            </select>
+            <div className="flex-1">
+              <label htmlFor="targetDistId" className="block font-bold text-stone-700 mb-1">Select District</label>
+              <select
+                id="targetDistId"
+                name="targetDistId"
+                value={targetDistId}
+                onChange={e => setTargetDistId(e.target.value)}
+                className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2.5 font-bold"
+              >
+                {locations.find(st => st.id === targetStateId)?.districts.map(d => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
+                ))}
+              </select>
+            </div>
 
-            <input
-              type="text"
-              placeholder="New Village Name (e.g. Kakori)"
-              value={newVillageName}
-              onChange={e => setNewVillageName(e.target.value)}
-              className="flex-1 bg-stone-50 border border-stone-300 rounded-xl p-2.5 font-bold"
-              required
-            />
+            <div className="flex-1">
+              <label htmlFor="newVillageName" className="block font-bold text-stone-700 mb-1">New Village Name</label>
+              <input
+                id="newVillageName"
+                name="newVillageName"
+                type="text"
+                placeholder="New Village Name (e.g. Kakori)"
+                value={newVillageName}
+                onChange={e => setNewVillageName(e.target.value)}
+                className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2.5 font-bold"
+                required
+              />
+            </div>
 
-            <button type="submit" className="px-5 py-2.5 bg-[#1B4D3E] text-white font-bold rounded-xl shadow">
+            <button type="submit" className="self-end px-5 py-2.5 bg-[#1B4D3E] text-white font-bold rounded-xl shadow h-[42px]">
               + Add Village
             </button>
           </form>
@@ -333,8 +363,10 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = () => {
 
           <form onSubmit={handleSendBroadcast} className="space-y-3 text-xs">
             <div>
-              <label className="block font-bold text-stone-700 mb-1">Target Audience</label>
+              <label htmlFor="broadcastRole" className="block font-bold text-stone-700 mb-1">Target Audience</label>
               <select
+                id="broadcastRole"
+                name="broadcastRole"
                 value={broadcastRole}
                 onChange={e => setBroadcastRole(e.target.value as any)}
                 className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2.5 font-bold"
@@ -346,8 +378,10 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = () => {
             </div>
 
             <div>
-              <label className="block font-bold text-stone-700 mb-1">Notification Title</label>
+              <label htmlFor="broadcastTitle" className="block font-bold text-stone-700 mb-1">Notification Title</label>
               <input
+                id="broadcastTitle"
+                name="broadcastTitle"
                 type="text"
                 placeholder="e.g. Festival Offer Season!"
                 value={broadcastTitle}
@@ -358,8 +392,10 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = () => {
             </div>
 
             <div>
-              <label className="block font-bold text-stone-700 mb-1">Message Content</label>
+              <label htmlFor="broadcastMsg" className="block font-bold text-stone-700 mb-1">Message Content</label>
               <textarea
+                id="broadcastMsg"
+                name="broadcastMsg"
                 rows={3}
                 placeholder="Enter announcement text..."
                 value={broadcastMsg}

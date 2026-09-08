@@ -302,10 +302,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
                   {/* TRANSACTION REFERENCE REF INPUT */}
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-stone-700 block">
+                    <label htmlFor="transactionId" className="text-xs font-bold text-stone-700 block">
                       Transaction UTR / Reference ID:
                     </label>
                     <input
+                      id="transactionId"
+                      name="transactionId"
                       type="text"
                       value={transactionId}
                       onChange={e => setTransactionId(e.target.value)}

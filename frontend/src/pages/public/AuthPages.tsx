@@ -294,8 +294,10 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
 
           <form onSubmit={handleLogin} className="space-y-4 text-xs font-bold">
             <div>
-              <label className="block text-stone-700 mb-1.5">मोबाइल नंबर (Mobile Number / User ID)</label>
+              <label htmlFor="loginPhone" className="block text-stone-700 mb-1.5">मोबाइल नंबर (Mobile Number / User ID)</label>
               <input
+                id="loginPhone"
+                name="loginPhone"
                 type="text"
                 value={phone}
                 onChange={e => setPhone(e.target.value)}
@@ -306,9 +308,11 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
             </div>
 
             <div>
-              <label className="block text-stone-700 mb-1.5">पासवर्ड (Password)</label>
+              <label htmlFor="loginPassword" className="block text-stone-700 mb-1.5">पासवर्ड (Password)</label>
               <div className="relative">
                 <input
+                  id="loginPassword"
+                  name="loginPassword"
                   type="password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
@@ -428,8 +432,10 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
           {registerRole === 'customer' && (
             <form onSubmit={handleRegisterCustomer} className="space-y-4 text-xs font-bold">
               <div>
-                <label className="block text-stone-700 mb-1">आपका पूरा नाम (Full Name)</label>
+                <label htmlFor="regCustomerName" className="block text-stone-700 mb-1">आपका पूरा नाम (Full Name)</label>
                 <input
+                  id="regCustomerName"
+                  name="regCustomerName"
                   type="text"
                   placeholder="उदा. प्रिया सिंह"
                   value={name}
@@ -440,8 +446,10 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
               </div>
 
               <div>
-                <label className="block text-stone-700 mb-1">मोबाइल नंबर (Mobile Number)</label>
+                <label htmlFor="regCustomerPhone" className="block text-stone-700 mb-1">मोबाइल नंबर (Mobile Number)</label>
                 <input
+                  id="regCustomerPhone"
+                  name="regCustomerPhone"
                   type="tel"
                   value={phone}
                   onChange={e => setPhone(e.target.value)}
@@ -452,8 +460,10 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-stone-700 mb-1">गाँव / क्षेत्र (Village)</label>
+                  <label htmlFor="regCustomerVillage" className="block text-stone-700 mb-1">गाँव / क्षेत्र (Village)</label>
                   <input
+                    id="regCustomerVillage"
+                    name="regCustomerVillage"
                     type="text"
                     value={village}
                     onChange={e => setVillage(e.target.value)}
@@ -463,8 +473,10 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
                 </div>
 
                 <div>
-                  <label className="block text-stone-700 mb-1">ज़िला (District)</label>
+                  <label htmlFor="regCustomerDistrict" className="block text-stone-700 mb-1">ज़िला (District)</label>
                   <input
+                    id="regCustomerDistrict"
+                    name="regCustomerDistrict"
                     type="text"
                     value={district}
                     onChange={e => setDistrict(e.target.value)}
@@ -499,8 +511,10 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
               </div>
 
               <div>
-                <label className="block text-stone-700 mb-1">दर्जी बहन का नाम (Full Name)</label>
+                <label htmlFor="regTailorName" className="block text-stone-700 mb-1">दर्जी बहन का नाम (Full Name)</label>
                 <input
+                  id="regTailorName"
+                  name="regTailorName"
                   type="text"
                   placeholder="उदा. सुनिता देवी"
                   value={name}
@@ -511,8 +525,10 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
               </div>
 
               <div>
-                <label className="block text-stone-700 mb-1">मोबाइल नंबर (Mobile Phone)</label>
+                <label htmlFor="regTailorPhone" className="block text-stone-700 mb-1">मोबाइल नंबर (Mobile Phone)</label>
                 <input
+                  id="regTailorPhone"
+                  name="regTailorPhone"
                   type="tel"
                   value={phone}
                   onChange={e => setPhone(e.target.value)}
@@ -523,8 +539,10 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-stone-700 mb-1">गाँव / मोहल्ला (Village)</label>
+                  <label htmlFor="regTailorVillage" className="block text-stone-700 mb-1">गाँव / मोहल्ला (Village)</label>
                   <input
+                    id="regTailorVillage"
+                    name="regTailorVillage"
                     type="text"
                     value={village}
                     onChange={e => setVillage(e.target.value)}
@@ -534,8 +552,10 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
                 </div>
 
                 <div>
-                  <label className="block text-stone-700 mb-1">ज़िला (District)</label>
+                  <label htmlFor="regTailorDistrict" className="block text-stone-700 mb-1">ज़िला (District)</label>
                   <input
+                    id="regTailorDistrict"
+                    name="regTailorDistrict"
                     type="text"
                     value={district}
                     onChange={e => setDistrict(e.target.value)}
@@ -547,8 +567,10 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-stone-700 mb-1">अनुभव (Experience - Years)</label>
+                  <label htmlFor="regTailorExperience" className="block text-stone-700 mb-1">अनुभव (Experience - Years)</label>
                   <input
+                    id="regTailorExperience"
+                    name="regTailorExperience"
                     type="number"
                     value={experience}
                     onChange={e => setExperience(e.target.value)}
@@ -558,8 +580,10 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
                 </div>
 
                 <div>
-                  <label className="block text-stone-700 mb-1">शुरुआती सिलाई दर (₹)</label>
+                  <label htmlFor="regTailorStartingPrice" className="block text-stone-700 mb-1">शुरुआती सिलाई दर (₹)</label>
                   <input
+                    id="regTailorStartingPrice"
+                    name="regTailorStartingPrice"
                     type="number"
                     value={startingPrice}
                     onChange={e => setStartingPrice(e.target.value)}
@@ -570,8 +594,10 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
               </div>
 
               <div>
-                <label className="block text-stone-700 mb-1">विशेषज्ञता एवं विवरण (About Skills)</label>
+                <label htmlFor="regTailorBio" className="block text-stone-700 mb-1">विशेषज्ञता एवं विवरण (About Skills)</label>
                 <textarea
+                  id="regTailorBio"
+                  name="regTailorBio"
                   rows={2}
                   value={bio}
                   onChange={e => setBio(e.target.value)}

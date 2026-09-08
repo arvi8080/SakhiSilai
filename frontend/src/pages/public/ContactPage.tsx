@@ -152,10 +152,12 @@ export const ContactPage: React.FC<ContactPageProps> = () => {
 
           <form onSubmit={handleSubmit} className="space-y-4 text-xs font-bold">
             <div>
-              <label className="block text-stone-700 mb-1">
+              <label htmlFor="publicContactName" className="block text-stone-700 mb-1">
                 {lang === 'hi' ? 'आपका नाम (Your Name)' : 'Your Name'}
               </label>
               <input
+                id="publicContactName"
+                name="publicContactName"
                 type="text"
                 placeholder={lang === 'hi' ? 'पूरा नाम' : 'Full Name'}
                 value={name}
@@ -166,10 +168,12 @@ export const ContactPage: React.FC<ContactPageProps> = () => {
             </div>
 
             <div>
-              <label className="block text-stone-700 mb-1">
+              <label htmlFor="publicContactPhone" className="block text-stone-700 mb-1">
                 {lang === 'hi' ? 'मोबाइल नंबर (Mobile Phone)' : 'Mobile Phone Number'}
               </label>
               <input
+                id="publicContactPhone"
+                name="publicContactPhone"
                 type="tel"
                 placeholder="10-digit mobile number"
                 value={phone}
@@ -180,10 +184,12 @@ export const ContactPage: React.FC<ContactPageProps> = () => {
             </div>
 
             <div>
-              <label className="block text-stone-700 mb-1">
+              <label htmlFor="publicContactTopic" className="block text-stone-700 mb-1">
                 {lang === 'hi' ? 'विषय (Topic)' : 'Topic / Inquiry Type'}
               </label>
               <select
+                id="publicContactTopic"
+                name="publicContactTopic"
                 value={topic}
                 onChange={e => setTopic(e.target.value)}
                 className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3.5 text-xs text-[#2A1B3D] font-bold"
@@ -196,10 +202,12 @@ export const ContactPage: React.FC<ContactPageProps> = () => {
             </div>
 
             <div>
-              <label className="block text-stone-700 mb-1">
+              <label htmlFor="publicContactMessage" className="block text-stone-700 mb-1">
                 {lang === 'hi' ? 'संदेश / विवरण (Message)' : 'Message / Details'}
               </label>
               <textarea
+                id="publicContactMessage"
+                name="publicContactMessage"
                 rows={4}
                 placeholder={lang === 'hi' ? 'अपना सवाल या संदेश यहाँ लिखें...' : 'Write your question or feedback...'}
                 value={message}

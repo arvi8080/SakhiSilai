@@ -98,8 +98,10 @@ export const CustomDesignRequestPage: React.FC<CustomDesignRequestPageProps> = (
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1">Design Title / Style Name</label>
+              <label htmlFor="customDesignTitle" className="block text-xs font-bold text-stone-700 mb-1">Design Title / Style Name</label>
               <input
+                id="customDesignTitle"
+                name="customDesignTitle"
                 type="text"
                 placeholder="e.g. Princess Cut Boatneck Kurti with Organza Sleeves"
                 value={title}
@@ -110,8 +112,10 @@ export const CustomDesignRequestPage: React.FC<CustomDesignRequestPageProps> = (
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1">Category</label>
+              <label htmlFor="customDesignCategory" className="block text-xs font-bold text-stone-700 mb-1">Category</label>
               <select
+                id="customDesignCategory"
+                name="customDesignCategory"
                 value={category}
                 onChange={e => setCategory(e.target.value)}
                 className="w-full bg-stone-50 border border-stone-300 rounded-xl p-3 text-xs font-medium focus:ring-2 focus:ring-[#D9534F] focus:outline-none"
@@ -123,7 +127,7 @@ export const CustomDesignRequestPage: React.FC<CustomDesignRequestPageProps> = (
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1">Upload Dress Photo / Reference Design</label>
+              <label htmlFor="customDesignImageUrl" className="block text-xs font-bold text-stone-700 mb-1">Upload Dress Photo / Reference Design</label>
               
               <div className="flex flex-col sm:flex-row gap-3 items-center mb-3">
                 <label className="w-full sm:w-auto px-4 py-2.5 bg-pink-50 hover:bg-pink-100 text-[#E91E63] font-bold text-xs rounded-xl border border-pink-200 cursor-pointer transition flex items-center justify-center gap-2">
@@ -134,6 +138,8 @@ export const CustomDesignRequestPage: React.FC<CustomDesignRequestPageProps> = (
                   )}
                   <span>{isUploading ? 'Uploading to Firebase Storage...' : 'Upload Photo (Firebase Cloud)'}</span>
                   <input
+                    id="customDesignFileInput"
+                    name="customDesignFileInput"
                     type="file"
                     accept="image/*"
                     onChange={handleFileUpload}
@@ -158,6 +164,8 @@ export const CustomDesignRequestPage: React.FC<CustomDesignRequestPageProps> = (
               </div>
 
               <input
+                id="customDesignImageUrl"
+                name="customDesignImageUrl"
                 type="url"
                 placeholder="Or paste image URL"
                 value={imageUrl}
@@ -167,8 +175,10 @@ export const CustomDesignRequestPage: React.FC<CustomDesignRequestPageProps> = (
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1">Required Completion Date</label>
+              <label htmlFor="customDesignDate" className="block text-xs font-bold text-stone-700 mb-1">Required Completion Date</label>
               <input
+                id="customDesignDate"
+                name="customDesignDate"
                 type="date"
                 value={requiredDate}
                 onChange={e => setRequiredDate(e.target.value)}
@@ -177,8 +187,10 @@ export const CustomDesignRequestPage: React.FC<CustomDesignRequestPageProps> = (
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1">Special Instructions for Tailors</label>
+              <label htmlFor="customDesignNotes" className="block text-xs font-bold text-stone-700 mb-1">Special Instructions for Tailors</label>
               <textarea
+                id="customDesignNotes"
+                name="customDesignNotes"
                 rows={3}
                 placeholder="Describe fabric type, lining preference, piping, latkan dori, fitting..."
                 value={notes}

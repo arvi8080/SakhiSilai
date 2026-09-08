@@ -83,8 +83,11 @@ export const Home: React.FC<HomeProps> = ({ setActiveTab, onSelectTailor, onSele
 
               <div className="flex flex-col sm:flex-row gap-2">
                 <div className="relative flex-1">
+                  <label htmlFor="homeSearchVillage" className="sr-only">{lang === 'hi' ? 'अपना स्थान दर्ज करें' : 'Enter your location'}</label>
                   <MapPin className="w-4 h-4 text-stone-400 absolute left-3.5 top-3.5" />
                   <input
+                    id="homeSearchVillage"
+                    name="homeSearchVillage"
                     type="text"
                     value={searchVillageInput}
                     onChange={e => setSearchVillageInput(e.target.value)}

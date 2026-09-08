@@ -259,8 +259,10 @@ export const CreateOrderPage: React.FC<CreateOrderPageProps> = ({
 
             {measurementType === 'saved' && (
               <div className="bg-stone-50 p-4 rounded-2xl border border-stone-200 space-y-2">
-                <label className="block text-xs font-bold text-stone-700">Select Saved Profile</label>
+                <label htmlFor="selectedMeasurementProfile" className="block text-xs font-bold text-stone-700">Select Saved Profile</label>
                 <select
+                  id="selectedMeasurementProfile"
+                  name="selectedMeasurementProfile"
                   value={selectedMeasurementId}
                   onChange={e => setSelectedMeasurementId(e.target.value)}
                   className="w-full bg-white border border-stone-300 rounded-xl p-2.5 text-xs font-medium"
@@ -278,10 +280,12 @@ export const CreateOrderPage: React.FC<CreateOrderPageProps> = ({
           {/* STEP 4: REQUIRED DATE & PAYMENT */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-stone-100">
             <div>
-              <label className="font-extrabold text-xs text-stone-900 block mb-1">
+              <label htmlFor="requiredDate" className="font-extrabold text-xs text-stone-900 block mb-1">
                 Required Completion Date
               </label>
               <input
+                id="requiredDate"
+                name="requiredDate"
                 type="date"
                 value={requiredDate}
                 onChange={e => setRequiredDate(e.target.value)}
@@ -290,10 +294,12 @@ export const CreateOrderPage: React.FC<CreateOrderPageProps> = ({
             </div>
 
             <div>
-              <label className="font-extrabold text-xs text-stone-900 block mb-1">
+              <label htmlFor="orderPaymentMethod" className="font-extrabold text-xs text-stone-900 block mb-1">
                 Payment Method
               </label>
               <select
+                id="orderPaymentMethod"
+                name="orderPaymentMethod"
                 value={paymentMethod}
                 onChange={e => setPaymentMethod(e.target.value as any)}
                 className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2.5 text-xs font-semibold text-[#1B4D3E]"
@@ -305,10 +311,12 @@ export const CreateOrderPage: React.FC<CreateOrderPageProps> = ({
             </div>
 
             <div>
-              <label className="font-extrabold text-xs text-stone-900 block mb-1">
+              <label htmlFor="specialInstructions" className="font-extrabold text-xs text-stone-900 block mb-1">
                 Special Instructions (Optional)
               </label>
               <input
+                id="specialInstructions"
+                name="specialInstructions"
                 type="text"
                 placeholder="e.g. Add red piping, back dori, extra seam margin..."
                 value={specialNotes}

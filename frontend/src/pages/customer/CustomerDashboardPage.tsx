@@ -242,46 +242,71 @@ export const CustomerDashboardPage: React.FC<CustomerDashboardPageProps> = ({ se
                 <h3 className="font-bold text-base text-stone-900">Save New Measurement</h3>
                 <form onSubmit={handleSaveM} className="space-y-3">
                   <div className="grid grid-cols-2 gap-2">
-                    <input
-                      type="text"
-                      placeholder="Profile Name (e.g. My Festive Blouse)"
-                      value={mLabel}
-                      onChange={e => setMLabel(e.target.value)}
-                      className="bg-stone-50 border border-stone-300 rounded-xl p-2.5 text-xs"
-                      required
-                    />
-                    <select
-                      value={mType}
-                      onChange={e => setMType(e.target.value)}
-                      className="bg-stone-50 border border-stone-300 rounded-xl p-2.5 text-xs font-bold"
-                    >
-                      <option value="Blouse">Blouse</option>
-                      <option value="Suit & Salwar">Suit & Salwar</option>
-                      <option value="Kurti / Dress">Kurti / Dress</option>
-                    </select>
+                    <div>
+                      <label htmlFor="mLabel" className="block text-[11px] font-bold text-stone-700 mb-1">Profile Name</label>
+                      <input
+                        id="mLabel"
+                        name="mLabel"
+                        type="text"
+                        placeholder="Profile Name (e.g. My Festive Blouse)"
+                        value={mLabel}
+                        onChange={e => setMLabel(e.target.value)}
+                        className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2.5 text-xs"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="mType" className="block text-[11px] font-bold text-stone-700 mb-1">Clothing Type</label>
+                      <select
+                        id="mType"
+                        name="mType"
+                        value={mType}
+                        onChange={e => setMType(e.target.value)}
+                        className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2.5 text-xs font-bold"
+                      >
+                        <option value="Blouse">Blouse</option>
+                        <option value="Suit & Salwar">Suit & Salwar</option>
+                        <option value="Kurti / Dress">Kurti / Dress</option>
+                      </select>
+                    </div>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
-                    <input
-                      type="text"
-                      placeholder="Bust (36 in)"
-                      value={bust}
-                      onChange={e => setBust(e.target.value)}
-                      className="bg-stone-50 border border-stone-300 rounded-xl p-2 text-xs"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Waist (30 in)"
-                      value={waist}
-                      onChange={e => setWaist(e.target.value)}
-                      className="bg-stone-50 border border-stone-300 rounded-xl p-2 text-xs"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Length (14 in)"
-                      value={length}
-                      onChange={e => setLength(e.target.value)}
-                      className="bg-stone-50 border border-stone-300 rounded-xl p-2 text-xs"
-                    />
+                    <div>
+                      <label htmlFor="bust" className="block text-[10px] font-bold text-stone-700 mb-0.5">Bust</label>
+                      <input
+                        id="bust"
+                        name="bust"
+                        type="text"
+                        placeholder="Bust (36 in)"
+                        value={bust}
+                        onChange={e => setBust(e.target.value)}
+                        className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2 text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="waist" className="block text-[10px] font-bold text-stone-700 mb-0.5">Waist</label>
+                      <input
+                        id="waist"
+                        name="waist"
+                        type="text"
+                        placeholder="Waist (30 in)"
+                        value={waist}
+                        onChange={e => setWaist(e.target.value)}
+                        className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2 text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="length" className="block text-[10px] font-bold text-stone-700 mb-0.5">Length</label>
+                      <input
+                        id="length"
+                        name="length"
+                        type="text"
+                        placeholder="Length (14 in)"
+                        value={length}
+                        onChange={e => setLength(e.target.value)}
+                        className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2 text-xs"
+                      />
+                    </div>
                   </div>
                   <div className="flex gap-2 pt-2">
                     <button type="button" onClick={() => setShowAddM(false)} className="flex-1 py-2 border rounded-xl text-xs">Cancel</button>

@@ -65,8 +65,11 @@ export const FindTailorsPage: React.FC<FindTailorsPageProps> = ({
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Search Box */}
           <div className="relative flex-1">
+            <label htmlFor="tailorSearchQuery" className="sr-only">Search Tailors</label>
             <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-3.5" />
             <input
+              id="tailorSearchQuery"
+              name="tailorSearchQuery"
               type="text"
               placeholder="Search tailor name, village, or skills (e.g. Princess Cut)..."
               value={searchQuery}
@@ -77,7 +80,10 @@ export const FindTailorsPage: React.FC<FindTailorsPageProps> = ({
 
           {/* Category Filter Dropdown */}
           <div className="sm:w-56">
+            <label htmlFor="tailorCategoryFilter" className="sr-only">Filter by Category</label>
             <select
+              id="tailorCategoryFilter"
+              name="tailorCategoryFilter"
               value={category}
               onChange={e => setCategory(e.target.value)}
               className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2.5 text-xs font-semibold focus:ring-2 focus:ring-[#D9534F] focus:outline-none"
@@ -94,8 +100,10 @@ export const FindTailorsPage: React.FC<FindTailorsPageProps> = ({
 
         {/* Toggle Pills */}
         <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-stone-100 text-xs">
-          <label className="flex items-center gap-2 cursor-pointer bg-stone-100 hover:bg-stone-200 px-3 py-1.5 rounded-full font-semibold text-stone-700 transition">
+          <label htmlFor="onlySameVillage" className="flex items-center gap-2 cursor-pointer bg-stone-100 hover:bg-stone-200 px-3 py-1.5 rounded-full font-semibold text-stone-700 transition">
             <input
+              id="onlySameVillage"
+              name="onlySameVillage"
               type="checkbox"
               checked={onlySameVillage}
               onChange={e => setOnlySameVillage(e.target.checked)}
@@ -104,8 +112,10 @@ export const FindTailorsPage: React.FC<FindTailorsPageProps> = ({
             <span>{t('sameVillageBadge')} Only ({selectedVillage})</span>
           </label>
 
-          <label className="flex items-center gap-2 cursor-pointer bg-stone-100 hover:bg-stone-200 px-3 py-1.5 rounded-full font-semibold text-stone-700 transition">
+          <label htmlFor="onlyAvailable" className="flex items-center gap-2 cursor-pointer bg-stone-100 hover:bg-stone-200 px-3 py-1.5 rounded-full font-semibold text-stone-700 transition">
             <input
+              id="onlyAvailable"
+              name="onlyAvailable"
               type="checkbox"
               checked={onlyAvailable}
               onChange={e => setOnlyAvailable(e.target.checked)}

@@ -239,8 +239,10 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({ orderId, s
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-stone-700 mb-1">Your Review Comment</label>
+                <label htmlFor="reviewComment" className="block text-xs font-bold text-stone-700 mb-1">Your Review Comment</label>
                 <textarea
+                  id="reviewComment"
+                  name="reviewComment"
                   rows={3}
                   placeholder="How was the fitting, stitching quality, and timing?"
                   value={comment}

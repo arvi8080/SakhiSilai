@@ -122,8 +122,10 @@ export const AboutContactPage: React.FC = () => {
 
           <form onSubmit={handleSubmit} className="space-y-4 text-xs">
             <div>
-              <label className="block font-bold text-stone-700 mb-1">Your Name</label>
+              <label htmlFor="contactName" className="block font-bold text-stone-700 mb-1">Your Name</label>
               <input
+                id="contactName"
+                name="contactName"
                 type="text"
                 placeholder="Full Name"
                 value={name}
@@ -134,8 +136,10 @@ export const AboutContactPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block font-bold text-stone-700 mb-1">Mobile Phone Number</label>
+              <label htmlFor="contactPhone" className="block font-bold text-stone-700 mb-1">Mobile Phone Number</label>
               <input
+                id="contactPhone"
+                name="contactPhone"
                 type="tel"
                 placeholder="10-digit mobile number"
                 value={phone}
@@ -146,8 +150,10 @@ export const AboutContactPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block font-bold text-stone-700 mb-1">Message / Inquiry</label>
+              <label htmlFor="contactMessage" className="block font-bold text-stone-700 mb-1">Message / Inquiry</label>
               <textarea
+                id="contactMessage"
+                name="contactMessage"
                 rows={4}
                 placeholder="Write your question, suggestion, or feedback..."
                 value={message}
