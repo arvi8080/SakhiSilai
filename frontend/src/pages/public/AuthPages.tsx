@@ -1,14 +1,10 @@
 import React, { useState } from 'react';
-import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import {
   Scissors,
-  UserCheck,
   CheckCircle,
   ArrowRight,
-  ShieldCheck,
-  Clock,
   UserPlus,
   LogIn,
   Lock
@@ -16,124 +12,96 @@ import {
 
 interface AuthPagesProps {
   setActiveTab: (tab: string) => void;
-  initialMode?: 'login' | 'register' | 'register_tailor';
+  initialMode?: 'login' | 'register';
 }
 
-export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode = 'register' }) => {
-  const { registerTailor, selectedState, selectedDistrict, selectedVillage } = useData();
+export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode = 'login' }) => {
   const {
-    setRole,
     loginWithCredentials,
-    loginAsAdmin,
     updateUserProfile,
     pendingRedirectTab,
     setPendingRedirectTab,
     redirectNotice,
-    setRedirectNotice
+    setRedirectNotice,
+    setRole
   } = useAuth();
   const { lang } = useLanguage();
 
-  const completeAuthRedirect = (defaultTab: string = 'dashboard') => {
+  const completeAuthRedirect = (role: string = 'customer') => {
     if (pendingRedirectTab) {
       const target = pendingRedirectTab;
       setPendingRedirectTab(null);
       setRedirectNotice(null);
       setActiveTab(target);
     } else {
-      setActiveTab(defaultTab);
+      if (role === 'admin') {
+        setActiveTab('admin_dashboard');
+      } else if (role === 'tailor') {
+        setActiveTab('tailor_dashboard');
+      } else {
+        setActiveTab('customer_dashboard');
+      }
     }
   };
 
   // Mode: 'login' or 'register'
-  const [authMode, setAuthMode] = useState<'login' | 'register'>(initialMode === 'login' ? 'login' : 'register');
-
-  // Role choice for Create Account: 'customer' or 'tailor'
-  const [registerRole, setRegisterRole] = useState<'customer' | 'tailor'>(initialMode === 'register_tailor' ? 'tailor' : 'customer');
+  const [authMode, setAuthMode] = useState<'login' | 'register'>(initialMode === 'register' ? 'register' : 'login');
 
   // Common Form Fields
-  const [phone, setPhone] = useState('');
+  const [phoneOrEmail, setPhoneOrEmail] = useState('');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
-  const [village, setVillage] = useState(selectedVillage || 'Mohanlalganj');
-  const [district, setDistrict] = useState(selectedDistrict || 'Lucknow');
-  const [stateVal] = useState(selectedState || 'Uttar Pradesh');
-
-  // Tailor Specific Fields
-  const [experience, setExperience] = useState('5');
-  const [startingPrice, setStartingPrice] = useState('300');
-  const [bio, setBio] = useState('अनुभवी दर्जी बहन - ब्लाउज, सूट एवं लहंगा सिलाई में विशेषज्ञ।');
+  const [village, setVillage] = useState('Mohanlalganj');
+  const [district, setDistrict] = useState('Lucknow');
+  const [stateVal] = useState('Uttar Pradesh');
 
   // Status screens
-  const [tailorPendingSuccess, setTailorPendingSuccess] = useState(false);
-  const [customerRegSuccess, setCustomerRegSuccess] = useState(false);
+  const [regSuccess, setRegSuccess] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // SINGLE UNIFIED LOGIN SUBMIT HANDLER FOR ALL ROLES
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError(null);
-    setIsLoggingIn(true);
+    setIsSubmitting(true);
 
     try {
-      const result = await loginWithCredentials(phone, password);
-      if (result.success) {
-        completeAuthRedirect('dashboard');
+      const result = await loginWithCredentials(phoneOrEmail, password);
+      if (result.success && result.role) {
+        completeAuthRedirect(result.role);
       } else {
         setLoginError(result.message || (lang === 'hi' ? 'गलत ईमेल/फोन नंबर या पासवर्ड।' : 'Invalid email or password.'));
       }
     } catch (err) {
       setLoginError(lang === 'hi' ? 'गलत ईमेल/फोन नंबर या पासवर्ड।' : 'Invalid email or password.');
     } finally {
-      setIsLoggingIn(false);
+      setIsSubmitting(false);
     }
   };
 
-  // REGISTER CUSTOMER SUBMIT
-  const handleRegisterCustomer = (e: React.FormEvent) => {
+  // UNIFIED SIGNUP HANDLER (EVERYONE BECOMES NORMAL USER FIRST)
+  const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
+
+    // Update user profile as customer
     updateUserProfile({
-      name: name || 'Customer',
-      phone,
+      name: name || 'User',
+      phone: !phoneOrEmail.includes('@') ? phoneOrEmail : '9812345678',
+      email: phoneOrEmail.includes('@') ? phoneOrEmail : '',
       village,
       district,
       state: stateVal,
       role: 'customer'
     });
     setRole('customer');
-    setCustomerRegSuccess(true);
+    setRegSuccess(true);
+    setIsSubmitting(false);
 
     setTimeout(() => {
-      completeAuthRedirect();
+      completeAuthRedirect('customer');
     }, 1200);
-  };
-
-  // REGISTER TAILOR SUBMIT (REQUIRES ADMIN VERIFICATION)
-  const handleRegisterTailor = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    registerTailor({
-      userId: 'u_' + Date.now(),
-      name: name || 'Sunita Devi',
-      phone,
-      avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&auto=format&fit=crop&q=80',
-      state: stateVal,
-      district,
-      village,
-      addressApprox: `गौतम बुद्ध मार्ग, chaupal near ${village}`,
-      bio,
-      experienceYears: Number(experience) || 3,
-      availability: 'available',
-      maxActiveOrders: 5,
-      servicesOffered: ['ब्लाउज सिलाई', 'सूट सिलाई', 'ड्रेस सिलाई'],
-      startingPrice: Number(startingPrice) || 300,
-      estCompletionDays: 3,
-      skills: ['प्रिंसेंस कट', 'राजपूती सूट', 'अल्टरेशन'],
-      galleryImages: ['https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80'],
-      isVerified: false // MUST BE VERIFIED BY ADMIN
-    });
-
-    setTailorPendingSuccess(true);
   };
 
   return (
@@ -147,8 +115,8 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
           </div>
           <p className="text-[11px] text-pink-100 font-medium leading-relaxed pl-7">
             {lang === 'hi'
-              ? 'सफलतापूर्वक लॉगिन या पंजीकरण करने के बाद आप स्वचालित रूप से अपनी पसंदीदा प्रक्रिया/पेज पर पहुँच जाएंगे।'
-              : 'After successful login or registration, you will be automatically returned to your original booking action.'}
+              ? 'सफलतापूर्वक लॉगिन करने के बाद आप स्वचालित रूप से अपने डैशबोर्ड पर पहुँच जाएंगे।'
+              : 'After successful login, you will be automatically returned to your original destination.'}
           </p>
         </div>
       )}
@@ -169,10 +137,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
       {/* TOP TOGGLE: LOGIN vs CREATE ACCOUNT */}
       <div className="flex bg-stone-100 p-1.5 rounded-full border border-stone-200 shadow-inner">
         <button
-          onClick={() => {
-            setAuthMode('login');
-            setTailorPendingSuccess(false);
-          }}
+          onClick={() => setAuthMode('login')}
           className={`flex-1 py-3 rounded-full font-black text-xs transition flex items-center justify-center gap-2 ${
             authMode === 'login'
               ? 'bg-white text-[#2A1B3D] shadow-md border border-stone-200'
@@ -184,10 +149,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
         </button>
 
         <button
-          onClick={() => {
-            setAuthMode('register');
-            setTailorPendingSuccess(false);
-          }}
+          onClick={() => setAuthMode('register')}
           className={`flex-1 py-3 rounded-full font-black text-xs transition flex items-center justify-center gap-2 ${
             authMode === 'register'
               ? 'bg-[#E91E63] text-white shadow-lg shadow-pink-500/25'
@@ -211,7 +173,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
             <p className="text-xs text-stone-500">
               {lang === 'hi'
                 ? 'ईमेल / फोन नंबर और पासवर्ड दर्ज करें — भूमिका (Role) का पता अपने आप चल जाएगा'
-                : 'Enter your Email / Phone & Password — System detects your role automatically'}
+                : 'Enter Email / Mobile Phone & Password — System checks your account role'}
             </p>
           </div>
 
@@ -223,17 +185,17 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
 
           <form onSubmit={handleLogin} className="space-y-4 text-xs font-bold">
             <div>
-              <label htmlFor="loginPhone" className="block text-stone-700 mb-1.5">
+              <label htmlFor="loginPhoneOrEmail" className="block text-stone-700 mb-1.5">
                 {lang === 'hi' ? 'ईमेल या मोबाइल नंबर (Email / Phone)' : 'Email / Mobile Phone'}
               </label>
               <input
-                id="loginPhone"
-                name="loginPhone"
+                id="loginPhoneOrEmail"
+                name="loginPhoneOrEmail"
                 type="text"
-                value={phone}
-                onChange={e => setPhone(e.target.value)}
-                placeholder={lang === 'hi' ? 'ईमेल या मोबाइल नंबर दर्ज करें' : 'Enter email or phone number'}
-                className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3.5 text-sm text-[#2A1B3D] focus:ring-2 focus:ring-[#E91E63] focus:outline-none"
+                value={phoneOrEmail}
+                onChange={e => setPhoneOrEmail(e.target.value)}
+                placeholder={lang === 'hi' ? 'उदा. user@gmail.com या 9812345678' : 'e.g. user@gmail.com or 9812345678'}
+                className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3.5 text-sm text-[#2A1B3D] focus:ring-2 focus:ring-[#E91E63] focus:outline-none font-bold"
                 required
               />
             </div>
@@ -259,10 +221,10 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
 
             <button
               type="submit"
-              disabled={isLoggingIn}
+              disabled={isSubmitting}
               className="w-full py-4 bg-[#E91E63] hover:bg-[#D81B60] text-white font-black rounded-2xl shadow-lg shadow-pink-500/25 transition active:scale-95 text-xs flex items-center justify-center gap-2"
             >
-              <span>{isLoggingIn ? (lang === 'hi' ? 'सत्यापित हो रहा है...' : 'Verifying...') : (lang === 'hi' ? 'लॉगिन करें (Login)' : 'Login')}</span>
+              <span>{isSubmitting ? (lang === 'hi' ? 'सत्यापित हो रहा है...' : 'Verifying...') : (lang === 'hi' ? 'लॉगिन करें (Login)' : 'Login')}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
@@ -283,295 +245,130 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
       )}
 
       {/* ========================================================================= */}
-      {/* 2. CREATE ACCOUNT MODE FORM */}
+      {/* 2. UNIFIED CREATE ACCOUNT FORM (ONE SIGNUP FOR EVERYONE) */}
       {/* ========================================================================= */}
-      {authMode === 'register' && !tailorPendingSuccess && (
+      {authMode === 'register' && (
         <div className="bg-white p-6 sm:p-8 rounded-3xl border border-pink-100 shadow-xl space-y-6">
           <div className="text-center space-y-1">
-            <h2 className="text-2xl font-black text-[#2A1B3D]">नया खाता बनाएं</h2>
-            <p className="text-xs text-stone-500">SakhiSilai प्लेटफ़ॉर्म पर अपनी भूमिका चुनें</p>
+            <h2 className="text-2xl font-black text-[#2A1B3D]">
+              {lang === 'hi' ? 'नया खाता बनाएं' : 'Create Account'}
+            </h2>
+            <p className="text-xs text-stone-500">
+              {lang === 'hi'
+                ? 'एक खाता सभी सेवाओं के लिए — बाद में आप दर्जी (Tailor) के रूप में आवेदन कर सकते हैं'
+                : 'One account for everyone — Later apply to become a tailor from your dashboard'}
+            </p>
           </div>
 
-          {/* ROLE SELECTOR CARDS */}
-          <div className="grid grid-cols-2 gap-3">
-            <div
-              onClick={() => setRegisterRole('customer')}
-              className={`p-4 rounded-2xl border-2 transition cursor-pointer text-center space-y-2 ${
-                registerRole === 'customer'
-                  ? 'border-[#E91E63] bg-pink-50/60 shadow-md'
-                  : 'border-stone-200 hover:border-stone-300 bg-stone-50/50'
-              }`}
-            >
-              <div className="w-10 h-10 rounded-xl bg-pink-100 text-[#E91E63] flex items-center justify-center mx-auto text-xl">
-                👤
-              </div>
-              <div>
-                <h4 className="font-black text-xs text-[#2A1B3D]">ग्राहक (Customer)</h4>
-                <p className="text-[10px] text-stone-500 font-medium">कपड़े सिलवाने के लिए</p>
-              </div>
-            </div>
-
-            <div
-              onClick={() => setRegisterRole('tailor')}
-              className={`p-4 rounded-2xl border-2 transition cursor-pointer text-center space-y-2 ${
-                registerRole === 'tailor'
-                  ? 'border-[#E91E63] bg-pink-50/60 shadow-md'
-                  : 'border-stone-200 hover:border-stone-300 bg-stone-50/50'
-              }`}
-            >
-              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center mx-auto text-xl">
-                👩🧵
-              </div>
-              <div>
-                <h4 className="font-black text-xs text-[#2A1B3D]">दर्जी बहन (Tailor)</h4>
-                <p className="text-[10px] text-stone-500 font-medium">घर बैठे सिलाई कमाई के लिए</p>
-              </div>
-            </div>
-          </div>
-
-          {customerRegSuccess && (
+          {regSuccess && (
             <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 text-xs font-bold text-emerald-900 flex items-center gap-2 animate-bounce">
               <CheckCircle className="w-5 h-5 text-emerald-600" />
-              <span>खाता सफलतापूर्वक बन गया! डैशबोर्ड पर रिडायरेक्ट हो रहे हैं...</span>
+              <span>खाता सफलतापूर्वक बन गया! ग्राहक डैशबोर्ड पर रिडायरेक्ट हो रहे हैं...</span>
             </div>
           )}
 
-          {/* CUSTOMER REGISTRATION FORM */}
-          {registerRole === 'customer' && (
-            <form onSubmit={handleRegisterCustomer} className="space-y-4 text-xs font-bold">
+          <form onSubmit={handleRegister} className="space-y-4 text-xs font-bold">
+            <div>
+              <label htmlFor="regName" className="block text-stone-700 mb-1">
+                {lang === 'hi' ? 'आपका पूरा नाम (Full Name)' : 'Full Name'}
+              </label>
+              <input
+                id="regName"
+                name="regName"
+                type="text"
+                placeholder="उदा. अरविंद कुमार / प्रिया सिंह"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3.5 text-sm text-[#2A1B3D]"
+                required
+              />
+            </div>
+
+            <div>
+              <label htmlFor="regPhoneOrEmail" className="block text-stone-700 mb-1">
+                {lang === 'hi' ? 'मोबाइल नंबर या ईमेल (Mobile OR Email)' : 'Mobile Number OR Email'}
+              </label>
+              <input
+                id="regPhoneOrEmail"
+                name="regPhoneOrEmail"
+                type="text"
+                placeholder="उदा. 9812345678 या user@gmail.com"
+                value={phoneOrEmail}
+                onChange={e => setPhoneOrEmail(e.target.value)}
+                className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3.5 text-sm text-[#2A1B3D]"
+                required
+              />
+            </div>
+
+            <div>
+              <label htmlFor="regPassword" className="block text-stone-700 mb-1">
+                {lang === 'hi' ? 'पासवर्ड (Password)' : 'Password'}
+              </label>
+              <input
+                id="regPassword"
+                name="regPassword"
+                type="password"
+                placeholder="******"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3.5 text-sm text-[#2A1B3D]"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
               <div>
-                <label htmlFor="regCustomerName" className="block text-stone-700 mb-1">आपका पूरा नाम (Full Name)</label>
+                <label htmlFor="regVillage" className="block text-stone-700 mb-1">
+                  {lang === 'hi' ? 'गाँव / क्षेत्र (Village)' : 'Village'}
+                </label>
                 <input
-                  id="regCustomerName"
-                  name="regCustomerName"
+                  id="regVillage"
+                  name="regVillage"
                   type="text"
-                  placeholder="उदा. प्रिया सिंह"
-                  value={name}
-                  onChange={e => setName(e.target.value)}
+                  value={village}
+                  onChange={e => setVillage(e.target.value)}
                   className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-sm text-[#2A1B3D]"
                   required
                 />
               </div>
 
               <div>
-                <label htmlFor="regCustomerPhone" className="block text-stone-700 mb-1">मोबाइल नंबर (Mobile Number)</label>
+                <label htmlFor="regDistrict" className="block text-stone-700 mb-1">
+                  {lang === 'hi' ? 'ज़िला (District)' : 'District'}
+                </label>
                 <input
-                  id="regCustomerPhone"
-                  name="regCustomerPhone"
-                  type="tel"
-                  value={phone}
-                  onChange={e => setPhone(e.target.value)}
-                  className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-sm text-[#2A1B3D]"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label htmlFor="regCustomerVillage" className="block text-stone-700 mb-1">गाँव / क्षेत्र (Village)</label>
-                  <input
-                    id="regCustomerVillage"
-                    name="regCustomerVillage"
-                    type="text"
-                    value={village}
-                    onChange={e => setVillage(e.target.value)}
-                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-sm text-[#2A1B3D]"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="regCustomerDistrict" className="block text-stone-700 mb-1">ज़िला (District)</label>
-                  <input
-                    id="regCustomerDistrict"
-                    name="regCustomerDistrict"
-                    type="text"
-                    value={district}
-                    onChange={e => setDistrict(e.target.value)}
-                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-sm text-[#2A1B3D]"
-                    required
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-4 bg-[#E91E63] hover:bg-[#D81B60] text-white font-black rounded-2xl shadow-lg shadow-pink-500/25 transition active:scale-95 text-xs flex items-center justify-center gap-2"
-              >
-                <span>ग्राहक खाता बनाएं (Register Customer)</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </form>
-          )}
-
-          {/* TAILOR REGISTRATION FORM (ADMIN VERIFICATION REQUIREMENT) */}
-          {registerRole === 'tailor' && (
-            <form onSubmit={handleRegisterTailor} className="space-y-3.5 text-xs font-bold">
-              {/* ADMIN VERIFICATION NOTICE */}
-              <div className="bg-amber-50 p-3.5 rounded-2xl border border-amber-200 text-amber-900 space-y-1">
-                <div className="flex items-center gap-1.5 font-black text-xs text-amber-800">
-                  <ShieldCheck className="w-4 h-4 text-amber-600" />
-                  <span>एडमिन सत्यापन आवश्यक (Admin Verification Policy)</span>
-                </div>
-                <p className="text-[11px] font-medium leading-relaxed text-amber-800">
-                  पंजीकरण के बाद आपकी प्रोफ़ाइल SakhiSilai एडमिन के पास सत्यापन के लिए जाएगी। स्वीकृति मिलते ही आपकी प्रोफ़ाइल ग्राहकों को दिखेगी।
-                </p>
-              </div>
-
-              <div>
-                <label htmlFor="regTailorName" className="block text-stone-700 mb-1">दर्जी बहन का नाम (Full Name)</label>
-                <input
-                  id="regTailorName"
-                  name="regTailorName"
+                  id="regDistrict"
+                  name="regDistrict"
                   type="text"
-                  placeholder="उदा. सुनिता देवी"
-                  value={name}
-                  onChange={e => setName(e.target.value)}
+                  value={district}
+                  onChange={e => setDistrict(e.target.value)}
                   className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-sm text-[#2A1B3D]"
                   required
                 />
               </div>
-
-              <div>
-                <label htmlFor="regTailorPhone" className="block text-stone-700 mb-1">मोबाइल नंबर (Mobile Phone)</label>
-                <input
-                  id="regTailorPhone"
-                  name="regTailorPhone"
-                  type="tel"
-                  value={phone}
-                  onChange={e => setPhone(e.target.value)}
-                  className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-sm text-[#2A1B3D]"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label htmlFor="regTailorVillage" className="block text-stone-700 mb-1">गाँव / मोहल्ला (Village)</label>
-                  <input
-                    id="regTailorVillage"
-                    name="regTailorVillage"
-                    type="text"
-                    value={village}
-                    onChange={e => setVillage(e.target.value)}
-                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-sm text-[#2A1B3D]"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="regTailorDistrict" className="block text-stone-700 mb-1">ज़िला (District)</label>
-                  <input
-                    id="regTailorDistrict"
-                    name="regTailorDistrict"
-                    type="text"
-                    value={district}
-                    onChange={e => setDistrict(e.target.value)}
-                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-sm text-[#2A1B3D]"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label htmlFor="regTailorExperience" className="block text-stone-700 mb-1">अनुभव (Experience - Years)</label>
-                  <input
-                    id="regTailorExperience"
-                    name="regTailorExperience"
-                    type="number"
-                    value={experience}
-                    onChange={e => setExperience(e.target.value)}
-                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-sm text-[#2A1B3D]"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="regTailorStartingPrice" className="block text-stone-700 mb-1">शुरुआती सिलाई दर (₹)</label>
-                  <input
-                    id="regTailorStartingPrice"
-                    name="regTailorStartingPrice"
-                    type="number"
-                    value={startingPrice}
-                    onChange={e => setStartingPrice(e.target.value)}
-                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-sm text-[#2A1B3D]"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="regTailorBio" className="block text-stone-700 mb-1">विशेषज्ञता एवं विवरण (About Skills)</label>
-                <textarea
-                  id="regTailorBio"
-                  name="regTailorBio"
-                  rows={2}
-                  value={bio}
-                  onChange={e => setBio(e.target.value)}
-                  className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-xs text-[#2A1B3D] font-medium"
-                ></textarea>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-4 bg-[#E91E63] hover:bg-[#D81B60] text-white font-black rounded-2xl shadow-lg shadow-pink-500/25 transition active:scale-95 text-xs flex items-center justify-center gap-2"
-              >
-                <UserCheck className="w-4 h-4" />
-                <span>दर्जी प्रोफ़ाइल जमा करें (Submit Tailor Profile)</span>
-              </button>
-            </form>
-          )}
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* 3. TAILOR PENDING ADMIN VERIFICATION SUCCESS SCREEN */}
-      {/* ========================================================================= */}
-      {tailorPendingSuccess && (
-        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-amber-200 shadow-xl space-y-6 text-center animate-fade-in">
-          <div className="w-16 h-16 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center mx-auto shadow-md">
-            <Clock className="w-8 h-8 animate-pulse" />
-          </div>
-
-          <div className="space-y-2">
-            <span className="bg-amber-100 text-amber-800 font-extrabold text-[10px] px-3 py-1 rounded-full uppercase tracking-wider">
-              सत्यापन लंबित (Pending Verification)
-            </span>
-            <h2 className="text-2xl font-black text-[#2A1B3D]">दर्जी पंजीकरण सफलतापूर्वक जमा हो गया!</h2>
-            <p className="text-xs text-stone-600 leading-relaxed max-w-md mx-auto">
-              आपकी प्रोफ़ाइल **SakhiSilai एडमिन (Admin Verification)** के पास पहुँच गई है। एडमिन द्वारा अनुमोदन (Approval) मिलते ही आपकी प्रोफ़ाइल आस-पास के ग्राहकों को दिखना शुरू हो जाएगी।
-            </p>
-          </div>
-
-          <div className="bg-stone-50 p-4 rounded-2xl border border-stone-200 text-left space-y-2 text-xs font-bold text-stone-700">
-            <h4 className="text-stone-900 font-black">प्रोफ़ाइल विवरण (Submitted Profile Summary):</h4>
-            <div className="flex justify-between border-b border-stone-200 pb-1">
-              <span>नाम:</span> <span>{name || 'Sunita Devi'}</span>
             </div>
-            <div className="flex justify-between border-b border-stone-200 pb-1">
-              <span>गाँव / स्थान:</span> <span>{village}, {district}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>सत्यापन स्थिति:</span> <span className="text-amber-600 font-extrabold">⏳ एडमिन जांच जारी</span>
-            </div>
-          </div>
 
-          {/* QUICK DEMO ACTION TO TEST ADMIN APPROVAL */}
-          <div className="pt-2 border-t border-stone-100 space-y-3">
-            <p className="text-[11px] font-bold text-stone-500">
-              डेमो टेस्ट के लिए: आप तुरंत एडमिन पैनल में जाकर इस प्रोफ़ाइल को स्वीकृत (Approve) कर सकते हैं।
-            </p>
             <button
-              onClick={() => {
-                loginAsAdmin();
-                setActiveTab('admin_dashboard');
-              }}
-              className="w-full py-3.5 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs rounded-2xl shadow transition flex items-center justify-center gap-2"
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full py-4 bg-[#E91E63] hover:bg-[#D81B60] text-white font-black rounded-2xl shadow-lg shadow-pink-500/25 transition active:scale-95 text-xs flex items-center justify-center gap-2"
             >
-              <ShieldCheck className="w-4 h-4" />
-              <span>एडमिन के रूप में लॉगिन करें व प्रोफ़ाइल स्वीकृत करें (Open Admin Console)</span>
+              <span>{lang === 'hi' ? 'खाता बनाएं (Register)' : 'Register Account'}</span>
+              <ArrowRight className="w-4 h-4" />
             </button>
+          </form>
+
+          <div className="text-center pt-2 border-t border-stone-100">
+            <p className="text-xs text-stone-500 font-medium">
+              {lang === 'hi' ? 'पहले से खाता है?' : 'Already have an account?'}{' '}
+              <button
+                type="button"
+                onClick={() => setAuthMode('login')}
+                className="text-[#E91E63] font-black underline hover:text-[#D81B60]"
+              >
+                {lang === 'hi' ? 'लॉगिन करें (Login)' : 'Login'}
+              </button>
+            </p>
           </div>
         </div>
       )}

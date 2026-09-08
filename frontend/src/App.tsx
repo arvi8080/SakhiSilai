@@ -133,7 +133,7 @@ const AppContent: React.FC = () => {
           {activeTab === 'auth' && (
             <AuthPages
               setActiveTab={handleNavigate}
-              initialMode="register_tailor"
+              initialMode="register"
             />
           )}
 
