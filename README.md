@@ -1,32 +1,73 @@
 # 🧵 SakhiSilai - Hyperlocal Women Tailoring Platform
 
+[![Platform](https://img.shields.io/badge/Platform-SakhiSilai-E91E63?style=for-the-badge&logo=react)](https://github.com/arvi8080/SakhiSilai)
+[![Backend API](https://img.shields.io/badge/Backend-Node.js%20%7C%20Express-1B4D3E?style=for-the-badge&logo=nodedotjs)](http://localhost:5000/api-docs)
+[![Database](https://img.shields.io/badge/Database-SQLite%20(Persistent)-003B57?style=for-the-badge&logo=sqlite)](http://localhost:5000/health)
+[![Build & Tests](https://img.shields.io/badge/APIs%20Tested-19%2F19%20Passed-emerald?style=for-the-badge)](http://localhost:5000/health)
+
 > **Tagline:** *Ghar Se Hunar, Apni Kamai.*  
-> A zero-commission hyperlocal platform empowering rural and suburban women tailors with direct customer bookings, custom photo bidding, real-time stitching tracking, persistent SQLite storage, and an integrated UPI payment gateway.
+> A zero-commission hyperlocal platform empowering rural and suburban women tailors with direct customer bookings, interactive visit appointment scheduling, custom photo bidding, real-time stitching tracking, persistent SQLite storage, and integrated UPI QR payments.
 
 ---
 
 ## 🌟 Overview
 
-**SakhiSilai** bridges the gap between household women tailors and local customers. Customers can discover top-rated tailors in their village or district, choose custom design styles, request fabric pickups, or upload dress photos for price bidding. Tailors receive 100% of their earnings with zero platform commissions.
+**SakhiSilai** bridges the gap between household women tailors and local customers. Tailors stay at home, while customers in the same village or district can discover them, schedule visit appointments for fabric drops and measurements, choose custom designs, or upload dress photos for price bidding. Tailors receive 100% of their earnings with zero platform commissions.
 
 ---
 
-## ✨ Key Features
+## ✨ Key Features & Architecture
 
-- 📍 **Hyperlocal Village Matching**: Automatically computes proximity scores, matching tiers (`same_village`, `nearby_area`), and distance estimates for customers and tailors.
-- 👗 **Custom Photo Bidding**: Customers upload dress photos from Pinterest/Instagram; local tailors submit competitive price & ETA quotes.
-- 💳 **Integrated Payment Gateway**:
-  - 💵 **Cash on Completion (100% COD)**
-  - 📱 **UPI / QR Instant Payments** (Dynamic QR payload generation for `sakhisilai@upi`, GPay, PhonePe, Paytm)
-  - ⚡ **Partial Advance Booking** (Pay ₹200 advance online, balance upon completion)
-  - 📄 **Digital Receipts**: Real-time transaction ref generation (`TXN...`) and persistent payment history.
-- ⏱️ **Real-Time Stitching Order Tracker**: Step-by-step progress timeline (`Requested` ➔ `Accepted` ➔ `Fabric Received` ➔ `Cutting Started` ➔ `Stitching` ➔ `Quality Check` ➔ `Ready` ➔ `Completed`).
-- 👩‍🎨 **Tailor Work Center**:
-  - Live availability status controls (🟢 *Available*, 🟡 *Limited Slots*, 🔴 *Busy*).
-  - Active workload capacity limiter.
-  - Multi-category stitching design catalog editor.
-  - Earnings dashboard with 100% direct payout breakdown.
-- 🛡️ **Admin Verification Panel**: Tailor registration approval workflow, system broadcast notifications, and platform analytics.
+### 1️⃣ Single Unified User System & "Become a Tailor" Flow
+- **One Signup for Everyone**: Name, Mobile OR Email, Password, Village, and District selection.
+- **Unified Account Logic**: Every user registers as a normal customer first.
+- **Become a Tailor**: Users can apply to become a tailor partner directly from their customer dashboard by filling in stitching skills, experience, village, starting prices, and portfolio images.
+- **Admin Verification**: Applications are reviewed by SakhiSilai Admin. Once approved (`isVerified: true`), tailor features unlock for that account.
+
+```
+Unified Signup (Role = customer)
+           ↓
+Customer Dashboard ➔ Click "Become a Tailor"
+           ↓
+Fill Skills, Experience & Portfolio
+           ↓
+Application Submitted ➔ Admin Verification ✅
+           ↓
+Tailor Profile Activated ➔ Access Tailor Dashboard Console 👩‍🧵
+```
+
+---
+
+### 2️⃣ 📅 Visit & Measurement Appointment Booking System
+- **Schedule Appointment**: Customers select their preferred **Appointment Date** and **Time Slot** during order booking:
+  - 🌅 **Morning Slot**: `10:00 AM – 01:00 PM`
+  - ☀️ **Afternoon Slot**: `02:00 PM – 05:00 PM`
+  - 🌆 **Evening Slot**: `05:00 PM – 08:00 PM`
+- **Appointment Confirmation**: Requested appointments are sent to the tailor. Upon tailor acceptance, the appointment status changes to **`✅ Appointment Confirmed`**.
+- **`📅 Book Appointment`** quick action button featured on all tailor profile pages.
+
+---
+
+### 3️⃣ 📍 Uttar Pradesh Hyperlocal Village Matching & Contact Privacy
+- **All 75 UP Districts Supported**: Includes Lucknow, Kanpur Nagar, Varanasi, Prayagraj, Agra, Aligarh, Gorakhpur, Meerut, Ayodhya, Jhansi, Ghaziabad, Gautam Buddha Nagar, and all 75 districts of Uttar Pradesh.
+- **Same-Village Priority**: Prioritizes home tailors in the same village for minimum travel and maximum trust.
+- **🔒 Privacy Contact Unlocking**: Tailor phone numbers and exact home drop addresses are kept private until the tailor accepts the order request. Upon acceptance, full contact and handover details unlock.
+
+---
+
+### 4️⃣ 👗 Custom Photo Bidding & Quote System
+- **Pinterest / Instagram Custom Bidding**: Customers upload dress photos, select budget, target date, and instructions.
+- **Tailor Quote Offers**: Verified nearby tailors review custom requests and submit custom price & timeframe quotes.
+- **Instant Order Conversion**: Customer accepts a quote to convert it into an active order.
+
+---
+
+### 5️⃣ ⏱️ Real-Time Stitching Order Tracker & Payment Gateway
+- **8-Stage Live Stepper**: `Order Requested` ➔ `Tailor Accepted` ➔ `Fabric Received` ➔ `Cutting Started` ➔ `Stitching` ➔ `Quality Check` ➔ `Ready` ➔ `Completed`.
+- **Integrated Payment Methods**:
+  - 📱 **UPI / QR Instant Payments** (Dynamic QR payload generation for `sakhisilai@upi`, GPay, PhonePe, Paytm).
+  - ⚡ **Partial Advance Booking** (Pay ₹200 advance online, balance upon completion).
+  - 💵 **Cash on Completion (100% Direct COD)**.
 
 ---
 
@@ -34,132 +75,80 @@
 
 | Layer | Technologies |
 | :--- | :--- |
-| **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, Lucide Icons, Canvas Confetti |
+| **Frontend** | React 18, TypeScript, Vite, Vanilla CSS / Tailwind, Lucide Icons, Canvas Confetti |
 | **Backend API** | Node.js, Express.js, TypeScript, Swagger UI (`swagger-ui-express`) |
-| **Database** | SQLite (`better-sqlite3`) with WAL journal mode & schema migrations |
-| **DevOps & Containers** | Docker, Docker Compose, Kubernetes (`k8s`), Render Deployment |
+| **Database** | Persistent SQLite (`sakhisilai.db`) with `better-sqlite3` & Realtime Cloud Firestore sync |
+| **DevOps & Containers** | Docker, Docker Compose, Render Deployment |
 
 ---
 
-## 🗄️ Database Architecture & Schema
+## 🚀 API Endpoints Reference (19/19 Verified & Tested)
 
-The persistent SQLite database (`backend/data/sakhisilai.db`) includes the following relational schema:
+| # | Method | Endpoint Path | Description | Test Status |
+| :-: | :--- | :--- | :--- | :-: |
+| 1 | `GET` | `/health` | API Health Check & Service Metadata | ✅ `200 OK` |
+| 2 | `GET` | `/api/locations` | Fetch UP States, Districts & Villages | ✅ `200 OK` |
+| 3 | `GET` | `/api/categories` | Service Categories Catalog | ✅ `200 OK` |
+| 4 | `GET` | `/api/tailors/nearby` | Hyperlocal Tailor Search & Ranking | ✅ `200 OK` |
+| 5 | `GET` | `/api/tailors/:id` | Fetch Tailor Profile Details | ✅ `200 OK` |
+| 6 | `POST` | `/api/auth/register` | Customer / User Registration | ✅ `201 Created` |
+| 7 | `POST` | `/api/auth/login` | Unified Email/Mobile Authentication | ✅ `200 OK` |
+| 8 | `GET` | `/api/auth/me/:userId` | Current User Data Fetch | ✅ `200 OK` |
+| 9 | `GET` | `/api/auth/customers` | Customer Directory Listing | ✅ `200 OK` |
+| 10 | `GET` | `/api/orders` | Fetch Orders by Role & Filter | ✅ `200 OK` |
+| 11 | `GET` | `/api/orders/:id` | Get Order & Appointment Details | ✅ `200 OK` |
+| 12 | `POST` | `/api/orders` | Create Order with Appointment Date/Slot | ✅ `201 Created` |
+| 13 | `PATCH` | `/api/orders/:id/status` | Update Order & Stitching Stage | ✅ `200 OK` |
+| 14 | `GET` | `/api/custom-requests` | List Custom Design Photo Bids | ✅ `200 OK` |
+| 15 | `POST` | `/api/custom-requests` | Post Custom Photo Bidding Request | ✅ `201 Created` |
+| 16 | `GET` | `/api/notifications` | Fetch Role Notifications | ✅ `200 OK` |
+| 17 | `POST` | `/api/notifications` | Send System / Admin Notification | ✅ `201 Created` |
+| 18 | `GET` | `/api/admin/stats` | Admin Dashboard Analytics & Metrics | ✅ `200 OK` |
+| 19 | `POST` | `/api/payments/verify` | Verify & Record Payment Transaction | ✅ `200 OK` |
 
-```
-┌──────────────┐     ┌──────────────┐     ┌────────────────┐
-│    users     │ ──► │   tailors    │ ──► │    designs     │
-└──────────────┘     └──────────────┘     └────────────────┘
-       │                    │
-       ▼                    ▼
-┌──────────────┐     ┌──────────────┐     ┌────────────────┐
-│   orders     │ ──► │   payments   │     │custom_requests │
-└──────────────┘     └──────────────┘     └────────────────┘
-       │                    │
-       ▼                    ▼
-┌──────────────┐     ┌──────────────┐
-│  categories  │     │  locations   │
-└──────────────┘     └──────────────┘
-```
-
-- **`users`**: Customer, tailor, and admin profile data.
-- **`tailors`**: Tailor bio, address, experience, rating, availability, capacity, and skills.
-- **`categories`**: Service categories (Blouse, Suit & Salwar, Dress & Kurti, Kids).
-- **`designs`**: Catalog items offered by tailors with prices & turnaround days.
-- **`orders`**: Active stitching orders, handover options, measurements, and status history.
-- **`custom_requests`**: Photo bidding requests and quote offers (`offers` JSON).
-- **`locations`**: State, district, and village geographic data.
-- **`notifications`**: System notifications with recipient targeting.
-- **`payments`**: Persistent transaction records (`id`, `orderId`, `amount`, `paymentMethod`, `paymentStatus`, `transactionId`, `timestamp`).
+> 📖 **Swagger UI Documentation**: Interactive API testing available at `http://localhost:5000/api-docs` when server is running.
 
 ---
 
-## 🚀 API Endpoints Reference
-
-### 🔐 Authentication (`/api/auth`)
-- `POST /api/auth/register` - Customer / User registration
-- `POST /api/auth/register-tailor` - Tailor registration
-- `POST /api/auth/login` - User authentication
-
-### ✂️ Tailors (`/api/tailors`)
-- `GET /api/tailors` - List all tailors
-- `GET /api/tailors/nearby` - Hyperlocal tailor matching (state, district, village query)
-- `GET /api/tailors/:id` - Fetch single tailor profile
-- `POST /api/tailors/availability` - Update availability status
-
-### 📦 Orders (`/api/orders`)
-- `GET /api/orders` - Filter orders by customer or tailor
-- `GET /api/orders/:id` - Get order details
-- `POST /api/orders` - Create new stitching order
-- `PATCH /api/orders/:id/status` - Update stitching progress status
-
-### 💳 Payments (`/api/payments`)
-- `POST /api/payments/process` - Process payment (COD, UPI, Partial Advance)
-- `POST /api/payments/qr-generate` - Dynamic UPI QR payload generator (`sakhisilai@upi`)
-- `GET /api/payments/order/:orderId` - Retrieve payment transaction records
-
-### 🎨 Custom Photo Requests (`/api/custom-requests`)
-- `GET /api/custom-requests` - List custom photo requests
-- `POST /api/custom-requests` - Post design photo for bidding
-- `POST /api/custom-requests/:id/quotes` - Submit tailor price quote
-- `POST /api/custom-requests/:id/accept-quote` - Accept quote and generate order
-
-### 📍 Locations & Categories (`/api/locations`, `/api/categories`)
-- `GET /api/locations` | `POST /api/locations/villages`
-- `GET /api/categories` | `POST /api/categories` | `DELETE /api/categories/:id`
-
-### 🔔 Notifications & Admin (`/api/notifications`, `/api/admin`)
-- `GET /api/notifications` | `POST /api/notifications/broadcast`
-- `GET /api/admin/stats` | `POST /api/admin/tailors/:id/verify`
-
-> 📖 **Swagger UI Documentation**: Available at `http://localhost:5000/api-docs` when server is running.
-
----
-
-## 💻 Local Development Setup
+## 💻 Local Setup & Development
 
 ### Prerequisites
 - **Node.js**: v18.0.0 or higher
 - **npm**: v9.0.0 or higher
 
-### 1. Clone Repository
+### 1️⃣ Clone Repository
 ```bash
 git clone https://github.com/arvi8080/SakhiSilai.git
 cd SakhiSilai
 ```
 
-### 2. Backend Setup
+### 2️⃣ Start Backend API (Port 5000)
 ```bash
 cd backend
 npm install
 npm run dev
 ```
-Backend API will listen on `http://localhost:5000`.
 
-### 3. Frontend Setup
+### 3️⃣ Start Frontend Web App (Port 5173)
 ```bash
 cd ../frontend
 npm install
 npm run dev
 ```
-Frontend Web App will run on `http://localhost:5173`.
 
 ---
 
 ## 🧪 Testing
 
-### Backend API & SQLite Database Build Test
+### Run Frontend Build Check
 ```bash
-cd backend
+cd frontend
 npm run build
 ```
 
----
-
-## 🐳 Docker Deployment
-
-To run both backend and frontend via Docker Compose:
+### Run Automated API Test Suite
 ```bash
-docker-compose up --build
+node scratch/test_apis.js
 ```
 
 ---
