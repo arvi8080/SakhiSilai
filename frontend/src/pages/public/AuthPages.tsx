@@ -23,10 +23,9 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
   const { registerTailor, selectedState, selectedDistrict, selectedVillage } = useData();
   const {
     setRole,
-    updateUserProfile,
+    loginWithCredentials,
     loginAsAdmin,
-    loginAsCustomer,
-    loginAsTailor,
+    updateUserProfile,
     pendingRedirectTab,
     setPendingRedirectTab,
     redirectNotice,
@@ -67,46 +66,27 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
   // Status screens
   const [tailorPendingSuccess, setTailorPendingSuccess] = useState(false);
   const [customerRegSuccess, setCustomerRegSuccess] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  // LOGIN ROLE SELECTOR STATE
-  const [loginRole, setLoginRole] = useState<'auto' | 'customer' | 'tailor' | 'admin'>('auto');
-
-  // LOGIN SUBMIT HANDLER - SINGLE LOGIN PAGE WITH AUTOMATIC REDIRECT
-  const handleLogin = (e: React.FormEvent) => {
+  // SINGLE UNIFIED LOGIN SUBMIT HANDLER FOR ALL ROLES
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanPhone = phone.trim().toLowerCase();
-    const cleanPass = password.trim().toLowerCase();
+    setLoginError(null);
+    setIsLoggingIn(true);
 
-    // 1. ADMIN REDIRECT CHECK
-    if (
-      loginRole === 'admin' ||
-      cleanPhone === '9999900000' ||
-      cleanPhone.includes('admin') ||
-      cleanPass === 'admin' ||
-      cleanPass === 'admin123'
-    ) {
-      loginAsAdmin();
-      completeAuthRedirect('dashboard');
-      return;
+    try {
+      const result = await loginWithCredentials(phone, password);
+      if (result.success) {
+        completeAuthRedirect('dashboard');
+      } else {
+        setLoginError(result.message || (lang === 'hi' ? 'गलत ईमेल/फोन नंबर या पासवर्ड।' : 'Invalid email or password.'));
+      }
+    } catch (err) {
+      setLoginError(lang === 'hi' ? 'गलत ईमेल/फोन नंबर या पासवर्ड।' : 'Invalid email or password.');
+    } finally {
+      setIsLoggingIn(false);
     }
-
-    // 2. TAILOR REDIRECT CHECK
-    if (
-      loginRole === 'tailor' ||
-      cleanPhone === '9876543210' ||
-      cleanPhone.includes('tailor')
-    ) {
-      loginAsTailor();
-      completeAuthRedirect('dashboard');
-      return;
-    }
-
-    // 3. CUSTOMER REDIRECT CHECK (DEFAULT)
-    if (cleanPhone) {
-      updateUserProfile({ phone: cleanPhone });
-    }
-    loginAsCustomer();
-    completeAuthRedirect();
   };
 
   // REGISTER CUSTOMER SUBMIT
@@ -230,85 +210,38 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
             </h2>
             <p className="text-xs text-stone-500">
               {lang === 'hi'
-                ? 'सिंगल लॉगिन पोर्टल — ग्राहक, टेलर या एडमिन के रूप में प्रवेश करें'
-                : 'Single login portal — Sign in as Customer, Tailor, or Admin'}
+                ? 'ईमेल / फोन नंबर और पासवर्ड दर्ज करें — भूमिका (Role) का पता अपने आप चल जाएगा'
+                : 'Enter your Email / Phone & Password — System detects your role automatically'}
             </p>
           </div>
 
-          {/* LOGIN ROLE TARGET SELECTION */}
-          <div className="space-y-1.5">
-            <label className="block text-[11px] font-extrabold text-stone-600">लॉगिन प्रकार चुनिए (Target Account Role):</label>
-            <div className="grid grid-cols-3 gap-2 text-center text-xs font-bold">
-              <button
-                type="button"
-                onClick={() => {
-                  setLoginRole('customer');
-                  setPhone('9812345678');
-                  setPassword('123456');
-                }}
-                className={`py-2 px-1 rounded-xl border transition flex flex-col items-center gap-1 ${
-                  loginRole === 'customer'
-                    ? 'border-[#E91E63] bg-pink-50 text-[#E91E63] font-black'
-                    : 'border-stone-200 text-stone-600 hover:bg-stone-50'
-                }`}
-              >
-                <span className="text-base">👤</span>
-                <span>ग्राहक (User)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setLoginRole('tailor');
-                  setPhone('9876543210');
-                  setPassword('123456');
-                }}
-                className={`py-2 px-1 rounded-xl border transition flex flex-col items-center gap-1 ${
-                  loginRole === 'tailor'
-                    ? 'border-[#E91E63] bg-pink-50 text-[#E91E63] font-black'
-                    : 'border-stone-200 text-stone-600 hover:bg-stone-50'
-                }`}
-              >
-                <span className="text-base">👩🧵</span>
-                <span>टेलर (Tailor)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setLoginRole('admin');
-                  setPhone('9999900000');
-                  setPassword('admin');
-                }}
-                className={`py-2 px-1 rounded-xl border transition flex flex-col items-center gap-1 ${
-                  loginRole === 'admin'
-                    ? 'border-amber-500 bg-amber-50 text-amber-900 font-black'
-                    : 'border-stone-200 text-stone-600 hover:bg-stone-50'
-                }`}
-              >
-                <span className="text-base">🛡️</span>
-                <span>एडमिन (Admin)</span>
-              </button>
+          {loginError && (
+            <div className="bg-red-50 p-4 rounded-2xl border border-red-200 text-xs font-bold text-red-700 text-center animate-shake">
+              ❌ {loginError}
             </div>
-          </div>
+          )}
 
           <form onSubmit={handleLogin} className="space-y-4 text-xs font-bold">
             <div>
-              <label htmlFor="loginPhone" className="block text-stone-700 mb-1.5">मोबाइल नंबर (Mobile Number / User ID)</label>
+              <label htmlFor="loginPhone" className="block text-stone-700 mb-1.5">
+                {lang === 'hi' ? 'ईमेल या मोबाइल नंबर (Email / Phone)' : 'Email / Mobile Phone'}
+              </label>
               <input
                 id="loginPhone"
                 name="loginPhone"
                 type="text"
                 value={phone}
                 onChange={e => setPhone(e.target.value)}
-                placeholder="उदा. 9812345678 या admin"
+                placeholder={lang === 'hi' ? 'ईमेल या मोबाइल नंबर दर्ज करें' : 'Enter email or phone number'}
                 className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3.5 text-sm text-[#2A1B3D] focus:ring-2 focus:ring-[#E91E63] focus:outline-none"
                 required
               />
             </div>
 
             <div>
-              <label htmlFor="loginPassword" className="block text-stone-700 mb-1.5">पासवर्ड (Password)</label>
+              <label htmlFor="loginPassword" className="block text-stone-700 mb-1.5">
+                {lang === 'hi' ? 'पासवर्ड (Password)' : 'Password'}
+              </label>
               <div className="relative">
                 <input
                   id="loginPassword"
@@ -326,50 +259,25 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
 
             <button
               type="submit"
+              disabled={isLoggingIn}
               className="w-full py-4 bg-[#E91E63] hover:bg-[#D81B60] text-white font-black rounded-2xl shadow-lg shadow-pink-500/25 transition active:scale-95 text-xs flex items-center justify-center gap-2"
             >
-              <span>लॉगिन करें और आगे बढ़ें (Sign In)</span>
+              <span>{isLoggingIn ? (lang === 'hi' ? 'सत्यापित हो रहा है...' : 'Verifying...') : (lang === 'hi' ? 'लॉगिन करें (Login)' : 'Login')}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
 
-          {/* 1-CLICK QUICK DEMO LOGIN BUTTONS */}
-          <div className="pt-3 border-t border-stone-100 space-y-2">
-            <span className="text-[10px] font-extrabold text-stone-400 block text-center uppercase tracking-wider">
-              क्विक 1-क्लिक टेस्ट (Quick Demo Access):
-            </span>
-            <div className="grid grid-cols-3 gap-2">
+          <div className="text-center pt-2 border-t border-stone-100">
+            <p className="text-xs text-stone-500 font-medium">
+              {lang === 'hi' ? 'खाता नहीं है?' : "Don't have an account?"}{' '}
               <button
                 type="button"
-                onClick={() => {
-                  loginAsCustomer();
-                  completeAuthRedirect();
-                }}
-                className="py-2.5 px-2 bg-pink-50 hover:bg-pink-100 text-[#E91E63] font-black text-[11px] rounded-xl border border-pink-200 transition text-center"
+                onClick={() => setAuthMode('register')}
+                className="text-[#E91E63] font-black underline hover:text-[#D81B60]"
               >
-                👤 Customer
+                {lang === 'hi' ? 'पंजीकरण करें (Register)' : 'Register'}
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  loginAsTailor();
-                  completeAuthRedirect();
-                }}
-                className="py-2.5 px-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-black text-[11px] rounded-xl border border-emerald-200 transition text-center"
-              >
-                👩🧵 Tailor
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  loginAsAdmin();
-                  completeAuthRedirect('dashboard');
-                }}
-                className="py-2.5 px-2 bg-amber-50 hover:bg-amber-100 text-amber-900 font-black text-[11px] rounded-xl border border-amber-200 transition text-center"
-              >
-                🛡️ Admin
-              </button>
-            </div>
+            </p>
           </div>
         </div>
       )}

@@ -198,11 +198,60 @@ const AppContent: React.FC = () => {
               )}
             </>
           )}
+
+          {activeTab === 'admin_dashboard' && (
+            currentRole === 'admin' ? (
+              <AdminDashboardPage setActiveTab={handleNavigate} />
+            ) : (
+              <AccessDeniedBanner targetRole="Admin" currentRole={currentRole} setActiveTab={handleNavigate} />
+            )
+          )}
+
+          {activeTab === 'tailor_dashboard' && (
+            currentRole === 'tailor' ? (
+              <TailorDashboardPage setActiveTab={handleNavigate} />
+            ) : (
+              <AccessDeniedBanner targetRole="Tailor" currentRole={currentRole} setActiveTab={handleNavigate} />
+            )
+          )}
+
+          {activeTab === 'customer_dashboard' && (
+            currentRole === 'customer' ? (
+              <CustomerDashboardPage setActiveTab={handleNavigate} onTrackOrder={handleTrackOrder} />
+            ) : (
+              <AccessDeniedBanner targetRole="Customer" currentRole={currentRole} setActiveTab={handleNavigate} />
+            )
+          )}
         </main>
       </div>
 
       {/* Global Footer */}
       <Footer />
+    </div>
+  );
+};
+
+const AccessDeniedBanner: React.FC<{ targetRole: string; currentRole: string; setActiveTab: (tab: string) => void }> = ({ targetRole, currentRole, setActiveTab }) => {
+  return (
+    <div className="max-w-md mx-auto my-12 p-8 bg-white rounded-3xl border border-red-200 shadow-2xl text-center space-y-4 animate-fade-in">
+      <div className="w-16 h-16 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto text-3xl shadow-sm">
+        🚫
+      </div>
+      <div className="space-y-1">
+        <span className="bg-red-100 text-red-700 font-extrabold text-[10px] px-3 py-1 rounded-full uppercase tracking-wider">
+          Access Denied (अभिगम अस्वीकृत)
+        </span>
+        <h2 className="text-xl font-black text-stone-900">Permission Restricted</h2>
+        <p className="text-xs text-stone-600 leading-relaxed">
+          You are currently signed in as <strong>{currentRole.toUpperCase()}</strong>. You do not have permission to access {targetRole.toUpperCase()} features.
+        </p>
+      </div>
+      <button
+        onClick={() => setActiveTab('dashboard')}
+        className="w-full py-3.5 bg-[#E91E63] hover:bg-[#D81B60] text-white font-black text-xs rounded-2xl shadow-md transition active:scale-95"
+      >
+        Go to My Workspace
+      </button>
     </div>
   );
 };

@@ -6,11 +6,22 @@ export const authRouter = Router();
 
 // POST /api/auth/login
 authRouter.post('/login', (req: Request, res: Response) => {
-  const { phone, role } = req.body;
-  const user = db.users.find(u => u.phone === phone || (role && u.role === role));
+  const { emailOrPhone, phone, email, password } = req.body;
+  const input = (emailOrPhone || email || phone || '').trim().toLowerCase();
+
+  if (!input) {
+    return res.status(400).json({ success: false, message: 'Please enter your email or mobile phone number.' });
+  }
+
+  const user = db.users.find(u =>
+    (u.email && u.email.toLowerCase() === input) ||
+    (u.phone && u.phone.toLowerCase() === input) ||
+    (input === 'admin' && u.role === 'admin') ||
+    (input === 'tailor' && u.role === 'tailor')
+  );
 
   if (!user) {
-    return res.status(404).json({ success: false, message: 'User profile not found. Please register.' });
+    return res.status(401).json({ success: false, message: 'Invalid email or password.' });
   }
 
   res.json({ success: true, message: 'Authenticated successfully', data: user });

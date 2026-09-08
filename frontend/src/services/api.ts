@@ -172,12 +172,12 @@ export async function fetchAdminStats() {
 }
 
 // Auth API
-export async function loginUserApi(phone: string, role: string) {
+export async function loginUserApi(emailOrPhone: string, password?: string) {
   try {
     const res = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone, role })
+      body: JSON.stringify({ emailOrPhone, password })
     });
     return await res.json();
   } catch (err) {
