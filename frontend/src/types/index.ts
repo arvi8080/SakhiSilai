@@ -16,6 +16,7 @@ export interface User {
   avatar?: string;
   createdAt: string;
   isVerified?: boolean;
+  isBlocked?: boolean;
 }
 
 export interface TailorProfile {
@@ -229,4 +230,21 @@ export interface PaymentRecord {
   timestamp: string;
   receiptUrl?: string;
 }
+
+export interface Complaint {
+  id: string;
+  orderId?: string;
+  orderNumber?: string;
+  complainantName: string;
+  complainantRole: 'customer' | 'tailor';
+  complainantPhone: string;
+  againstName: string;
+  category: 'delay' | 'fabric' | 'stitching' | 'payment' | 'cancellation';
+  subject: string;
+  description: string;
+  status: 'open' | 'investigating' | 'resolved';
+  createdAt: string;
+  resolutionNote?: string;
+}
+
 

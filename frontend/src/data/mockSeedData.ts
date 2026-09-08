@@ -1,4 +1,5 @@
 import type {
+  User,
   TailorProfile,
   ServiceCategory,
   DesignCatalogItem,
@@ -6,7 +7,8 @@ import type {
   CustomDesignRequest,
   StateLocation,
   Review,
-  SystemNotification
+  SystemNotification,
+  Complaint
 } from '../types';
 
 export const INITIAL_LOCATIONS: StateLocation[] = [
@@ -496,3 +498,90 @@ export const INITIAL_NOTIFICATIONS: SystemNotification[] = [
     type: 'order'
   }
 ];
+
+export const INITIAL_CUSTOMERS: User[] = [
+  {
+    id: 'u_pria',
+    name: 'Priya Singh',
+    phone: '9812345678',
+    email: 'priya.singh@gmail.com',
+    role: 'customer',
+    village: 'Mohanlalganj',
+    district: 'Lucknow',
+    state: 'Uttar Pradesh',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
+    createdAt: '2025-02-10',
+    isBlocked: false
+  },
+  {
+    id: 'u_kavita',
+    name: 'Kavita Mishra',
+    phone: '9823456789',
+    email: 'kavita.mishra@gmail.com',
+    role: 'customer',
+    village: 'Mohanlalganj',
+    district: 'Lucknow',
+    state: 'Uttar Pradesh',
+    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&auto=format&fit=crop&q=80',
+    createdAt: '2025-03-01',
+    isBlocked: false
+  },
+  {
+    id: 'u_arvind',
+    name: 'Arvind Kumar',
+    phone: '9834567890',
+    email: 'user@gmail.com',
+    role: 'customer',
+    village: 'Bakshi Ka Talab',
+    district: 'Lucknow',
+    state: 'Uttar Pradesh',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80',
+    createdAt: '2025-03-15',
+    isBlocked: false
+  },
+  {
+    id: 'u_sunita_user',
+    name: 'Sunita Devi',
+    phone: '9876543210',
+    email: 'sunita@gmail.com',
+    role: 'tailor',
+    village: 'Mohanlalganj',
+    district: 'Lucknow',
+    state: 'Uttar Pradesh',
+    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&auto=format&fit=crop&q=80',
+    createdAt: '2025-01-15',
+    isBlocked: false
+  }
+];
+
+export const INITIAL_COMPLAINTS: Complaint[] = [
+  {
+    id: 'cmp_101',
+    orderId: 'ord_101',
+    orderNumber: 'SK-2026-001',
+    complainantName: 'Priya Singh',
+    complainantRole: 'customer',
+    complainantPhone: '9812345678',
+    againstName: 'Sunita Devi',
+    category: 'stitching',
+    subject: 'Minor sleeve fitting query',
+    description: 'Requested extra sleeve piping margin. Want to verify if stitching will include latkan dori as discussed.',
+    status: 'open',
+    createdAt: '2026-09-07T11:00:00Z'
+  },
+  {
+    id: 'cmp_102',
+    orderId: 'ord_098',
+    orderNumber: 'SK-2026-098',
+    complainantName: 'Radha Sharma',
+    complainantRole: 'tailor',
+    complainantPhone: '9876543211',
+    againstName: 'Kavita Mishra',
+    category: 'fabric',
+    subject: 'Delay in fabric handover',
+    description: 'Customer scheduled fabric drop on Tuesday but hasn’t dropped cloth yet.',
+    status: 'investigating',
+    createdAt: '2026-09-06T09:30:00Z'
+  }
+];
+

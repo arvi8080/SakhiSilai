@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type {
+  User,
   TailorProfile,
   ServiceCategory,
   DesignCatalogItem,
@@ -11,7 +12,8 @@ import type {
   SystemNotification,
   MeasurementProfile,
   TailorAvailability,
-  QuoteOffer
+  QuoteOffer,
+  Complaint
 } from '../types';
 import {
   INITIAL_LOCATIONS,
@@ -21,7 +23,9 @@ import {
   INITIAL_ORDERS,
   INITIAL_CUSTOM_REQUESTS,
   INITIAL_REVIEWS,
-  INITIAL_NOTIFICATIONS
+  INITIAL_NOTIFICATIONS,
+  INITIAL_CUSTOMERS,
+  INITIAL_COMPLAINTS
 } from '../data/mockSeedData';
 import { firestore, isFirebaseConfigured } from '../config/firebase';
 import {
@@ -61,6 +65,8 @@ interface DataContextType {
   reviews: Review[];
   notifications: SystemNotification[];
   measurements: MeasurementProfile[];
+  customers: User[];
+  complaints: Complaint[];
 
   // User location filter selection
   selectedState: string;
@@ -96,8 +102,13 @@ interface DataContextType {
 
   saveMeasurement: (m: Omit<MeasurementProfile, 'id'>) => void;
   addReview: (orderId: string, rating: number, comment: string) => void;
+  deleteReview: (reviewId: string) => void;
   sendNotification: (n: Omit<SystemNotification, 'id' | 'timestamp' | 'isRead'>) => void;
   markNotificationRead: (id: string) => void;
+
+  // Admin Actions
+  toggleBlockUser: (userId: string) => void;
+  resolveComplaint: (complaintId: string, status: 'investigating' | 'resolved', note?: string) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -163,6 +174,16 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ];
   });
 
+  const [customers, setCustomers] = useState<User[]>(() => {
+    const s = localStorage.getItem('sakhisilai_customers');
+    return s ? JSON.parse(s) : INITIAL_CUSTOMERS;
+  });
+
+  const [complaints, setComplaints] = useState<Complaint[]>(() => {
+    const s = localStorage.getItem('sakhisilai_complaints');
+    return s ? JSON.parse(s) : INITIAL_COMPLAINTS;
+  });
+
   // User location state
   const [selectedState, setSelectedState] = useState<string>('Uttar Pradesh');
   const [selectedDistrict, setSelectedDistrict] = useState<string>('Lucknow');
@@ -172,6 +193,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => localStorage.setItem('sakhisilai_locations', JSON.stringify(locations)), [locations]);
   useEffect(() => localStorage.setItem('sakhisilai_categories', JSON.stringify(categories)), [categories]);
   useEffect(() => localStorage.setItem('sakhisilai_tailors', JSON.stringify(tailors)), [tailors]);
+  useEffect(() => localStorage.setItem('sakhisilai_customers', JSON.stringify(customers)), [customers]);
+  useEffect(() => localStorage.setItem('sakhisilai_complaints', JSON.stringify(complaints)), [complaints]);
   useEffect(() => localStorage.setItem('sakhisilai_designs', JSON.stringify(designs)), [designs]);
   useEffect(() => localStorage.setItem('sakhisilai_orders', JSON.stringify(orders)), [orders]);
   useEffect(() => localStorage.setItem('sakhisilai_custom_requests', JSON.stringify(customRequests)), [customRequests]);
@@ -683,6 +706,22 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setNotifications(prev => prev.map(n => (n.id === id ? { ...n, isRead: true } : n)));
   };
 
+  const deleteReview = (reviewId: string) => {
+    setReviews(prev => prev.filter(r => r.id !== reviewId));
+  };
+
+  const toggleBlockUser = (userId: string) => {
+    setCustomers(prev =>
+      prev.map(c => (c.id === userId ? { ...c, isBlocked: !c.isBlocked } : c))
+    );
+  };
+
+  const resolveComplaint = (complaintId: string, status: 'investigating' | 'resolved', note?: string) => {
+    setComplaints(prev =>
+      prev.map(cmp => (cmp.id === complaintId ? { ...cmp, status, resolutionNote: note } : cmp))
+    );
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -695,6 +734,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         reviews,
         notifications,
         measurements,
+        customers,
+        complaints,
 
         selectedState,
         selectedDistrict,
@@ -728,8 +769,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         saveMeasurement,
         addReview,
+        deleteReview,
         sendNotification,
-        markNotificationRead
+        markNotificationRead,
+
+        toggleBlockUser,
+        resolveComplaint
       }}
     >
       {children}
