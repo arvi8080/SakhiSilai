@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import { LanguageProvider } from './context/LanguageContext';
-import { RoleSwitcherBar } from './components/common/RoleSwitcherBar';
 import { Navbar } from './components/common/Navbar';
 import { Footer } from './components/common/Footer';
 
@@ -97,9 +96,6 @@ const AppContent: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#FAF7F2] text-stone-800 flex flex-col justify-between selection:bg-[#D9534F] selection:text-white">
       <div>
-        {/* Quick Role Switcher Bar for Demo */}
-        <RoleSwitcherBar />
-
         {/* Navigation Bar */}
         <Navbar activeTab={activeTab} setActiveTab={handleNavigate} />
 
