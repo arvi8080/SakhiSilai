@@ -9,6 +9,7 @@ import {
   LogIn,
   Lock
 } from 'lucide-react';
+import { UP_DISTRICTS } from '../../data/upDistricts';
 
 interface AuthPagesProps {
   setActiveTab: (tab: string) => void;
@@ -334,17 +335,22 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
 
               <div>
                 <label htmlFor="regDistrict" className="block text-stone-700 mb-1">
-                  {lang === 'hi' ? 'ज़िला (District)' : 'District'}
+                  {lang === 'hi' ? 'ज़िला (Uttar Pradesh District)' : 'District (Uttar Pradesh)'}
                 </label>
-                <input
+                <select
                   id="regDistrict"
                   name="regDistrict"
-                  type="text"
                   value={district}
                   onChange={e => setDistrict(e.target.value)}
-                  className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-sm text-[#2A1B3D]"
+                  className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-sm text-[#2A1B3D] font-bold focus:ring-2 focus:ring-[#E91E63] focus:outline-none"
                   required
-                />
+                >
+                  {UP_DISTRICTS.map(dist => (
+                    <option key={dist} value={dist}>
+                      {dist}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
