@@ -87,7 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Realtime Firebase Auth Listener
   useEffect(() => {
-    if (!isFirebaseConfigured) return;
+    if (!isFirebaseConfigured || !auth) return;
 
     const unsubscribe = onAuthStateChanged(auth, fbUser => {
       if (fbUser) {
