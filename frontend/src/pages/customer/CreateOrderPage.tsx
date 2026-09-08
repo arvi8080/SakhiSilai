@@ -13,7 +13,9 @@ import {
   UserCheck,
   Ruler,
   ArrowRight,
-  ArrowLeft
+  ArrowLeft,
+  Calendar,
+  Clock
 } from 'lucide-react';
 
 interface CreateOrderPageProps {
@@ -45,6 +47,10 @@ export const CreateOrderPage: React.FC<CreateOrderPageProps> = ({
   const [requiredDate, setRequiredDate] = useState<string>(
     new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   );
+  const [appointmentDate, setAppointmentDate] = useState<string>(
+    new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  );
+  const [appointmentTimeSlot, setAppointmentTimeSlot] = useState<string>('Morning (10:00 AM - 01:00 PM)');
   const [paymentMethod, setPaymentMethod] = useState<'cod' | 'upi' | 'partial_advance'>('upi');
   const [createdOrderData, setCreatedOrderData] = useState<any>(null);
   const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false);
@@ -88,7 +94,9 @@ export const CreateOrderPage: React.FC<CreateOrderPageProps> = ({
       hasDeliveryAvailable: isDeliveryAvailable,
       measurements: measurementData,
       specialInstructions: specialNotes,
-      requiredDate
+      requiredDate,
+      appointmentDate,
+      appointmentTimeSlot
     });
 
     setCreatedOrderData(created);
@@ -277,7 +285,65 @@ export const CreateOrderPage: React.FC<CreateOrderPageProps> = ({
             )}
           </div>
 
-          {/* STEP 4: REQUIRED DATE & PAYMENT */}
+          {/* STEP 4: SCHEDULE VISIT APPOINTMENT */}
+          <div className="space-y-4 pt-4 border-t border-stone-100">
+            <div className="flex items-center justify-between">
+              <label className="font-extrabold text-sm text-stone-900 flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-[#E91E63]" />
+                <span>4. Schedule Visit & Drop-off Appointment (सिलाई अपॉइंटमेंट समय)</span>
+              </label>
+              <span className="bg-pink-100 text-[#E91E63] text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase">
+                Visit Confirmation
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="appointmentDate" className="font-bold text-xs text-stone-700 block mb-1">
+                  Appointment Date (विज़िट की तारीख)
+                </label>
+                <input
+                  id="appointmentDate"
+                  name="appointmentDate"
+                  type="date"
+                  value={appointmentDate}
+                  onChange={e => setAppointmentDate(e.target.value)}
+                  className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2.5 text-xs font-bold text-stone-900"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="appointmentTimeSlot" className="font-bold text-xs text-stone-700 block mb-1">
+                  Preferred Time Slot (उपयुक्त समय)
+                </label>
+                <select
+                  id="appointmentTimeSlot"
+                  name="appointmentTimeSlot"
+                  value={appointmentTimeSlot}
+                  onChange={e => setAppointmentTimeSlot(e.target.value)}
+                  className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2.5 text-xs font-bold text-[#1B4D3E]"
+                >
+                  <option value="Morning (10:00 AM - 01:00 PM)">🌅 Morning Slot (10:00 AM – 01:00 PM)</option>
+                  <option value="Afternoon (02:00 PM - 05:00 PM)">☀️ Afternoon Slot (02:00 PM – 05:00 PM)</option>
+                  <option value="Evening (05:00 PM - 08:00 PM)">🌆 Evening Slot (05:00 PM – 08:00 PM)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="bg-pink-50/70 p-3.5 rounded-2xl border border-pink-200/70 text-xs text-pink-950 flex items-start gap-2.5">
+              <Clock className="w-4 h-4 text-[#E91E63] shrink-0 mt-0.5" />
+              <div>
+                <span className="font-extrabold text-[#E91E63] block">How Appointment Booking Works:</span>
+                <p className="text-[11px] text-stone-600 font-medium">
+                  {lang === 'hi'
+                    ? `आपके अनुरोध भेजते ही दर्जी बहन को अपॉइंटमेंट प्राप्त होगा। दर्जी द्वारा स्वीकार किए जाते ही विज़िट अपॉइंटमेंट (${appointmentDate}, ${appointmentTimeSlot}) की पुष्टि हो जाएगी और दर्जी का पूरा पता अनलॉक हो जाएगा।`
+                    : `Your visit appointment will be sent to ${tailor.name}. As soon as tailor accepts your request, your visit appointment for ${appointmentDate} (${appointmentTimeSlot}) is confirmed and full tailor home address/phone will be unlocked.`}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* STEP 5: REQUIRED DATE & PAYMENT */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-stone-100">
             <div>
               <label htmlFor="requiredDate" className="font-extrabold text-xs text-stone-900 block mb-1">

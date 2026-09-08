@@ -33,6 +33,22 @@ const AppContent: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState<string | undefined>(undefined);
 
   const handleNavigate = (tab: string, extraData?: { tailorId?: string; designId?: string; orderId?: string }) => {
+    // Unified Join / Become a Tailor routing logic
+    if (tab === 'become_tailor' || tab === 'join_tailor') {
+      if (!isLoggedIn) {
+        setPendingRedirectTab('dashboard');
+        setRedirectNotice("🔐 दर्जी बनने / जुड़ने (Join as a Tailor) के लिए कृपया पहले लॉगिन या खाता बनाएं (Please login or register to become a tailor partner)");
+        setActiveTab('auth');
+        return;
+      }
+      if (currentRole === 'tailor') {
+        setActiveTab('tailor_dashboard');
+        return;
+      }
+      setActiveTab('dashboard');
+      return;
+    }
+
     // Check if target tab is protected and user is not logged in
     if (!isLoggedIn && PROTECTED_TABS.includes(tab)) {
       setPendingRedirectTab(tab);
@@ -226,7 +242,7 @@ const AppContent: React.FC = () => {
       </div>
 
       {/* Global Footer */}
-      <Footer />
+      <Footer setActiveTab={handleNavigate} />
     </div>
   );
 };

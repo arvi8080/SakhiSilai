@@ -2,7 +2,11 @@ import React from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { Scissors, Heart, ShieldCheck, MapPin, Phone } from 'lucide-react';
 
-export const Footer: React.FC = () => {
+interface FooterProps {
+  setActiveTab?: (tab: string) => void;
+}
+
+export const Footer: React.FC<FooterProps> = ({ setActiveTab }) => {
   const { lang, t } = useLanguage();
 
   return (
@@ -11,7 +15,7 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
           {/* Brand Mission */}
           <div className="space-y-3 md:col-span-1">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab && setActiveTab('home')}>
               <div className="w-8 h-8 rounded-lg bg-[#E91E63] flex items-center justify-center text-white">
                 <Scissors className="w-4 h-4 rotate-45" />
               </div>
@@ -34,11 +38,27 @@ export const Footer: React.FC = () => {
             <h4 className="font-bold text-white text-sm mb-3 uppercase tracking-wider">
               {lang === 'hi' ? 'मुख्य लिंक' : 'Platform Links'}
             </h4>
-            <ul className="space-y-2 text-xs">
-              <li><a href="#find-tailors" className="hover:text-[#E91E63] transition">{lang === 'hi' ? 'पास की दर्जियां खोजें' : 'Find Nearby Tailors'}</a></li>
-              <li><a href="#custom-design" className="hover:text-[#E91E63] transition">{lang === 'hi' ? 'कस्टम डिज़ाइन अपलोड करें' : 'Upload Custom Design'}</a></li>
-              <li><a href="#how-it-works" className="hover:text-[#E91E63] transition">{lang === 'hi' ? 'कैसे काम करता है' : 'How It Works'}</a></li>
-              <li><a href="#join-tailor" className="hover:text-[#E91E63] transition">{lang === 'hi' ? 'दर्जी के रूप में जुड़ें' : 'Register as a Tailor'}</a></li>
+            <ul className="space-y-2 text-xs font-medium">
+              <li>
+                <button onClick={() => setActiveTab && setActiveTab('find_tailors')} className="hover:text-[#E91E63] transition text-left">
+                  {lang === 'hi' ? 'पास की दर्जियां खोजें' : 'Find Nearby Tailors'}
+                </button>
+              </li>
+              <li>
+                <button onClick={() => setActiveTab && setActiveTab('custom_request')} className="hover:text-[#E91E63] transition text-left">
+                  {lang === 'hi' ? 'कस्टम डिज़ाइन अपलोड करें' : 'Upload Custom Design'}
+                </button>
+              </li>
+              <li>
+                <button onClick={() => setActiveTab && setActiveTab('how_it_works')} className="hover:text-[#E91E63] transition text-left">
+                  {lang === 'hi' ? 'कैसे काम करता है' : 'How It Works'}
+                </button>
+              </li>
+              <li>
+                <button onClick={() => setActiveTab && setActiveTab('become_tailor')} className="hover:text-[#E91E63] transition text-left text-amber-300 font-extrabold">
+                  👩🧵 {lang === 'hi' ? 'दर्जी के रूप में जुड़ें / दर्जी बनें' : 'Join / Become a Tailor'}
+                </button>
+              </li>
             </ul>
           </div>
 

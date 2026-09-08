@@ -137,6 +137,9 @@ export interface Order {
   measurements: MeasurementProfile | string; // Profile or note
   specialInstructions: string;
   requiredDate: string;
+  appointmentDate?: string;
+  appointmentTimeSlot?: string;
+  appointmentNotes?: string;
   createdAt: string;
   updatedAt: string;
   statusHistory: StatusHistoryEntry[];

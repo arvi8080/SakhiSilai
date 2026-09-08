@@ -39,7 +39,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ setActiveTab }) => {
 
         <div className="flex flex-col sm:flex-row gap-4 pt-2">
           <button
-            onClick={() => setActiveTab('auth')}
+            onClick={() => setActiveTab('become_tailor')}
             className="px-6 py-3.5 bg-[#E91E63] hover:bg-[#D81B60] text-white font-extrabold text-xs rounded-xl shadow-lg transition active:scale-95 flex items-center justify-center gap-2"
           >
             <UserCheck className="w-4 h-4" />

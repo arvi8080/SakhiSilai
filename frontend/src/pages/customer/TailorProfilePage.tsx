@@ -12,7 +12,8 @@ import {
   Sparkles,
   Bookmark,
   MessageSquarePlus,
-  Check
+  Check,
+  Calendar
 } from 'lucide-react';
 
 interface TailorProfilePageProps {
@@ -121,6 +122,14 @@ export const TailorProfilePage: React.FC<TailorProfilePageProps> = ({ tailorId, 
               >
                 <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-[#E91E63]' : ''}`} />
                 <span>{isSaved ? (lang === 'hi' ? 'सहेजा गया' : 'Saved') : (lang === 'hi' ? 'सहेजें' : 'Save')}</span>
+              </button>
+
+              <button
+                onClick={() => onBookDesign(tailor.id)}
+                className="flex-1 sm:flex-none px-5 py-3 bg-[#1B4D3E] hover:bg-[#133A2E] text-white font-extrabold text-xs rounded-xl shadow transition active:scale-95 flex items-center justify-center gap-1.5"
+              >
+                <Calendar className="w-4 h-4 text-amber-300" />
+                <span>{lang === 'hi' ? '📅 अपॉइंटमेंट बुक करें' : '📅 Book Appointment'}</span>
               </button>
 
               <button

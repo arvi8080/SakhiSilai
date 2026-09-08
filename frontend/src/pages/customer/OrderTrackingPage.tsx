@@ -13,7 +13,8 @@ import {
   ArrowLeft,
   Sparkles,
   QrCode,
-  Lock
+  Lock,
+  Calendar
 } from 'lucide-react';
 
 interface OrderTrackingPageProps {
@@ -170,6 +171,54 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({ orderId, s
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* APPOINTMENT & VISIT DETAILS CARD */}
+      <div className="bg-white rounded-3xl border border-stone-200 shadow-md p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="font-extrabold text-base text-stone-900 flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-[#E91E63]" />
+            <span>📅 Appointment & Visit Schedule (अपॉइंटमेंट विवरण)</span>
+          </h3>
+
+          {order.status === 'requested' ? (
+            <span className="bg-amber-100 text-amber-900 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase flex items-center gap-1">
+              <Clock className="w-3 h-3 text-amber-700" />
+              <span>Pending Tailor Confirmation</span>
+            </span>
+          ) : (
+            <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase flex items-center gap-1">
+              <CheckCircle className="w-3 h-3 text-emerald-600" />
+              <span>✅ Appointment Confirmed</span>
+            </span>
+          )}
+        </div>
+
+        <div className="bg-gradient-to-r from-stone-50 to-pink-50/50 p-4 rounded-2xl border border-pink-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <span className="text-[10px] font-extrabold text-[#E91E63] uppercase tracking-wider block">
+              Scheduled Appointment Date & Slot
+            </span>
+            <div className="text-sm font-black text-stone-900 flex items-center gap-2">
+              <span>📅 {order.appointmentDate || order.requiredDate}</span>
+              <span className="text-stone-400">•</span>
+              <span className="text-[#1B4D3E]">⏰ {order.appointmentTimeSlot || 'Morning (10:00 AM - 01:00 PM)'}</span>
+            </div>
+            <p className="text-xs text-stone-500 font-medium">
+              Visit Location: <strong>{order.tailorName}</strong>'s Home ({order.tailorVillage} Village)
+            </p>
+          </div>
+
+          {order.status !== 'requested' && (
+            <a
+              href={`tel:${order.tailorPhone}`}
+              className="px-4 py-2.5 bg-[#1B4D3E] hover:bg-[#133A2E] text-white font-extrabold text-xs rounded-xl shadow flex items-center gap-1.5 transition shrink-0"
+            >
+              <Phone className="w-4 h-4 text-amber-300" />
+              <span>Call Tailor for Appointment</span>
+            </a>
+          )}
         </div>
       </div>
 

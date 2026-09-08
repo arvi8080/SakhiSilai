@@ -310,10 +310,14 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-stone-50 p-3 rounded-2xl font-bold text-stone-700">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs bg-stone-50 p-3 rounded-2xl font-bold text-stone-700">
                     <div>
                       <span className="block text-stone-400 text-[10px] uppercase">Fabric Handover Option</span>
                       <span>{ord.handoverMethod === 'customer_drop' ? 'Customer Drop at your location' : 'Delivery Runner Pickup'}</span>
+                    </div>
+                    <div>
+                      <span className="block text-[#E91E63] text-[10px] uppercase">📅 Requested Visit Appointment</span>
+                      <span className="text-[#1B4D3E]">{ord.appointmentDate || ord.requiredDate} • {ord.appointmentTimeSlot || 'Morning'}</span>
                     </div>
                     <div>
                       <span className="block text-stone-400 text-[10px] uppercase">Required Completion Date</span>
@@ -390,7 +394,9 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
                   <div>
                     <span className="font-bold text-xs text-stone-400">{ord.orderNumber}</span>
                     <h4 className="font-extrabold text-base text-stone-900">{ord.designTitle}</h4>
-                    <p className="text-xs text-stone-500">Customer: <strong>{ord.customerName}</strong> ({ord.customerVillage}) • <a href={`tel:${ord.customerPhone}`} className="text-[#D9534F] underline">Call Customer</a></p>
+                    <p className="text-xs text-stone-500">
+                      Customer: <strong>{ord.customerName}</strong> ({ord.customerVillage}) • <a href={`tel:${ord.customerPhone}`} className="text-[#D9534F] underline font-bold">📞 Call Customer</a> • <span className="text-[#1B4D3E] font-extrabold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">📅 Appt: {ord.appointmentDate || ord.requiredDate} ({ord.appointmentTimeSlot || 'Morning'})</span>
+                    </p>
                   </div>
                   <div className="text-right">
                     <span className="font-black text-xl text-[#D9534F] block">₹{ord.price}</span>

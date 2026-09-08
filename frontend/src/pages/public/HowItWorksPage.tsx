@@ -208,7 +208,7 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({ setActiveTab }) 
 
           <div className="text-center pt-4">
             <button
-              onClick={() => setActiveTab('auth')}
+              onClick={() => setActiveTab('become_tailor')}
               className="px-8 py-4 bg-[#2A1B3D] hover:bg-[#1f132f] text-white font-black rounded-2xl shadow-lg transition active:scale-95 inline-flex items-center gap-2 text-sm"
             >
               <Scissors className="w-5 h-5 rotate-45 text-amber-400" />

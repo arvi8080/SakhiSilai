@@ -325,6 +325,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       measurements: orderData.measurements || 'Handover during fabric drop',
       specialInstructions: orderData.specialInstructions || '',
       requiredDate: orderData.requiredDate || '2026-09-15',
+      appointmentDate: orderData.appointmentDate || orderData.requiredDate || new Date(Date.now() + 86400000).toISOString().split('T')[0],
+      appointmentTimeSlot: orderData.appointmentTimeSlot || 'Morning (10:00 AM - 01:00 PM)',
+      appointmentNotes: orderData.appointmentNotes || '',
       createdAt: now,
       updatedAt: now,
       statusHistory: [

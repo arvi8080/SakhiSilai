@@ -279,6 +279,9 @@ export const CustomerDashboardPage: React.FC<CustomerDashboardPageProps> = ({ se
                         <div>
                           <h4 className="font-bold text-sm text-stone-900">{ord.designTitle}</h4>
                           <p className="text-xs text-stone-500">Tailor: <strong>{ord.tailorName}</strong> ({ord.tailorVillage})</p>
+                          <span className="text-[10px] font-extrabold text-[#1B4D3E] bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 inline-block mt-1">
+                            📅 Visit Appt: {ord.appointmentDate || ord.requiredDate} • {ord.appointmentTimeSlot || 'Morning'}
+                          </span>
                           <span className="font-extrabold text-sm text-[#E91E63] block mt-1">₹{ord.price}</span>
                         </div>
                       </div>

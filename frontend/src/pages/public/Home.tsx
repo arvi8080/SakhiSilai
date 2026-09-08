@@ -110,7 +110,7 @@ export const Home: React.FC<HomeProps> = ({ setActiveTab, onSelectTailor, onSele
             {/* TWO ACTION CARDS BELOW HERO SEARCH */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div
-                onClick={() => setActiveTab('auth')}
+                onClick={() => setActiveTab('become_tailor')}
                 className="bg-white p-4 rounded-2xl border border-stone-200 hover:border-[#E91E63] shadow-sm hover:shadow-md transition cursor-pointer flex items-center gap-3.5 group"
               >
                 <div className="w-12 h-12 rounded-2xl bg-pink-50 text-[#E91E63] group-hover:bg-[#E91E63] group-hover:text-white transition flex items-center justify-center">
@@ -455,7 +455,7 @@ export const Home: React.FC<HomeProps> = ({ setActiveTab, onSelectTailor, onSele
             </p>
 
             <button
-              onClick={() => setActiveTab('auth')}
+              onClick={() => setActiveTab('become_tailor')}
               className="px-6 py-3.5 bg-[#E91E63] hover:bg-[#D81B60] text-white font-extrabold text-xs rounded-xl shadow-lg transition active:scale-95 flex items-center gap-2"
             >
               <UserCheck className="w-4 h-4" />
@@ -553,7 +553,7 @@ export const Home: React.FC<HomeProps> = ({ setActiveTab, onSelectTailor, onSele
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
             <button
-              onClick={() => setActiveTab('auth')}
+              onClick={() => setActiveTab('become_tailor')}
               className="w-full sm:w-auto px-8 py-3.5 bg-white text-[#E91E63] font-extrabold text-xs rounded-xl shadow-lg transition active:scale-95 flex items-center justify-center gap-2"
             >
               <span>👩🧵 {lang === 'hi' ? 'टेलर के रूप में जुड़ें' : 'Join as a Tailor'}</span>
