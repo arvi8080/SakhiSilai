@@ -24,24 +24,29 @@ authRouter.post('/login', (req: Request, res: Response) => {
     return res.status(401).json({ success: false, message: 'Invalid email or password.' });
   }
 
+  if ((user as any).password && password && (user as any).password !== password) {
+    return res.status(401).json({ success: false, message: 'Invalid email or password.' });
+  }
+
   res.json({ success: true, message: 'Authenticated successfully', data: user });
 });
 
 // POST /api/auth/register (General Customer / User registration)
 authRouter.post('/register', (req: Request, res: Response) => {
-  const { name, phone, email, role, state, district, village } = req.body;
+  const { name, phone, email, password, role, state, district, village } = req.body;
 
-  const existingUser = db.users.find(u => u.phone === phone);
+  const existingUser = db.users.find(u => (phone && u.phone === phone) || (email && u.email === email));
   if (existingUser) {
-    return res.json({ success: true, message: 'User already exists', data: existingUser });
+    return res.status(400).json({ success: false, message: 'User with this phone number or email already exists' });
   }
 
   const newUserId = 'u_' + Date.now();
-  const newUser: User = {
+  const newUser: User & { password?: string } = {
     id: newUserId,
-    name: name || 'User ' + phone.slice(-4),
-    phone,
+    name: name || 'User ' + (phone ? phone.slice(-4) : ''),
+    phone: phone || '',
     email: email || '',
+    password: password || '',
     role: role || 'customer',
     state: state || 'Uttar Pradesh',
     district: district || 'Lucknow',

@@ -32,6 +32,7 @@ export function initDatabase() {
       name TEXT NOT NULL,
       phone TEXT NOT NULL,
       email TEXT,
+      password TEXT,
       role TEXT NOT NULL,
       state TEXT NOT NULL,
       district TEXT NOT NULL,
@@ -187,6 +188,12 @@ export function initDatabase() {
       receiptUrl TEXT
     );
   `);
+
+  try {
+    sqlite.exec("ALTER TABLE users ADD COLUMN password TEXT;");
+  } catch (e) {
+    // Column already exists
+  }
 
   // Migration for existing databases: ensure recipientId column exists in notifications
   try {

@@ -96,14 +96,15 @@ class SQLiteDatabaseProxy {
   // ------------------------------------------------------------------
   // WRITE MUTATORS (Persisting changes to SQLite database)
   // ------------------------------------------------------------------
-  addUser(user: User) {
+  addUser(user: User & { password?: string }) {
     const stmt = sqlite.prepare(`
-      INSERT OR REPLACE INTO users (id, name, phone, email, role, state, district, village, avatar, createdAt, isVerified)
-      VALUES (@id, @name, @phone, @email, @role, @state, @district, @village, @avatar, @createdAt, @isVerified)
+      INSERT OR REPLACE INTO users (id, name, phone, email, password, role, state, district, village, avatar, createdAt, isVerified)
+      VALUES (@id, @name, @phone, @email, @password, @role, @state, @district, @village, @avatar, @createdAt, @isVerified)
     `);
     stmt.run({
       ...user,
       email: user.email || '',
+      password: (user as any).password || '',
       avatar: user.avatar || '',
       isVerified: user.isVerified ? 1 : 0
     });
