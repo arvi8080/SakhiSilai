@@ -12,7 +12,10 @@ import {
   Sparkles,
   PlusCircle,
   MapPin,
-  Trash2
+  Trash2,
+  Edit,
+  UserCheck,
+  XCircle
 } from 'lucide-react';
 
 interface TailorDashboardPageProps {
@@ -20,13 +23,28 @@ interface TailorDashboardPageProps {
 }
 
 export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
-  const { tailors, designs, orders, customRequests, updateOrderStatus, updateTailorAvailability, updateTailorCapacity, addDesign, deleteDesign, submitQuoteOffer } = useData();
+  const { tailors, designs, orders, customRequests, updateOrderStatus, updateTailorAvailability, updateTailorCapacity, updateTailorProfile, addDesign, deleteDesign, submitQuoteOffer } = useData();
   const { currentUser } = useAuth();
   const { lang, t } = useLanguage();
 
   const [activeTabSub, setActiveTabSub] = useState<'requests' | 'active' | 'catalog' | 'earnings'>('requests');
   const [showAddDesignModal, setShowAddDesignModal] = useState(false);
+  const [showEditProfileModal, setShowEditProfileModal] = useState(false);
   const [quoteModalReqId, setQuoteModalReqId] = useState<string | null>(null);
+
+  const tailor = tailors.find(t => t.id === 't_sunita' || t.userId === currentUser.id) || tailors[0];
+
+  // Profile Edit Form State
+  const [profileName, setProfileName] = useState(tailor.name);
+  const [profilePhone, setProfilePhone] = useState(tailor.phone);
+  const [profileVillage, setProfileVillage] = useState(tailor.village);
+  const [profileDistrict, setProfileDistrict] = useState(tailor.district);
+  const [profileAddress, setProfileAddress] = useState(tailor.addressApprox);
+  const [profileBio, setProfileBio] = useState(tailor.bio);
+  const [profileExperience, setProfileExperience] = useState(tailor.experienceYears);
+  const [profileStartingPrice, setProfileStartingPrice] = useState(tailor.startingPrice);
+  const [profileSkills, setProfileSkills] = useState(tailor.skills.join(', '));
+  const [profileAvatar, setProfileAvatar] = useState(tailor.avatar);
 
   // Quote Form
   const [quotePrice, setQuotePrice] = useState<number>(550);
@@ -41,7 +59,6 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
   const [designCategory, setDesignCategory] = useState('Blouse Stitching');
   const [designImage, setDesignImage] = useState('https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80');
 
-  const tailor = tailors.find(t => t.id === 't_sunita' || t.userId === currentUser.id) || tailors[0];
   const tailorOrders = orders.filter(o => o.tailorId === tailor.id);
   const newRequests = tailorOrders.filter(o => o.status === 'requested');
   const activeOrders = tailorOrders.filter(
@@ -78,6 +95,23 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
     setDesignDesc('');
   };
 
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateTailorProfile(tailor.id, {
+      name: profileName,
+      phone: profilePhone,
+      village: profileVillage,
+      district: profileDistrict,
+      addressApprox: profileAddress,
+      bio: profileBio,
+      experienceYears: Number(profileExperience),
+      startingPrice: Number(profileStartingPrice),
+      skills: profileSkills.split(',').map(s => s.trim()).filter(Boolean),
+      avatar: profileAvatar
+    });
+    setShowEditProfileModal(false);
+  };
+
   const handleSendQuote = (e: React.FormEvent) => {
     e.preventDefault();
     if (!quoteModalReqId) return;
@@ -104,13 +138,23 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
           <div className="flex items-center gap-4">
             <img src={tailor.avatar} alt={tailor.name} className="w-20 h-20 rounded-2xl object-cover border-2 border-amber-400 shadow-md bg-stone-100" />
             <div>
-              <span className="bg-amber-400 text-stone-900 font-extrabold text-[10px] px-2.5 py-0.5 rounded-full uppercase">
-                Registered Sakhi Tailor
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="bg-amber-400 text-stone-900 font-extrabold text-[10px] px-2.5 py-0.5 rounded-full uppercase">
+                  Registered Sakhi Tailor
+                </span>
+                <button
+                  onClick={() => setShowEditProfileModal(true)}
+                  className="bg-white/15 hover:bg-white/25 text-white font-bold text-xs px-2.5 py-1 rounded-full border border-white/20 flex items-center gap-1 transition"
+                  title="Edit Tailor Profile"
+                >
+                  <Edit className="w-3.5 h-3.5" />
+                  <span>{lang === 'hi' ? 'प्रोफ़ाइल संपादित करें' : 'Edit Profile'}</span>
+                </button>
+              </div>
               <h1 className="text-2xl font-black text-white mt-1">{tailor.name}</h1>
               <p className="text-xs text-stone-300 flex items-center gap-1 mt-0.5">
                 <MapPin className="w-3.5 h-3.5 text-amber-400" />
-                <span>{tailor.village}, {tailor.district}</span>
+                <span>{tailor.village}, {tailor.district} • Starting ₹{tailor.startingPrice} • {tailor.experienceYears}y Exp</span>
               </p>
             </div>
           </div>
@@ -730,6 +774,196 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
                   className="flex-1 py-3.5 bg-[#E91E63] hover:bg-[#D81B60] text-white font-black rounded-2xl shadow-lg shadow-pink-500/25 transition active:scale-95"
                 >
                   {lang === 'hi' ? 'डिज़ाइन सहेजें (Save Design)' : 'Save Design Catalog'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT TAILOR PROFILE MODAL */}
+      {showEditProfileModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-5 border border-amber-200 max-h-[90vh] overflow-y-auto">
+            <div className="text-center space-y-1">
+              <h3 className="font-black text-xl text-stone-900">
+                {lang === 'hi' ? 'दर्जी प्रोफ़ाइल संपादित करें' : 'Edit Tailor Profile'}
+              </h3>
+              <p className="text-xs text-stone-500">
+                {lang === 'hi' ? 'नाम, स्थान, शुरुआती सिलाई दर एवं अनुभव विवरण बदलें' : 'Update your personal details, stitching base rate & bio'}
+              </p>
+            </div>
+
+            <form onSubmit={handleSaveProfile} className="space-y-4 text-xs font-bold">
+              <div>
+                <label htmlFor="editProfileName" className="block text-stone-700 mb-1">
+                  {lang === 'hi' ? 'पूरा नाम (Full Name)' : 'Full Name'}
+                </label>
+                <input
+                  id="editProfileName"
+                  name="editProfileName"
+                  type="text"
+                  value={profileName}
+                  onChange={e => setProfileName(e.target.value)}
+                  className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-sm text-stone-900"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="editProfilePhone" className="block text-stone-700 mb-1">
+                    {lang === 'hi' ? 'मोबाइल नंबर (Phone)' : 'Phone Number'}
+                  </label>
+                  <input
+                    id="editProfilePhone"
+                    name="editProfilePhone"
+                    type="tel"
+                    value={profilePhone}
+                    onChange={e => setProfilePhone(e.target.value)}
+                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-xs text-stone-900"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="editProfileStartingPrice" className="block text-stone-700 mb-1">
+                    {lang === 'hi' ? 'शुरुआती सिलाई दर (₹)' : 'Starting Rate (₹)'}
+                  </label>
+                  <input
+                    id="editProfileStartingPrice"
+                    name="editProfileStartingPrice"
+                    type="number"
+                    value={profileStartingPrice}
+                    onChange={e => setProfileStartingPrice(Number(e.target.value))}
+                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-xs text-stone-900"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="editProfileVillage" className="block text-stone-700 mb-1">
+                    {lang === 'hi' ? 'गाँव / शहर (Village)' : 'Village / Location'}
+                  </label>
+                  <input
+                    id="editProfileVillage"
+                    name="editProfileVillage"
+                    type="text"
+                    value={profileVillage}
+                    onChange={e => setProfileVillage(e.target.value)}
+                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-xs text-stone-900"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="editProfileDistrict" className="block text-stone-700 mb-1">
+                    {lang === 'hi' ? 'ज़िला (District)' : 'District'}
+                  </label>
+                  <input
+                    id="editProfileDistrict"
+                    name="editProfileDistrict"
+                    type="text"
+                    value={profileDistrict}
+                    onChange={e => setProfileDistrict(e.target.value)}
+                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-xs text-stone-900"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="editProfileExperience" className="block text-stone-700 mb-1">
+                    {lang === 'hi' ? 'अनुभव (वर्ष)' : 'Experience (Years)'}
+                  </label>
+                  <input
+                    id="editProfileExperience"
+                    name="editProfileExperience"
+                    type="number"
+                    value={profileExperience}
+                    onChange={e => setProfileExperience(Number(e.target.value))}
+                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-xs text-stone-900"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="editProfileAddress" className="block text-stone-700 mb-1">
+                    {lang === 'hi' ? 'पता / लैंडमार्क' : 'Address / Landmark'}
+                  </label>
+                  <input
+                    id="editProfileAddress"
+                    name="editProfileAddress"
+                    type="text"
+                    value={profileAddress}
+                    onChange={e => setProfileAddress(e.target.value)}
+                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-xs text-stone-900"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="editProfileSkills" className="block text-stone-700 mb-1">
+                  {lang === 'hi' ? 'विशेषज्ञता कौशल (Skills, comma separated)' : 'Specialized Skills (Comma separated)'}
+                </label>
+                <input
+                  id="editProfileSkills"
+                  name="editProfileSkills"
+                  type="text"
+                  placeholder="उदा. प्रिंसेंस कट, राजपूती सूट, अल्टरेशन"
+                  value={profileSkills}
+                  onChange={e => setProfileSkills(e.target.value)}
+                  className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-xs text-stone-900"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="editProfileAvatar" className="block text-stone-700 mb-1">
+                  {lang === 'hi' ? 'प्रोफ़ाइल फोटो URL' : 'Profile Avatar URL'}
+                </label>
+                <input
+                  id="editProfileAvatar"
+                  name="editProfileAvatar"
+                  type="text"
+                  value={profileAvatar}
+                  onChange={e => setProfileAvatar(e.target.value)}
+                  className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-xs text-stone-900"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="editProfileBio" className="block text-stone-700 mb-1">
+                  {lang === 'hi' ? 'विशेषज्ञता एवं विवरण (About Bio)' : 'Bio / Short Introduction'}
+                </label>
+                <textarea
+                  id="editProfileBio"
+                  name="editProfileBio"
+                  rows={3}
+                  value={profileBio}
+                  onChange={e => setProfileBio(e.target.value)}
+                  className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-xs text-stone-900 font-medium"
+                ></textarea>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditProfileModal(false)}
+                  className="flex-1 py-3.5 border border-stone-300 rounded-2xl font-black text-stone-600 hover:bg-stone-50 flex items-center justify-center gap-1.5"
+                >
+                  <XCircle className="w-4 h-4" />
+                  <span>{lang === 'hi' ? 'रद्द करें' : 'Cancel'}</span>
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3.5 bg-[#1B4D3E] hover:bg-[#133A2E] text-white font-black rounded-2xl shadow-lg transition active:scale-95 flex items-center justify-center gap-1.5"
+                >
+                  <UserCheck className="w-4 h-4" />
+                  <span>{lang === 'hi' ? 'प्रोफ़ाइल सहेजें' : 'Save Profile Changes'}</span>
                 </button>
               </div>
             </form>

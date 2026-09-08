@@ -73,6 +73,7 @@ interface DataContextType {
   updateOrderStatus: (orderId: string, newStatus: OrderStatus, note?: string) => void;
   updateTailorAvailability: (tailorId: string, status: TailorAvailability) => void;
   updateTailorCapacity: (tailorId: string, maxOrders: number) => void;
+  updateTailorProfile: (tailorId: string, updates: Partial<TailorProfile>) => void;
   
   addDesign: (design: Omit<DesignCatalogItem, 'id'>) => void;
   updateDesign: (id: string, updates: Partial<DesignCatalogItem>) => void;
@@ -420,6 +421,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setTailors(prev => prev.map(t => (t.id === tailorId ? { ...t, maxActiveOrders } : t)));
   };
 
+  const updateTailorProfile = (tailorId: string, updates: Partial<TailorProfile>) => {
+    setTailors(prev => prev.map(t => (t.id === tailorId ? { ...t, ...updates } : t)));
+  };
+
   const addDesign = (design: Omit<DesignCatalogItem, 'id'>) => {
     const newItem: DesignCatalogItem = {
       ...design,
@@ -700,6 +705,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateOrderStatus,
         updateTailorAvailability,
         updateTailorCapacity,
+        updateTailorProfile,
 
         addDesign,
         updateDesign,
