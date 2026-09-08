@@ -15,7 +15,8 @@ import {
   Trash2,
   Edit,
   UserCheck,
-  XCircle
+  XCircle,
+  Lock
 } from 'lucide-react';
 
 interface TailorDashboardPageProps {
@@ -294,19 +295,29 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
                     <div>
                       <span className="font-bold text-xs text-[#D9534F]">{ord.orderNumber}</span>
                       <h4 className="font-black text-base text-stone-900">{ord.designTitle}</h4>
-                      <p className="text-xs text-stone-500">Customer: <strong>{ord.customerName}</strong> ({ord.customerVillage})</p>
+                      <p className="text-xs text-stone-500">Customer: <strong>{ord.customerName}</strong> (📍 {ord.customerVillage} — Approx Location)</p>
                     </div>
                     <span className="font-extrabold text-xl text-[#1B4D3E]">₹{ord.price}</span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-stone-50 p-3 rounded-2xl">
+                  <div className="bg-amber-50/80 p-3.5 rounded-2xl border border-amber-200 text-xs space-y-1 text-amber-950 font-medium">
+                    <div className="flex items-center gap-1.5 font-extrabold text-amber-900">
+                      <Lock className="w-3.5 h-3.5 text-amber-700" />
+                      <span>गोपनीयता सुरक्षा (Contact Privacy Protected):</span>
+                    </div>
+                    <p>
+                      Customer phone number (🔒 XXXXXX{ord.customerPhone.slice(-4)}) & exact handover drop address unlock immediately after you click <strong>Accept Order ✅</strong>.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-stone-50 p-3 rounded-2xl font-bold text-stone-700">
                     <div>
-                      <span className="font-bold text-stone-700 block">Fabric Handover Option:</span>
-                      <span className="text-stone-600">{ord.handoverMethod === 'customer_drop' ? 'Customer Direct Drop to your home' : 'Delivery Runner Pickup'}</span>
+                      <span className="block text-stone-400 text-[10px] uppercase">Fabric Handover Option</span>
+                      <span>{ord.handoverMethod === 'customer_drop' ? 'Customer Drop at your location' : 'Delivery Runner Pickup'}</span>
                     </div>
                     <div>
-                      <span className="font-bold text-stone-700 block">Required Date:</span>
-                      <span className="text-stone-600">{ord.requiredDate}</span>
+                      <span className="block text-stone-400 text-[10px] uppercase">Required Completion Date</span>
+                      <span>{ord.requiredDate}</span>
                     </div>
                   </div>
 
@@ -317,7 +328,7 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
                       className="flex-1 py-3 bg-[#1B4D3E] hover:bg-[#133A2E] text-white font-extrabold text-xs rounded-xl shadow transition flex items-center justify-center gap-1.5"
                     >
                       <CheckCircle className="w-4 h-4" />
-                      <span>{t('acceptOrder')}</span>
+                      <span>{t('acceptOrder')} & Unlock Contact 🔓</span>
                     </button>
 
                     <button

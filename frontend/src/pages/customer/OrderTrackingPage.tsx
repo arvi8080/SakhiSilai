@@ -12,7 +12,8 @@ import {
   Star,
   ArrowLeft,
   Sparkles,
-  QrCode
+  QrCode,
+  Lock
 } from 'lucide-react';
 
 interface OrderTrackingPageProps {
@@ -172,40 +173,79 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({ orderId, s
         </div>
       </div>
 
-      {/* FABRIC HANDOVER DETAILS CARD */}
+      {/* FABRIC HANDOVER & PRIVACY CONTACT DETAILS CARD */}
       <div className="bg-white rounded-3xl border border-stone-200 shadow-md p-6 space-y-4">
-        <h3 className="font-extrabold text-base text-stone-900 flex items-center gap-2">
-          <MapPin className="w-5 h-5 text-emerald-700" />
-          <span>Confirmed Fabric Handover Details</span>
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="font-extrabold text-base text-stone-900 flex items-center gap-2">
+            <MapPin className="w-5 h-5 text-emerald-700" />
+            <span>Fabric Handover & Contact Information</span>
+          </h3>
 
-        {order.handoverMethod === 'customer_drop' ? (
-          <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 text-xs space-y-2 text-stone-800">
-            <p className="font-bold text-emerald-900 text-sm">Direct Village Handover Instructions:</p>
-            <p>Please deliver your fabric & sample measurements to the tailor at:</p>
-            <div className="bg-white p-3 rounded-xl border border-emerald-300 font-semibold space-y-1">
-              <p><strong>Tailor Name:</strong> {order.tailorName}</p>
-              <p><strong>Phone:</strong> {order.tailorPhone}</p>
-              <p><strong>Full Handover Address:</strong> {tailor?.addressApprox || order.tailorVillage}</p>
+          {order.status === 'requested' ? (
+            <span className="bg-amber-100 text-amber-900 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase flex items-center gap-1">
+              <Lock className="w-3 h-3 text-amber-700" />
+              <span>Tailor Reviewing Request</span>
+            </span>
+          ) : (
+            <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase flex items-center gap-1">
+              <CheckCircle className="w-3 h-3 text-emerald-600" />
+              <span>🔓 Details Unlocked</span>
+            </span>
+          )}
+        </div>
+
+        {order.status === 'requested' ? (
+          /* LOCKED PRIVACY BOX UNTIL TAILOR ACCEPTS */
+          <div className="bg-amber-50/80 p-5 rounded-2xl border border-amber-200 text-xs space-y-3 text-amber-950">
+            <div className="flex items-center gap-2 font-black text-amber-900 text-sm">
+              <Lock className="w-4 h-4 text-amber-600" />
+              <span>सत्यापित सुरक्षा गोपनीयता (Contact & Location Privacy Protected)</span>
             </div>
-            <p className="text-[11px] text-stone-600 italic">
-              Tip: Call {order.tailorName.split(' ')[0]} before dropping off the fabric!
+            <p className="font-medium text-amber-900 leading-relaxed">
+              Customer & Tailor phone numbers and exact handover pickup locations are kept private until the tailor reviews & accepts your order booking.
             </p>
+            <div className="bg-white p-3 rounded-xl border border-amber-200 font-bold space-y-1 text-stone-700">
+              <p><strong>Tailor Name:</strong> {order.tailorName}</p>
+              <p><strong>Phone Number:</strong> <span className="text-stone-400 font-mono">🔒 XXXXXX{order.tailorPhone.slice(-4)} (Hidden until tailor accepts)</span></p>
+              <p><strong>Handover Location:</strong> Approximate Area — {order.tailorVillage} Village (Exact drop location unlocks after acceptance)</p>
+            </div>
+            <div className="inline-flex items-center gap-2 bg-stone-200 text-stone-600 font-bold text-xs px-4 py-2.5 rounded-xl cursor-not-allowed">
+              <Lock className="w-4 h-4" />
+              <span>Call Unlocks After Tailor Acceptance</span>
+            </div>
           </div>
         ) : (
-          <div className="bg-amber-50 p-4 rounded-2xl border border-amber-200 text-xs space-y-2 text-stone-800">
-            <p className="font-bold text-amber-900 text-sm">Doorstep Pickup Scheduled:</p>
-            <p>Our Sakhi Runner will arrive at your location in {order.customerVillage} to collect fabric.</p>
+          /* UNLOCKED DETAILS AFTER TAILOR ACCEPTS */
+          <div className="space-y-4">
+            {order.handoverMethod === 'customer_drop' ? (
+              <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 text-xs space-y-2 text-stone-800">
+                <p className="font-bold text-emerald-900 text-sm">Direct Village Handover Instructions:</p>
+                <p>Please deliver your fabric & sample measurements to the tailor at:</p>
+                <div className="bg-white p-3.5 rounded-xl border border-emerald-300 font-bold space-y-1">
+                  <p><strong>Tailor Name:</strong> {order.tailorName}</p>
+                  <p><strong>Phone:</strong> <a href={`tel:${order.tailorPhone}`} className="text-emerald-700 underline">{order.tailorPhone}</a></p>
+                  <p><strong>Unlocked Pickup / Drop Address:</strong> {tailor?.addressApprox || order.tailorVillage}</p>
+                </div>
+                <p className="text-[11px] text-stone-600 italic">
+                  Tip: Call {order.tailorName.split(' ')[0]} before dropping off the fabric!
+                </p>
+              </div>
+            ) : (
+              <div className="bg-amber-50 p-4 rounded-2xl border border-amber-200 text-xs space-y-2 text-stone-800">
+                <p className="font-bold text-amber-900 text-sm">Doorstep Pickup Scheduled:</p>
+                <p>Our Sakhi Runner will arrive at your location in {order.customerVillage} to collect fabric.</p>
+              </div>
+            )}
+
+            <a
+              href={`tel:${order.tailorPhone}`}
+              className="inline-flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow transition"
+            >
+              <Phone className="w-4 h-4" />
+              <span>Call Tailor ({order.tailorName})</span>
+            </a>
           </div>
         )}
-
-        <a
-          href={`tel:${order.tailorPhone}`}
-          className="inline-flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow transition"
-        >
-          <Phone className="w-4 h-4" />
-          <span>Call Tailor ({order.tailorName})</span>
-        </a>
       </div>
 
       {/* REVIEW FORM IF COMPLETED */}
