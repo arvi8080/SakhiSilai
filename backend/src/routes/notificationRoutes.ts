@@ -19,6 +19,27 @@ notificationRouter.get('/', (req: Request, res: Response) => {
   res.json({ success: true, count: results.length, data: results });
 });
 
+// POST /api/notifications
+notificationRouter.post('/', (req: Request, res: Response) => {
+  const { titleEn, titleHi, messageEn, messageHi, targetRole, recipientId, type } = req.body;
+
+  const newNotif: SystemNotification = {
+    id: 'n_' + Date.now(),
+    targetRole: targetRole || 'all',
+    recipientId,
+    titleEn: titleEn || 'System Notification',
+    titleHi: titleHi || titleEn || 'अधिसूचना',
+    messageEn: messageEn || '',
+    messageHi: messageHi || messageEn || '',
+    timestamp: new Date().toISOString(),
+    isRead: false,
+    type: type || 'admin'
+  };
+
+  db.addNotification(newNotif);
+  res.status(201).json({ success: true, message: 'Notification sent successfully', data: newNotif });
+});
+
 // POST /api/notifications/broadcast
 notificationRouter.post('/broadcast', (req: Request, res: Response) => {
   const { titleEn, titleHi, messageEn, messageHi, targetRole } = req.body;

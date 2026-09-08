@@ -31,6 +31,22 @@ authRouter.post('/login', (req: Request, res: Response) => {
   res.json({ success: true, message: 'Authenticated successfully', data: user });
 });
 
+// GET /api/auth/me/:userId
+authRouter.get('/me/:userId', (req: Request, res: Response) => {
+  const { userId } = req.params;
+  const user = db.users.find(u => u.id === userId);
+  if (!user) {
+    return res.status(404).json({ success: false, message: 'User not found' });
+  }
+  res.json({ success: true, data: user });
+});
+
+// GET /api/auth/customers
+authRouter.get('/customers', (_req: Request, res: Response) => {
+  const customers = db.users.filter(u => u.role === 'customer');
+  res.json({ success: true, count: customers.length, data: customers });
+});
+
 // POST /api/auth/register (General Customer / User registration)
 authRouter.post('/register', (req: Request, res: Response) => {
   const { name, phone, email, password, role, state, district, village } = req.body;
