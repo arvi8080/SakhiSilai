@@ -1,12 +1,21 @@
 # 🧵 SakhiSilai - Hyperlocal Women Tailoring Platform
 
-[![Platform](https://img.shields.io/badge/Platform-SakhiSilai-E91E63?style=for-the-badge&logo=react)](https://github.com/arvi8080/SakhiSilai)
-[![Backend API](https://img.shields.io/badge/Backend-Node.js%20%7C%20Express-1B4D3E?style=for-the-badge&logo=nodedotjs)](http://localhost:5000/api-docs)
-[![Database](https://img.shields.io/badge/Database-SQLite%20(Persistent)-003B57?style=for-the-badge&logo=sqlite)](http://localhost:5000/health)
-[![Build & Tests](https://img.shields.io/badge/APIs%20Tested-19%2F19%20Passed-emerald?style=for-the-badge)](http://localhost:5000/health)
+[![Live App](https://img.shields.io/badge/Live%20App-sakhisilai.vercel.app-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://sakhisilai.vercel.app/)
+[![Backend API](https://img.shields.io/badge/Backend-Node.js%20%7C%20Express-1B4D3E?style=for-the-badge&logo=nodedotjs)](https://sakhisilai.onrender.com/api-docs)
+[![Database](https://img.shields.io/badge/Database-SQLite%20(Persistent)-003B57?style=for-the-badge&logo=sqlite)](https://sakhisilai.onrender.com/health)
+[![Build & Tests](https://img.shields.io/badge/APIs%20Tested-19%2F19%20Passed-emerald?style=for-the-badge)](https://sakhisilai.onrender.com/health)
 
 > **Tagline:** *Ghar Se Hunar, Apni Kamai.*  
 > A zero-commission hyperlocal platform empowering rural and suburban women tailors with direct customer bookings, interactive visit appointment scheduling, custom photo bidding, real-time stitching tracking, persistent SQLite storage, and integrated UPI QR payments.
+
+---
+
+## 🌐 Live Production Links
+
+* 🚀 **Web Application**: [https://sakhisilai.vercel.app](https://sakhisilai.vercel.app/)
+* ⚡ **Backend API Endpoint**: [https://sakhisilai.onrender.com/api](https://sakhisilai.onrender.com/api)
+* 📖 **Interactive Swagger UI**: [https://sakhisilai.onrender.com/api-docs](https://sakhisilai.onrender.com/api-docs)
+* 💚 **API Health Check**: [https://sakhisilai.onrender.com/health](https://sakhisilai.onrender.com/health)
 
 ---
 
@@ -19,9 +28,9 @@
 ## ✨ Key Features & Architecture
 
 ### 1️⃣ Single Unified User System & "Become a Tailor" Flow
-- **One Signup for Everyone**: Name, Mobile OR Email, Password, Village, and District selection.
-- **Unified Account Logic**: Every user registers as a normal customer first.
-- **Become a Tailor**: Users can apply to become a tailor partner directly from their customer dashboard by filling in stitching skills, experience, village, starting prices, and portfolio images.
+- **One Signup for Everyone**: Clean email & password authentication with state, district, and village selection.
+- **Forgot & Reset Password Support**: Instant self-service password recovery flow.
+- **Become a Tailor**: Customers can apply to become a tailor partner directly from their customer dashboard by filling in stitching skills, experience, village, starting prices, and portfolio images.
 - **Admin Verification**: Applications are reviewed by SakhiSilai Admin. Once approved (`isVerified: true`), tailor features unlock for that account.
 
 ```
@@ -75,10 +84,10 @@ Tailor Profile Activated ➔ Access Tailor Dashboard Console 👩‍🧵
 
 | Layer | Technologies |
 | :--- | :--- |
-| **Frontend** | React 18, TypeScript, Vite, Vanilla CSS / Tailwind, Lucide Icons, Canvas Confetti |
-| **Backend API** | Node.js, Express.js, TypeScript, Swagger UI (`swagger-ui-express`) |
+| **Frontend Platform** | React 18, TypeScript, Vite, Vanilla CSS / Tailwind, Vercel Hosting |
+| **Backend API** | Node.js, Express.js, TypeScript, Swagger UI (`swagger-ui-express`), Render Hosting |
 | **Database** | Persistent SQLite (`sakhisilai.db`) with `better-sqlite3` & Realtime Cloud Firestore sync |
-| **DevOps & Containers** | Docker, Docker Compose, Render Deployment |
+| **DevOps & Containers** | Docker, Docker Compose, GitHub Actions / Auto Deploy |
 
 ---
 
@@ -92,21 +101,21 @@ Tailor Profile Activated ➔ Access Tailor Dashboard Console 👩‍🧵
 | 4 | `GET` | `/api/tailors/nearby` | Hyperlocal Tailor Search & Ranking | ✅ `200 OK` |
 | 5 | `GET` | `/api/tailors/:id` | Fetch Tailor Profile Details | ✅ `200 OK` |
 | 6 | `POST` | `/api/auth/register` | Customer / User Registration | ✅ `201 Created` |
-| 7 | `POST` | `/api/auth/login` | Unified Email/Mobile Authentication | ✅ `200 OK` |
-| 8 | `GET` | `/api/auth/me/:userId` | Current User Data Fetch | ✅ `200 OK` |
-| 9 | `GET` | `/api/auth/customers` | Customer Directory Listing | ✅ `200 OK` |
-| 10 | `GET` | `/api/orders` | Fetch Orders by Role & Filter | ✅ `200 OK` |
-| 11 | `GET` | `/api/orders/:id` | Get Order & Appointment Details | ✅ `200 OK` |
-| 12 | `POST` | `/api/orders` | Create Order with Appointment Date/Slot | ✅ `201 Created` |
-| 13 | `PATCH` | `/api/orders/:id/status` | Update Order & Stitching Stage | ✅ `200 OK` |
-| 14 | `GET` | `/api/custom-requests` | List Custom Design Photo Bids | ✅ `200 OK` |
-| 15 | `POST` | `/api/custom-requests` | Post Custom Photo Bidding Request | ✅ `201 Created` |
-| 16 | `GET` | `/api/notifications` | Fetch Role Notifications | ✅ `200 OK` |
-| 17 | `POST` | `/api/notifications` | Send System / Admin Notification | ✅ `201 Created` |
-| 18 | `GET` | `/api/admin/stats` | Admin Dashboard Analytics & Metrics | ✅ `200 OK` |
+| 7 | `POST` | `/api/auth/login` | Email & Password Authentication | ✅ `200 OK` |
+| 8 | `POST` | `/api/auth/forgot-password` | Forgot Password Request | ✅ `200 OK` |
+| 9 | `POST` | `/api/auth/reset-password` | Self-Service Password Reset | ✅ `200 OK` |
+| 10 | `GET` | `/api/auth/me/:userId` | Current User Data Fetch | ✅ `200 OK` |
+| 11 | `GET` | `/api/auth/customers` | Customer Directory Listing | ✅ `200 OK` |
+| 12 | `GET` | `/api/orders` | Fetch Orders by Role & Filter | ✅ `200 OK` |
+| 13 | `GET` | `/api/orders/:id` | Get Order & Appointment Details | ✅ `200 OK` |
+| 14 | `POST` | `/api/orders` | Create Order with Appointment Date/Slot | ✅ `201 Created` |
+| 15 | `PATCH` | `/api/orders/:id/status` | Update Order & Stitching Stage | ✅ `200 OK` |
+| 16 | `GET` | `/api/custom-requests` | List Custom Design Photo Bids | ✅ `200 OK` |
+| 17 | `POST` | `/api/custom-requests` | Post Custom Photo Bidding Request | ✅ `201 Created` |
+| 18 | `GET` | `/api/notifications` | Fetch Role Notifications | ✅ `200 OK` |
 | 19 | `POST` | `/api/payments/verify` | Verify & Record Payment Transaction | ✅ `200 OK` |
 
-> 📖 **Swagger UI Documentation**: Interactive API testing available at `http://localhost:5000/api-docs` when server is running.
+> 📖 **Swagger UI Documentation**: Interactive API testing available at [https://sakhisilai.onrender.com/api-docs](https://sakhisilai.onrender.com/api-docs)
 
 ---
 
