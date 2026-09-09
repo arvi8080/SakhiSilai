@@ -31,6 +31,19 @@ app.use((req: Request, _res: Response, next) => {
   next();
 });
 
+// Root Endpoint
+app.get('/', (_req: Request, res: Response) => {
+  res.json({
+    status: 'ok',
+    service: 'SakhiSilai Hyperlocal Women Tailoring Backend API',
+    tagline: 'Ghar Se Hunar, Apni Kamai.',
+    database: 'SQLite Persistent (sakhisilai.db)',
+    healthCheck: '/health',
+    swaggerDocs: '/api-docs',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Health check endpoint
 app.get('/health', (_req: Request, res: Response) => {
   res.json({
