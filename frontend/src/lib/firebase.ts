@@ -14,15 +14,15 @@ export const isFirebaseConfigured = Boolean(
   !envApiKey.includes('AIzaSyDkV7TnevzzmKcY')
 );
 
-// Your web app's Firebase configuration (supports .env or fallback)
+// Your web app's Firebase configuration (supports .env configuration)
 const firebaseConfig = {
-  apiKey: envApiKey || "AIzaSyDkV7TnevzzmKcY_Z9PFR9lYUDxgp0K_T0",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "sakhisilai-b7b43.firebaseapp.com",
-  projectId: envProjectId || "sakhisilai-b7b43",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "sakhisilai-b7b43.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "721609239599",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:721609239599:web:765aa59cda065f966faada",
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-37K6J83ETB"
+  apiKey: envApiKey || "",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "",
+  projectId: envProjectId || "",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || ""
 };
 
 // Initialize Firebase App singleton
