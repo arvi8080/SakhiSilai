@@ -3,11 +3,17 @@
   "version": "1.0.0",
   "description": "Backend API Server for SakhiSilai Hyperlocal Women Tailoring Platform",
   "main": "dist/server.js",
+
+  "engines": {
+    "node": "22.x"
+  },
+
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js"
   },
+
   "dependencies": {
     "better-sqlite3": "^13.0.3",
     "cors": "^2.8.5",
@@ -16,6 +22,7 @@
     "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1"
   },
+
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",
     "@types/cors": "^2.8.17",
