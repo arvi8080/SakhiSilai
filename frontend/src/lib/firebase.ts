@@ -14,32 +14,32 @@ export const isFirebaseConfigured = Boolean(
   !envApiKey.includes('AIzaSyDkV7TnevzzmKcY')
 );
 
-// Your web app's Firebase configuration (supports .env configuration)
-const firebaseConfig = {
-  apiKey: envApiKey || "",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "",
-  projectId: envProjectId || "",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "",
+const firebaseConfig = isFirebaseConfigured ? {
+  apiKey: envApiKey,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || `${envProjectId}.firebaseapp.com`,
+  projectId: envProjectId,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || `${envProjectId}.firebasestorage.app`,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
   appId: import.meta.env.VITE_FIREBASE_APP_ID || "",
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || ""
-};
+} : null;
 
-// Initialize Firebase App singleton
-const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+// Initialize Firebase App singleton safely
+export const app = firebaseConfig ? (getApps().length > 0 ? getApp() : initializeApp(firebaseConfig)) : null;
 
-// Only initialize Firebase Auth if valid production credentials are present
-export const auth = isFirebaseConfigured ? getAuth(app) : null;
-export const firestore = getFirestore(app);
-export const storage = getStorage(app);
+// Only initialize services if app is configured
+export const auth = (isFirebaseConfigured && app) ? getAuth(app) : null;
+export const firestore = (isFirebaseConfigured && app) ? getFirestore(app) : null;
+export const storage = (isFirebaseConfigured && app) ? getStorage(app) : null;
 
 /**
- * Upload an image file to Firebase Storage
- * @param file File object or Blob
- * @param storagePath Path in storage (e.g. 'custom_requests/123.jpg')
- * @returns Promise<string> Public Download URL
+ * Upload an image file to Firebase Storage with fallback
  */
 export async function uploadImageToFirebase(file: File | Blob, storagePath: string): Promise<string> {
+  if (!storage) {
+    console.warn('Firebase Storage unavailable, using local preview URL fallback');
+    return URL.createObjectURL(file);
+  }
   try {
     const storageRef = ref(storage, storagePath);
     const snapshot = await uploadBytes(storageRef, file);
@@ -47,6 +47,6 @@ export async function uploadImageToFirebase(file: File | Blob, storagePath: stri
     return downloadUrl;
   } catch (err) {
     console.error('Firebase Storage upload error:', err);
-    throw err;
+    return URL.createObjectURL(file);
   }
 }

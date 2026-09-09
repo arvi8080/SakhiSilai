@@ -242,7 +242,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     // 2. Realtime Cloud Firestore Listeners if Firebase is active
-    if (isFirebaseConfigured) {
+    if (isFirebaseConfigured && firestore) {
       console.log('🔥 Cloud Firestore Realtime Sync Active (Scalable to 1,000+ users/day)');
 
       const tailorsQuery = query(collection(firestore, 'tailors'), limit(100));
