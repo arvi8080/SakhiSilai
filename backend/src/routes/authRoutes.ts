@@ -47,6 +47,49 @@ authRouter.get('/customers', (_req: Request, res: Response) => {
   res.json({ success: true, count: customers.length, data: customers });
 });
 
+// POST /api/auth/forgot-password
+authRouter.post('/forgot-password', (req: Request, res: Response) => {
+  const { email } = req.body;
+  const cleanEmail = (email || '').trim().toLowerCase();
+
+  if (!cleanEmail) {
+    return res.status(400).json({ success: false, message: 'Please enter your registered email address.' });
+  }
+
+  const user = db.users.find(u => u.email && u.email.toLowerCase() === cleanEmail);
+  if (!user) {
+    return res.status(404).json({ success: false, message: 'No account found with this email address.' });
+  }
+
+  res.json({
+    success: true,
+    message: 'Password reset request verified. Please enter your new password.',
+    email: cleanEmail
+  });
+});
+
+// POST /api/auth/reset-password
+authRouter.post('/reset-password', (req: Request, res: Response) => {
+  const { email, newPassword } = req.body;
+  const cleanEmail = (email || '').trim().toLowerCase();
+
+  if (!cleanEmail || !newPassword) {
+    return res.status(400).json({ success: false, message: 'Please provide email and new password.' });
+  }
+
+  const user = db.users.find(u => (u.email && u.email.toLowerCase() === cleanEmail) || (u.phone && u.phone === cleanEmail));
+  if (!user) {
+    return res.status(404).json({ success: false, message: 'No account found with this email address.' });
+  }
+
+  db.updateUserPassword(cleanEmail, newPassword);
+
+  res.json({
+    success: true,
+    message: 'Password reset successfully. You can now login with your new password.'
+  });
+});
+
 // POST /api/auth/register (General Customer / User registration)
 authRouter.post('/register', (req: Request, res: Response) => {
   const { name, phone, email, password, role, state, district, village } = req.body;

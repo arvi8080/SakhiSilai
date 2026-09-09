@@ -110,6 +110,11 @@ class SQLiteDatabaseProxy {
     });
   }
 
+  updateUserPassword(email: string, newPassword: string) {
+    const cleanEmail = email.trim().toLowerCase();
+    sqlite.prepare('UPDATE users SET password = ? WHERE LOWER(email) = ? OR LOWER(phone) = ?').run(newPassword, cleanEmail, cleanEmail);
+  }
+
   addTailor(tailor: TailorProfile) {
     const stmt = sqlite.prepare(`
       INSERT OR REPLACE INTO tailors (

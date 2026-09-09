@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { User, UserRole } from '../types';
 import { auth, isFirebaseConfigured } from '../config/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { loginUserApi } from '../services/api';
+import { loginUserApi, forgotPasswordApi, resetPasswordApi } from '../services/api';
 
 interface AuthContextType {
   currentUser: User;
@@ -10,6 +10,8 @@ interface AuthContextType {
   isLoggedIn: boolean;
   setRole: (role: UserRole) => void;
   loginWithCredentials: (emailOrPhone: string, password?: string) => Promise<{ success: boolean; role?: UserRole; message?: string }>;
+  forgotPassword: (email: string) => Promise<{ success: boolean; message?: string }>;
+  resetPassword: (email: string, newPassword: string) => Promise<{ success: boolean; message?: string }>;
   loginAsCustomer: () => void;
   loginAsTailor: () => void;
   loginAsAdmin: () => void;
@@ -160,6 +162,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { success: false, message: res?.message || 'Invalid email or password.' };
   };
 
+  const forgotPassword = async (email: string): Promise<{ success: boolean; message?: string }> => {
+    const res = await forgotPasswordApi(email);
+    if (res && res.success) {
+      return { success: true, message: res.message };
+    }
+    return { success: false, message: res?.message || 'Email address not found in database.' };
+  };
+
+  const resetPassword = async (email: string, newPassword: string): Promise<{ success: boolean; message?: string }> => {
+    const res = await resetPasswordApi(email, newPassword);
+    if (res && res.success) {
+      return { success: true, message: res.message };
+    }
+    return { success: false, message: res?.message || 'Failed to update password.' };
+  };
+
   const loginAsCustomer = () => {
     setIsLoggedIn(true);
     setCurrentRoleState('customer');
@@ -198,6 +216,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoggedIn,
         setRole,
         loginWithCredentials,
+        forgotPassword,
+        resetPassword,
         loginAsCustomer,
         loginAsTailor,
         loginAsAdmin,

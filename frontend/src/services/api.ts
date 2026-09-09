@@ -216,6 +216,32 @@ export async function registerUserApi(userData: any) {
   }
 }
 
+export async function forgotPasswordApi(email: string) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    return await res.json();
+  } catch (err) {
+    return null;
+  }
+}
+
+export async function resetPasswordApi(email: string, newPassword: string) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, newPassword })
+    });
+    return await res.json();
+  } catch (err) {
+    return null;
+  }
+}
+
 // Payment API
 export async function processPaymentApi(paymentData: { orderId: string; paymentMethod: string; amount: number; transactionId?: string }) {
   try {
