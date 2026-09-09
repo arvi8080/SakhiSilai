@@ -31,7 +31,7 @@ const options: swaggerJsdoc.Options = {
         description: 'Local Development Server (SQLite DB)'
       },
       {
-        url: 'https://sakhisilai-backend.onrender.com',
+        url: 'https://sakhisilai.onrender.com',
         description: 'Render Production Cloud Server'
       }
     ],
