@@ -3,10 +3,27 @@ services:
     name: sakhisilai-backend
     env: node
     rootDir: backend
-    buildCommand: npm install && npm run build
+    buildCommand: npm ci && npm run build
     startCommand: npm start
+    healthCheckPath: /health
     envVars:
       - key: PORT
         value: 10000
       - key: NODE_ENV
         value: production
+      - key: SQLITE_DB_PATH
+        value: /var/data/sakhisilai.db
+      - key: ALLOWED_ORIGINS
+        value: https://sakhisilai.vercel.app
+      - key: JWT_SECRET
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+    disk:
+      name: sakhisilai-data
+      mountPath: /var/data
+      sizeGB: 10

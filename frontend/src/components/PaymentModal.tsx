@@ -1,17 +1,32 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   QrCode,
   CreditCard,
   Banknote,
   CheckCircle2,
-  Copy,
-  Check,
   ShieldCheck,
   X,
   ArrowRight
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { processPaymentApi } from '../services/api';
+import { createRazorpayOrderApi, verifyRazorpayPaymentApi } from '../services/api';
+
+interface RazorpayCheckoutOptions {
+  key: string;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+  order_id: string;
+  handler: (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => void;
+  modal: { ondismiss: () => void };
+}
+
+declare global {
+  interface Window {
+    Razorpay?: new (options: RazorpayCheckoutOptions) => { open: () => void };
+  }
+}
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -35,79 +50,67 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   onPaymentSuccess
 }) => {
   const [selectedMethod, setSelectedMethod] = useState<'cod' | 'upi' | 'partial_advance'>(initialMethod);
-  const [copied, setCopied] = useState(false);
-  const [transactionId, setTransactionId] = useState(`TXN${Date.now().toString().slice(-8)}`);
   const [isProcessing, setIsProcessing] = useState(false);
   const [completedReceipt, setCompletedReceipt] = useState<any>(null);
+  const paymentIdempotencyKey = useRef(crypto.randomUUID());
 
   if (!isOpen) return null;
 
-  const upiId = 'sakhisilai@upi';
   const advanceAmount = 200;
   const currentPayableAmount =
     selectedMethod === 'partial_advance' ? Math.min(advanceAmount, amount) : amount;
 
-  const upiString = `upi://pay?pa=${upiId}&pn=SakhiSilai&am=${currentPayableAmount}&cu=INR&tn=Order_${orderNumber}`;
-  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(
-    upiString
-  )}`;
-
-  const handleCopyUpi = () => {
-    navigator.clipboard.writeText(upiId);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   const handleConfirmPayment = async () => {
+    if (selectedMethod === 'cod') {
+      onClose();
+      return;
+    }
     setIsProcessing(true);
 
     try {
-      const res = await processPaymentApi({
-        orderId,
-        paymentMethod: selectedMethod,
-        amount: currentPayableAmount,
-        transactionId: selectedMethod === 'cod' ? `COD_${Date.now()}` : transactionId
-      });
-
-      setIsProcessing(false);
-
-      if (res && res.success) {
-        setCompletedReceipt(res.data.payment || {
-          id: 'pay_' + Date.now(),
-          orderId,
-          amount: currentPayableAmount,
-          paymentMethod: selectedMethod,
-          paymentStatus: selectedMethod === 'partial_advance' ? 'advance_paid' : 'fully_paid',
-          transactionId: selectedMethod === 'cod' ? `COD_${Date.now()}` : transactionId,
-          timestamp: new Date().toISOString()
+      if (!window.Razorpay) {
+        await new Promise<void>((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error('Secure payment checkout could not be loaded.'));
+          document.body.appendChild(script);
         });
-
-        confetti({
-          particleCount: 80,
-          spread: 70,
-          origin: { y: 0.6 }
-        });
-
-        if (onPaymentSuccess) {
-          onPaymentSuccess(res.data);
-        }
-      } else {
-        // Fallback simulate receipt
-        const fallbackReceipt = {
-          id: 'pay_' + Date.now(),
-          orderId,
-          amount: currentPayableAmount,
-          paymentMethod: selectedMethod,
-          paymentStatus: selectedMethod === 'partial_advance' ? 'advance_paid' : 'fully_paid',
-          transactionId,
-          timestamp: new Date().toISOString()
-        };
-        setCompletedReceipt(fallbackReceipt);
-        if (onPaymentSuccess) onPaymentSuccess({ payment: fallbackReceipt });
       }
+
+      const result = await createRazorpayOrderApi(orderId, selectedMethod, paymentIdempotencyKey.current);
+      if (!window.Razorpay) throw new Error('Secure payment checkout is unavailable.');
+
+      const checkout = new window.Razorpay({
+        key: result.data.keyId,
+        amount: result.data.amount,
+        currency: result.data.currency,
+        name: 'SakhiSilai',
+        description: `Order ${orderNumber} with ${tailorName}`,
+        order_id: result.data.orderId,
+        handler: async paymentResponse => {
+          try {
+            const verified = await verifyRazorpayPaymentApi({
+              razorpayOrderId: paymentResponse.razorpay_order_id,
+              razorpayPaymentId: paymentResponse.razorpay_payment_id,
+              razorpaySignature: paymentResponse.razorpay_signature
+            });
+            const receipt = verified.data.payment;
+            setCompletedReceipt(receipt);
+            confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+            onPaymentSuccess?.(verified.data);
+          } catch (error) {
+            alert(error instanceof Error ? error.message : 'Payment could not be confirmed.');
+          } finally {
+            setIsProcessing(false);
+          }
+        },
+        modal: { ondismiss: () => setIsProcessing(false) }
+      });
+      checkout.open();
     } catch (err) {
       setIsProcessing(false);
-      alert('Payment processing failed. Please try again.');
+      alert(err instanceof Error ? err.message : 'Payment processing failed. Please try again.');
     }
   };
 
@@ -271,51 +274,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   </p>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {/* QR CODE & UPI VPA */}
-                  <div className="bg-stone-50 p-4 rounded-2xl border border-stone-200 text-center space-y-3">
-                    <div className="inline-block bg-white p-2.5 rounded-2xl border border-stone-200 shadow-sm">
-                      <img src={qrImageUrl} alt="UPI QR Code" className="w-44 h-44 mx-auto rounded-xl" />
-                    </div>
-
-                    <div className="flex items-center justify-center gap-2">
-                      <span className="text-xs font-mono font-bold bg-white px-3 py-1.5 rounded-xl border border-stone-300 text-stone-800">
-                        {upiId}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={handleCopyUpi}
-                        className="px-2.5 py-1.5 bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold text-xs rounded-xl flex items-center gap-1 transition"
-                      >
-                        {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                        <span>{copied ? 'Copied' : 'Copy'}</span>
-                      </button>
-                    </div>
-
-                    <div className="flex justify-center items-center gap-2 pt-1">
-                      <span className="text-[10px] font-extrabold text-stone-400 uppercase">Supports:</span>
-                      <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded">GPay</span>
-                      <span className="text-[10px] font-bold bg-purple-50 text-purple-700 px-2 py-0.5 rounded">PhonePe</span>
-                      <span className="text-[10px] font-bold bg-[#00B9F1]/10 text-[#00B9F1] px-2 py-0.5 rounded">Paytm UPI</span>
-                    </div>
-                  </div>
-
-                  {/* TRANSACTION REFERENCE REF INPUT */}
-                  <div className="space-y-1">
-                    <label htmlFor="transactionId" className="text-xs font-bold text-stone-700 block">
-                      Transaction UTR / Reference ID:
-                    </label>
-                    <input
-                      id="transactionId"
-                      name="transactionId"
-                      type="text"
-                      value={transactionId}
-                      onChange={e => setTransactionId(e.target.value)}
-                      className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2.5 text-xs font-mono font-bold"
-                      placeholder="e.g. TXN987654321"
-                      required
-                    />
-                  </div>
+                <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 text-sm text-emerald-950 space-y-2">
+                  <h4 className="font-bold">Verified checkout</h4>
+                  <p className="text-xs leading-relaxed text-emerald-900">
+                    Continue to Razorpay's secure checkout to choose an available payment method. SakhiSilai confirms payment directly with the provider; never share your UPI PIN or OTP.
+                  </p>
                 </div>
               )}
 
@@ -330,7 +293,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   <span className="animate-pulse">Processing Payment Verification...</span>
                 ) : (
                   <>
-                    <span>Confirm & Verify ₹{currentPayableAmount} Payment</span>
+                    <span>{selectedMethod === 'cod' ? 'Continue with cash on completion' : `Continue to secure checkout · ₹${currentPayableAmount}`}</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}

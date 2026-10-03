@@ -11,7 +11,11 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "create-admin": "node scripts/create-admin.cjs",
+    "backup": "node scripts/backup-database.cjs",
+    "restore": "node scripts/restore-database.cjs",
+    "test:smoke": "npm run build && node scripts/smoke-test.cjs"
   },
 
   "dependencies": {

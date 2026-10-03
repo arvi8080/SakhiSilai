@@ -44,6 +44,8 @@ export const CustomerDashboardPage: React.FC<CustomerDashboardPageProps> = ({ se
   const [tailorPrice, setTailorPrice] = useState('300');
   const [tailorBio, setTailorBio] = useState('अनुभवी दर्जी बहन — ब्लाउज, सूट एवं लहंगे की सिलाई विशेषज्ञ।');
   const [tailorSubmitted, setTailorSubmitted] = useState(false);
+  const [tailorApplicationError, setTailorApplicationError] = useState('');
+  const [isSubmittingTailorApplication, setIsSubmittingTailorApplication] = useState(false);
 
   // New Measurement Form
   const [mLabel, setMLabel] = useState('');
@@ -75,34 +77,41 @@ export const CustomerDashboardPage: React.FC<CustomerDashboardPageProps> = ({ se
     setMLabel('');
   };
 
-  const handleTailorApplicationSubmit = (e: React.FormEvent) => {
+  const handleTailorApplicationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    registerTailor({
-      userId: currentUser.id,
-      name: currentUser.name || 'Tailor Sister',
-      phone: currentUser.phone || '9876543210',
-      avatar: currentUser.avatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&auto=format&fit=crop&q=80',
-      state: selectedState,
-      district: selectedDistrict,
-      village: selectedVillage,
-      addressApprox: `Chaupal near ${selectedVillage}`,
-      bio: tailorBio,
-      experienceYears: Number(tailorExp) || 5,
-      availability: 'available',
-      maxActiveOrders: 5,
-      servicesOffered: ['Blouse Stitching', 'Suit & Salwar Stitching', 'Dress & Kurti'],
-      startingPrice: Number(tailorPrice) || 300,
-      estCompletionDays: 3,
-      skills: ['Princess Cut', 'Bridal Sharara', 'Piping Fitting'],
-      galleryImages: ['https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80'],
-      isVerified: false // Requires admin approval
-    });
-
-    setTailorSubmitted(true);
-    setTimeout(() => {
-      setShowTailorModal(false);
-      setTailorSubmitted(false);
-    }, 2000);
+    setTailorApplicationError('');
+    setIsSubmittingTailorApplication(true);
+    try {
+      await registerTailor({
+        userId: currentUser.id,
+        name: currentUser.name,
+        phone: currentUser.phone,
+        avatar: currentUser.avatar || '',
+        state: selectedState,
+        district: selectedDistrict,
+        village: selectedVillage,
+        addressApprox: `Chaupal near ${selectedVillage}`,
+        bio: tailorBio,
+        experienceYears: Number(tailorExp) || 0,
+        availability: 'available',
+        maxActiveOrders: 5,
+        servicesOffered: ['Blouse Stitching', 'Suit & Salwar Stitching', 'Dress & Kurti'],
+        startingPrice: Number(tailorPrice) || 300,
+        estCompletionDays: 3,
+        skills: [],
+        galleryImages: [],
+        isVerified: false
+      });
+      setTailorSubmitted(true);
+      setTimeout(() => {
+        setShowTailorModal(false);
+        setTailorSubmitted(false);
+      }, 2000);
+    } catch (error) {
+      setTailorApplicationError(error instanceof Error ? error.message : 'Application could not be submitted.');
+    } finally {
+      setIsSubmittingTailorApplication(false);
+    }
   };
 
   return (
@@ -398,6 +407,7 @@ export const CustomerDashboardPage: React.FC<CustomerDashboardPageProps> = ({ se
               </div>
             ) : (
               <form onSubmit={handleTailorApplicationSubmit} className="space-y-3.5 text-xs font-bold">
+                {tailorApplicationError && <p role="alert" className="text-red-700">{tailorApplicationError}</p>}
                 <div className="bg-amber-50 p-3 rounded-2xl border border-amber-200 text-amber-900 flex items-center gap-2">
                   <ShieldCheck className="w-5 h-5 text-amber-600 shrink-0" />
                   <span className="text-[11px] font-medium">
@@ -452,10 +462,11 @@ export const CustomerDashboardPage: React.FC<CustomerDashboardPageProps> = ({ se
 
                 <button
                   type="submit"
-                  className="w-full py-3.5 bg-[#E91E63] hover:bg-[#D81B60] text-white font-black rounded-2xl shadow-lg transition active:scale-95 text-xs flex items-center justify-center gap-2"
+                  disabled={isSubmittingTailorApplication}
+                  className="w-full py-3.5 bg-[#E91E63] hover:bg-[#D81B60] disabled:opacity-60 text-white font-black rounded-2xl shadow-lg transition active:scale-95 text-xs flex items-center justify-center gap-2"
                 >
                   <UserCheck className="w-4 h-4" />
-                  <span>दर्जी आवेदन जमा करें (Submit Application)</span>
+                  <span>{isSubmittingTailorApplication ? 'Submitting...' : 'दर्जी आवेदन जमा करें (Submit Application)'}</span>
                 </button>
               </form>
             )}

@@ -10,42 +10,90 @@
     --accent-gold: #FFB300;
     --bg-cream: #FAF7F2;
     --bg-blush: #FFF5F8;
+    --bg-warm: #F4EFE7;
     --card-bg: #FFFFFF;
     --text-heading: #2A1B3D;
     --text-dark: #372A45;
     --text-muted: #6B5B7B;
+    --border-soft: rgba(91, 72, 88, 0.14);
+    --shadow-soft: 0 18px 36px rgba(42, 27, 61, 0.08);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background:
+      radial-gradient(circle at top left, rgba(255, 240, 246, 0.9), transparent 28%),
+      radial-gradient(circle at bottom right, rgba(35, 88, 73, 0.08), transparent 24%),
+      var(--bg-cream);
+    color: var(--text-dark);
+    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
+    line-height: 1.5;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
+  }
+
+  #root {
+    min-height: 100vh;
   }
 }
 
-body {
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  background-color: #FAF7F2;
-  color: #372A45;
-  overflow-x: hidden;
-  margin: 0;
-  padding: 0;
+::selection {
+  background: rgba(233, 30, 99, 0.2);
+  color: var(--text-heading);
 }
 
-/* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
+
 ::-webkit-scrollbar-track {
-  background: #FAF7F2;
+  background: rgba(250, 247, 242, 0.9);
 }
+
 ::-webkit-scrollbar-thumb {
-  background: #E0D5E5;
+  background: linear-gradient(180deg, #f4bfd6 0%, #e497b2 100%);
   border-radius: 9999px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: #E91E63;
+  background: linear-gradient(180deg, #e583a6 0%, #d93972 100%);
 }
 
-/* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-fade-in {
@@ -53,23 +101,250 @@ body {
 }
 
 @keyframes floatSlow {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-6px); }
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
 }
 
 .animate-float {
   animation: floatSlow 4s ease-in-out infinite;
 }
 
-/* Glassmorphism & Soft Cards */
 .glass-pink {
-  background: rgba(255, 245, 248, 0.9);
+  background: rgba(255, 245, 248, 0.82);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(233, 30, 99, 0.15);
+  border: 1px solid rgba(233, 30, 99, 0.12);
+  box-shadow: 0 16px 26px rgba(233, 30, 99, 0.06);
 }
 
 .glass-nav {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(16px);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(18px);
   border: 1px solid rgba(233, 30, 99, 0.08);
+  box-shadow: 0 14px 30px rgba(42, 27, 61, 0.06);
+}
+
+.soft-card {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-soft);
+}
+
+.primary-btn {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 12px 24px rgba(233, 30, 99, 0.22);
+}
+
+.primary-btn:hover {
+  background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary-dark) 100%);
+}
+
+.secondary-btn {
+  background: rgba(27, 77, 62, 0.08);
+  color: var(--secondary);
+  border: 1px solid rgba(27, 77, 62, 0.15);
+}
+
+.secondary-btn:hover {
+  background: rgba(27, 77, 62, 0.12);
+}
+
+.section-shell {
+  position: relative;
+  background: rgba(255, 255, 255, 0.64);
+  border: 1px solid rgba(91, 72, 88, 0.08);
+  box-shadow: 0 12px 22px rgba(42, 27, 61, 0.04);
+}
+
+.muted-copy {
+  color: var(--text-muted);
+}
+
+.focus-ring:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 3px solid rgba(233, 30, 99, 0.28);
+  outline-offset: 2px;
+}
+
+html.dark {
+  color-scheme: dark;
+  --bg-cream: #19171B;
+  --bg-blush: #241D23;
+  --bg-warm: #28242A;
+  --card-bg: #242127;
+  --text-heading: #F7EDF2;
+  --text-dark: #E9E1E6;
+  --text-muted: #B9ADB5;
+  --border-soft: rgba(242, 220, 232, 0.14);
+  --shadow-soft: 0 18px 36px rgba(0, 0, 0, 0.22);
+}
+
+html.dark body {
+  background: #19171B;
+  color: var(--text-dark);
+}
+
+html.dark .glass-nav {
+  background: rgba(36, 33, 39, 0.94);
+  border-color: rgba(242, 220, 232, 0.12);
+}
+
+html.dark [class~="bg-[#FAF7F2]"],
+html.dark [class~="bg-[#FFF5F8]"],
+html.dark [class~="bg-[#FFF9FB]"],
+html.dark [class~="bg-[#FFF8FB]"],
+html.dark [class~="bg-[#FFF1F6]"],
+html.dark [class~="bg-[#FFF0F6]"],
+html.dark [class~="bg-[#F2F8F6]"],
+html.dark [class~="bg-[#F7F5F0]"] {
+  background-color: #252229;
+}
+
+html.dark [class~="bg-[#E8F8F2]"],
+html.dark [class~="bg-[#FDD7E7]"],
+html.dark [class~="bg-[#D9F6D9]"],
+html.dark [class~="bg-[#FFF7E4]"] {
+  background-color: #302B34;
+}
+
+html.dark [class*="bg-[radial-gradient"] {
+  background-color: #252229;
+  background-image: none;
+}
+
+html.dark [class*="bg-[linear-gradient(135deg,#fff7fa_0%,#f7f5ef_100%)]"] {
+  background-color: #252229;
+  background-image: none;
+  border-color: rgba(242, 220, 232, 0.14);
+}
+
+html.dark [class~="bg-[#FFEAF3]"] {
+  background-color: #3A2833;
+}
+
+html.dark [class~="hover:bg-[#EEF8F4]"]:hover {
+  background-color: #302B34;
+}
+
+html.dark [class~="bg-white"],
+html.dark [class~="bg-white/95"],
+html.dark [class~="bg-white/90"],
+html.dark [class~="bg-white/85"],
+html.dark [class~="bg-white/80"],
+html.dark [class~="bg-white/70"],
+html.dark [class~="bg-white/64"],
+html.dark [class~="bg-white/40"] {
+  background-color: #242127;
+}
+
+html.dark [class~="bg-stone-50"] {
+  background-color: #211F24;
+}
+
+html.dark [class~="bg-stone-100"] {
+  background-color: #2D2930;
+}
+
+html.dark [class~="bg-stone-200"] {
+  background-color: #403A43;
+}
+
+html.dark [class~="bg-pink-50"],
+html.dark [class~="bg-pink-100"],
+html.dark [class~="bg-pink-200"],
+html.dark [class~="bg-amber-50"],
+html.dark [class~="bg-amber-50/80"],
+html.dark [class~="bg-amber-100"],
+html.dark [class~="bg-amber-200"],
+html.dark [class~="bg-emerald-50"],
+html.dark [class~="bg-emerald-100"],
+html.dark [class~="bg-green-50"],
+html.dark [class~="bg-green-100"],
+html.dark [class~="bg-red-50"],
+html.dark [class~="bg-red-100"],
+html.dark [class~="bg-blue-50"],
+html.dark [class~="bg-blue-100"],
+html.dark [class~="bg-purple-50"],
+html.dark [class~="bg-purple-100"],
+html.dark [class~="bg-indigo-50"],
+html.dark [class~="bg-indigo-100"] {
+  background-color: #302B34;
+}
+
+html.dark [class~="border-stone-100"],
+html.dark [class~="border-stone-200"],
+html.dark [class~="border-stone-300"],
+html.dark [class~="border-pink-100"],
+html.dark [class~="border-pink-200"] {
+  border-color: rgba(242, 220, 232, 0.16);
+}
+
+html.dark [class~="text-[#2A1B3D]"],
+html.dark [class~="text-[#372A45]"],
+html.dark [class~="text-stone-900"] {
+  color: #F7EDF2;
+}
+
+html.dark [class~="text-[#1B4D3E]"],
+html.dark [class~="text-[#133A2E]"],
+html.dark [class~="text-amber-700"],
+html.dark [class~="text-amber-800"],
+html.dark [class~="text-amber-900"],
+html.dark [class~="text-emerald-700"],
+html.dark [class~="text-emerald-800"],
+html.dark [class~="text-emerald-900"],
+html.dark [class~="text-green-700"],
+html.dark [class~="text-green-800"],
+html.dark [class~="text-green-900"],
+html.dark [class~="text-red-700"],
+html.dark [class~="text-red-800"],
+html.dark [class~="text-red-900"],
+html.dark [class~="text-blue-700"],
+html.dark [class~="text-blue-800"],
+html.dark [class~="text-blue-900"],
+html.dark [class~="text-purple-700"],
+html.dark [class~="text-purple-800"],
+html.dark [class~="text-purple-900"] {
+  color: #B9E3D0;
+}
+
+html.dark [class~="text-stone-800"] {
+  color: #E9E1E6;
+}
+
+html.dark [class~="text-stone-700"] {
+  color: #D8CDD4;
+}
+
+html.dark [class~="text-stone-600"] {
+  color: #C4B8C0;
+}
+
+html.dark [class~="text-stone-500"],
+html.dark [class~="text-stone-400"] {
+  color: #AA9EA7;
+}
+
+html.dark input,
+html.dark textarea,
+html.dark select {
+  color: #F7EDF2;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #AA9EA7;
+}
+
+html.dark ::-webkit-scrollbar-track {
+  background: #19171B;
 }

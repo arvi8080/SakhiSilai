@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../data/db';
+import { requireAuth, requireRole } from '../middleware/auth';
 
 export const locationRouter = Router();
 
@@ -9,14 +10,15 @@ locationRouter.get('/', (_req: Request, res: Response) => {
 });
 
 // POST /api/locations/villages (Add Village to District)
-locationRouter.post('/villages', (req: Request, res: Response) => {
+locationRouter.post('/villages', requireAuth, requireRole('admin'), (req: Request, res: Response) => {
   const { stateId, districtId, villageName } = req.body;
 
-  if (!stateId || !districtId || !villageName) {
+  if (typeof stateId !== 'string' || stateId.length > 100 || typeof districtId !== 'string' || districtId.length > 100 ||
+    typeof villageName !== 'string' || villageName.trim().length < 2 || villageName.length > 100) {
     return res.status(400).json({ success: false, message: 'stateId, districtId and villageName are required' });
   }
 
-  const success = db.addVillage(stateId, districtId, villageName);
+  const success = db.addVillage(stateId, districtId, villageName.trim());
   if (!success) {
     return res.status(404).json({ success: false, message: 'State or district not found' });
   }

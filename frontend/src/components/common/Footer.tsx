@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLanguage } from '../../context/LanguageContext';
-import { Scissors, Heart, ShieldCheck, MapPin, Phone } from 'lucide-react';
+import { Scissors, Heart, ShieldCheck, MapPin, Phone, ArrowRight, CheckCircle } from 'lucide-react';
 
 interface FooterProps {
   setActiveTab?: (tab: string) => void;
@@ -9,99 +9,120 @@ interface FooterProps {
 export const Footer: React.FC<FooterProps> = ({ setActiveTab }) => {
   const { lang, t } = useLanguage();
 
+  const quickLinks = [
+    { key: 'find_tailors', label: lang === 'hi' ? 'पास के दर्जी देखें' : 'Find Tailors' },
+    { key: 'custom_request', label: lang === 'hi' ? 'कस्टम डिजाइन' : 'Custom Design' },
+    { key: 'how_it_works', label: lang === 'hi' ? 'कैसे काम करता है' : 'How It Works' },
+    { key: 'about', label: lang === 'hi' ? 'हमारे बारे में' : 'About Us' },
+  ];
+
   return (
-    <footer className="bg-[#1F162B] text-stone-300 pt-12 pb-8 border-t border-stone-800 mt-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
-          {/* Brand Mission */}
-          <div className="space-y-3 md:col-span-1">
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab && setActiveTab('home')}>
-              <div className="w-8 h-8 rounded-lg bg-[#E91E63] flex items-center justify-center text-white">
-                <Scissors className="w-4 h-4 rotate-45" />
-              </div>
-              <span className="font-extrabold text-xl text-white tracking-tight">
-                Sakhi<span className="text-[#E91E63]">Silai</span>
-              </span>
-            </div>
-            <p className="text-amber-300 text-xs font-bold italic">
-              "{t('tagline')}"
-            </p>
-            <p className="text-xs text-stone-400 leading-relaxed">
-              {lang === 'hi'
-                ? 'अपने घर के पास की हुनरमंद महिलाओं से कपड़े सिलवाएं और उन्हें घर बैठे आत्मनिर्भर बनाएं।'
-                : 'Empowering skilled rural women to earn independently from home while connecting customers with trusted nearby tailors.'}
-            </p>
-          </div>
-
-          {/* Quick Links */}
-          <div>
-            <h4 className="font-bold text-white text-sm mb-3 uppercase tracking-wider">
-              {lang === 'hi' ? 'मुख्य लिंक' : 'Platform Links'}
-            </h4>
-            <ul className="space-y-2 text-xs font-medium">
-              <li>
-                <button onClick={() => setActiveTab && setActiveTab('find_tailors')} className="hover:text-[#E91E63] transition text-left">
-                  {lang === 'hi' ? 'पास की दर्जियां खोजें' : 'Find Nearby Tailors'}
-                </button>
-              </li>
-              <li>
-                <button onClick={() => setActiveTab && setActiveTab('custom_request')} className="hover:text-[#E91E63] transition text-left">
-                  {lang === 'hi' ? 'कस्टम डिज़ाइन अपलोड करें' : 'Upload Custom Design'}
-                </button>
-              </li>
-              <li>
-                <button onClick={() => setActiveTab && setActiveTab('how_it_works')} className="hover:text-[#E91E63] transition text-left">
-                  {lang === 'hi' ? 'कैसे काम करता है' : 'How It Works'}
-                </button>
-              </li>
-              <li>
-                <button onClick={() => setActiveTab && setActiveTab('become_tailor')} className="hover:text-[#E91E63] transition text-left text-amber-300 font-extrabold">
-                  👩🧵 {lang === 'hi' ? 'दर्जी के रूप में जुड़ें / दर्जी बनें' : 'Join / Become a Tailor'}
-                </button>
-              </li>
-            </ul>
-          </div>
-
-          {/* Core Values */}
-          <div>
-            <h4 className="font-bold text-white text-sm mb-3 uppercase tracking-wider">
-              {lang === 'hi' ? 'हमारा भरोसा' : 'Our Trust Promise'}
-            </h4>
-            <ul className="space-y-2 text-xs">
-              <li className="flex items-center gap-1.5 text-stone-300">
-                <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <span>{lang === 'hi' ? 'दर्जी बहनों को 100% कमाई' : '100% Direct Payout to Tailors'}</span>
-              </li>
-              <li className="flex items-center gap-1.5 text-stone-300">
-                <Heart className="w-4 h-4 text-[#E91E63]" />
-                <span>{lang === 'hi' ? 'महिला सशक्तिकरण व आत्मनिर्भरता' : 'Women Empowerment'}</span>
-              </li>
-              <li className="flex items-center gap-1.5 text-stone-300">
-                <MapPin className="w-4 h-4 text-amber-400" />
-                <span>{lang === 'hi' ? 'आपके अपने गाँव की प्राथमिकता' : 'Same Village Priority'}</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Helpline & Support */}
-          <div>
-            <h4 className="font-bold text-white text-sm mb-3 uppercase tracking-wider">
-              {lang === 'hi' ? 'सखी सहायता केंद्र' : 'Sakhi Helpline'}
-            </h4>
-            <p className="text-xs text-stone-400 mb-2">
-              {lang === 'hi' ? 'सिलाई बुकिंग या दुकान पंजीकरण में सहायता चाहिए?' : 'Need help booking or registering your tailoring profile?'}
-            </p>
-            <a
-              href="tel:1800999000"
-              className="inline-flex items-center gap-2 bg-stone-800 hover:bg-stone-700 text-amber-300 px-3.5 py-2 rounded-xl text-xs font-bold border border-stone-700 transition"
+    <footer className="mt-20 border-t border-[#F2D6E1] bg-[#FFF5F8] text-stone-700">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+          <div className="space-y-4">
+            <button
+              type="button"
+              onClick={() => setActiveTab && setActiveTab('home')}
+              className="flex items-center gap-3 text-left"
             >
-              <Phone className="w-4 h-4 text-emerald-400" />
-              <span>Toll Free: 1800-SAKHI-SILAI</span>
-            </a>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#E91E63] to-[#FF5B8E] text-white shadow-lg shadow-pink-500/20">
+                <Scissors className="h-5 w-5 rotate-45" />
+              </div>
+              <div>
+                <div className="text-xl font-black tracking-tight text-[#2A1B3D]">
+                  Sakhi<span className="text-[#F48FB1]">Silai</span>
+                </div>
+                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#D43A72]">
+                  {lang === 'hi' ? 'गृह सेवा' : 'Home Tailoring'}
+                </div>
+              </div>
+            </button>
+
+            <p className="text-sm font-medium italic text-amber-300">
+              “{t('tagline')}”
+            </p>
+
+            <p className="text-sm leading-6 text-stone-600">
+              {lang === 'hi'
+                ? 'अपने घर के पास की सहेलियों और दर्जियों को खोजें, ऑर्डर करें और भरोसेमंद सिलाई सेवाओं का अनुभव लें।'
+                : 'Discover trusted local tailors, book your order, and support skilled women artisans working close to home.'}
+            </p>
+          </div>
+
+          <div>
+            <h4 className="mb-4 text-sm font-extrabold uppercase tracking-[0.18em] text-[#2A1B3D]">
+              {lang === 'hi' ? 'मुख्य लिंक' : 'Quick Links'}
+            </h4>
+            <ul className="space-y-3 text-sm text-stone-600">
+              {quickLinks.map(({ key, label }) => (
+                <li key={key}>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab && setActiveTab(key)}
+                    className="flex items-center gap-2 transition hover:text-[#F48FB1]"
+                  >
+                    <ArrowRight className="h-3.5 w-3.5 text-pink-300" />
+                    <span>{label}</span>
+                  </button>
+                </li>
+              ))}
+              <li>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab && setActiveTab('become_tailor')}
+                  className="flex items-center gap-2 text-amber-300 transition hover:text-amber-200"
+                >
+                  <CheckCircle className="h-3.5 w-3.5 text-amber-300" />
+                  <span>{lang === 'hi' ? 'दर्जी बनें' : 'Become a Tailor'}</span>
+                </button>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="mb-4 text-sm font-extrabold uppercase tracking-[0.18em] text-[#2A1B3D]">
+              {lang === 'hi' ? 'हमारा भरोसा' : 'Why Us'}
+            </h4>
+            <ul className="space-y-3 text-sm text-stone-600">
+              <li className="flex items-start gap-3">
+                <ShieldCheck className="mt-0.5 h-4 w-4 text-emerald-400" />
+                <span>{lang === 'hi' ? 'दर्जी बहनों को सीधे भुगतान' : 'Direct payouts to skilled tailors'}</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <Heart className="mt-0.5 h-4 w-4 text-pink-400" />
+                <span>{lang === 'hi' ? 'महिला सशक्तिकरण और आत्मनिर्भरता' : 'Women empowerment and livelihood'}</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <MapPin className="mt-0.5 h-4 w-4 text-amber-400" />
+                <span>{lang === 'hi' ? 'अपने गाँव की सुविधाएं और भरोसा' : 'Local trust with nearby support'}</span>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="mb-4 text-sm font-extrabold uppercase tracking-[0.18em] text-[#2A1B3D]">
+              {lang === 'hi' ? 'सहायता' : 'Support'}
+            </h4>
+            <div className="space-y-4">
+              <p className="text-sm leading-6 text-stone-600">
+                {lang === 'hi'
+                  ? 'बुकिंग, भुगतान या प्रोफाइल पंजीकरण में मदद चाहिए?'
+                  : 'Need help with booking, payments, or profile registration?'}
+              </p>
+
+              <a
+                href="tel:1800999000"
+                className="inline-flex items-center gap-3 rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm font-bold text-[#2A1B3D] transition hover:border-[#D43A72] hover:bg-[#FFF1F6]"
+              >
+                <Phone className="h-4 w-4 text-emerald-400" />
+                <span>Toll Free: 1800-SAKHI-SILAI</span>
+              </a>
+            </div>
           </div>
         </div>
 
-        <div className="border-t border-stone-800 pt-6 text-center text-xs text-stone-500">
+        <div className="mt-10 border-t border-stone-200 pt-6 text-center text-sm text-stone-500">
           <p>{t('copyright')}</p>
         </div>
       </div>

@@ -45,18 +45,32 @@ export const FindTailorsPage: React.FC<FindTailorsPageProps> = ({
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 animate-fade-in pb-16">
       {/* Header Banner */}
-      <div className="bg-stone-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4 border border-stone-800">
-        <div>
-          <div className="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase mb-1">
-            <MapPin className="w-4 h-4 text-[#D9534F]" />
-            <span>Matching Location: {selectedVillage}, {selectedDistrict}</span>
+      <div className="overflow-hidden rounded-[32px] border border-[#F2D6E1] bg-[#FFF5F8] p-6 shadow-[0_20px_60px_rgba(42,27,61,0.08)] sm:p-8">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#F7C0D8] bg-white/90 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#D43A72]">
+              <MapPin className="h-3.5 w-3.5" />
+              <span>{lang === 'hi' ? 'आपका स्थान' : 'Matching location'}: {selectedVillage}, {selectedDistrict}</span>
+            </div>
+
+            <h1 className="text-3xl font-black text-[#2A1B3D] sm:text-4xl">
+              {lang === 'hi' ? 'पास के सत्यापित दर्जी' : 'Discover nearby tailors'}
+            </h1>
+
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-stone-600 sm:text-base">
+              {lang === 'hi'
+                ? 'समान गाँव की दर्जियों को पहले दिखाया जाता है ताकि भरोसा, कम दूरी और कपड़ा उठाकर देने की प्रक्रिया आसान रहे।'
+                : 'Same-village tailors are shown first for trust, comfort, and easier fabric handover.'}
+            </p>
           </div>
-          <h1 className="text-2xl sm:text-4xl font-black">
-            {lang === 'hi' ? 'पास के सत्यापित दर्जी' : 'Discover Nearby Tailors'}
-          </h1>
-          <p className="text-xs sm:text-sm text-stone-300 mt-1">
-            Same village tailors prioritized first for max trust and easy fabric handover.
-          </p>
+
+          <button
+            type="button"
+            onClick={() => setOnlySameVillage(false)}
+            className="inline-flex items-center justify-center rounded-2xl border border-stone-200 bg-white px-4 py-2.5 text-xs font-extrabold text-[#2A1B3D] shadow-sm transition hover:border-[#D43A72] hover:text-[#D43A72]"
+          >
+            {lang === 'hi' ? 'सड़क के पास भी देखें' : 'View nearby villages'}
+          </button>
         </div>
       </div>
 
@@ -132,19 +146,40 @@ export const FindTailorsPage: React.FC<FindTailorsPageProps> = ({
 
       {/* TAILORS GRID */}
       {filteredTailors.length === 0 ? (
-        <div className="bg-white p-12 rounded-3xl border border-stone-200 text-center space-y-3">
-          <p className="text-base font-bold text-stone-700">No tailors found matching your exact filter.</p>
-          <p className="text-xs text-stone-500">Try turning off "Same Village Only" to expand search radius to nearby villages.</p>
-          <button
-            onClick={() => {
-              setOnlySameVillage(false);
-              setCategory('all');
-              setSearchQuery('');
-            }}
-            className="px-4 py-2 bg-[#D9534F] text-white text-xs font-bold rounded-xl"
-          >
-            Reset Filters
-          </button>
+        <div className="rounded-[32px] border border-stone-200 bg-white p-8 text-center shadow-[0_12px_30px_rgba(42,27,61,0.04)] sm:p-12">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#FFF1F6] text-[#D43A72]">
+            <Search className="h-7 w-7" />
+          </div>
+
+          <h2 className="mt-5 text-xl font-black text-[#2A1B3D] sm:text-2xl">
+            {lang === 'hi' ? 'इस फ़िल्टर में कोई दर्जी नहीं मिला' : 'No tailors match this exact filter'}
+          </h2>
+
+          <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-stone-600 sm:text-base">
+            {lang === 'hi'
+              ? 'समान गाँव के फ़िल्टर को बंद करें, ताकि पास के गाँवों की दर्जियों को भी देखा जा सके।'
+              : 'Try turning off “Same Village Only” to widen the search and explore nearby villages.'}
+          </p>
+
+          <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <button
+              onClick={() => {
+                setOnlySameVillage(false);
+                setCategory('all');
+                setSearchQuery('');
+              }}
+              className="rounded-2xl bg-[#D9534F] px-5 py-3 text-sm font-extrabold text-white shadow-[0_16px_28px_rgba(217,83,79,0.25)] transition hover:bg-[#C94A45]"
+            >
+              {lang === 'hi' ? 'फ़िल्टर रीसेट करें' : 'Reset filters'}
+            </button>
+
+            <button
+              onClick={() => setOnlySameVillage(false)}
+              className="rounded-2xl border border-stone-200 bg-stone-50 px-5 py-3 text-sm font-bold text-stone-700 transition hover:bg-stone-100"
+            >
+              {lang === 'hi' ? 'पास के गाँव देखें' : 'Show nearby villages'}
+            </button>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

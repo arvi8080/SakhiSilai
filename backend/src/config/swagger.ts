@@ -152,7 +152,7 @@ const options: swaggerJsdoc.Options = {
       },
       '/api/auth/login': {
         post: {
-          summary: 'User Login Endpoint',
+          summary: 'Log in with email or phone and password',
           tags: ['Auth'],
           requestBody: {
             required: true,
@@ -160,22 +160,28 @@ const options: swaggerJsdoc.Options = {
               'application/json': {
                 schema: {
                   type: 'object',
+                  required: ['password'],
+                  description: 'Provide emailOrPhone, email, or phone as the account identifier.',
                   properties: {
+                    emailOrPhone: { type: 'string', example: '9812345678' },
+                    email: { type: 'string', format: 'email', example: 'customer@example.com' },
                     phone: { type: 'string', example: '9812345678' },
-                    role: { type: 'string', enum: ['customer', 'tailor', 'admin'], example: 'customer' }
+                    password: { type: 'string', format: 'password', example: 'a-secure-password' }
                   }
                 }
               }
             }
           },
           responses: {
-            '200': { description: 'Login successful' }
+            '200': { description: 'Login successful; returns an access token and safe user profile' },
+            '400': { description: 'Email or phone and password are required' },
+            '401': { description: 'Credentials are invalid' }
           }
         }
       },
       '/api/auth/register': {
         post: {
-          summary: 'User Registration Endpoint',
+          summary: 'Register a customer account',
           tags: ['Auth'],
           requestBody: {
             required: true,
@@ -183,20 +189,70 @@ const options: swaggerJsdoc.Options = {
               'application/json': {
                 schema: {
                   type: 'object',
+                  required: ['name', 'phone', 'email', 'password', 'village', 'district'],
                   properties: {
-                    name: { type: 'string', example: 'Sushma Devi' },
-                    phone: { type: 'string', example: '9811122233' },
-                    role: { type: 'string', example: 'tailor' },
-                    village: { type: 'string', example: 'Mohanlalganj' },
-                    district: { type: 'string', example: 'Lucknow' },
-                    state: { type: 'string', example: 'Uttar Pradesh' }
+                    name: { type: 'string', minLength: 2, maxLength: 100, example: 'Sushma Devi' },
+                    phone: { type: 'string', pattern: '^\\+?[0-9]{10,15}$', example: '9811122233' },
+                    email: { type: 'string', format: 'email', example: 'sushma@example.com' },
+                    password: { type: 'string', format: 'password', minLength: 12, maxLength: 128 },
+                    village: { type: 'string', minLength: 2, maxLength: 100, example: 'Mohanlalganj' },
+                    district: { type: 'string', minLength: 2, maxLength: 100, example: 'Lucknow' },
+                    state: { type: 'string', maxLength: 100, example: 'Uttar Pradesh' }
                   }
                 }
               }
             }
           },
           responses: {
-            '201': { description: 'User registered successfully' }
+            '201': { description: 'Customer account created; returns an access token and safe user profile' },
+            '400': { description: 'Account details are invalid or already registered' }
+          }
+        }
+      },
+      '/api/auth/forgot-password': {
+        post: {
+          summary: 'Request password recovery',
+          description: 'Password recovery is unavailable until a verified email or SMS delivery provider is configured.',
+          tags: ['Auth'],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['email'],
+                  properties: { email: { type: 'string', format: 'email' } }
+                }
+              }
+            }
+          },
+          responses: {
+            '503': { description: 'Secure password recovery is not configured' }
+          }
+        }
+      },
+      '/api/auth/reset-password': {
+        post: {
+          summary: 'Reset a password',
+          description: 'Password recovery is unavailable until a verified email or SMS delivery provider is configured.',
+          tags: ['Auth'],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['email', 'newPassword'],
+                  properties: {
+                    email: { type: 'string', format: 'email' },
+                    newPassword: { type: 'string', format: 'password', minLength: 12, maxLength: 128 }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            '503': { description: 'Secure password recovery is not configured' }
           }
         }
       },

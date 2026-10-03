@@ -18,7 +18,7 @@ export const CustomDesignRequestPage: React.FC<CustomDesignRequestPageProps> = (
   const [imageUrl, setImageUrl] = useState('https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=600&auto=format&fit=crop&q=80');
   const [isUploading, setIsUploading] = useState(false);
   const [notes, setNotes] = useState('');
-  const [requiredDate, setRequiredDate] = useState(
+  const [requiredDate, setRequiredDate] = useState(() =>
     new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   );
   const [submittedSuccess, setSubmittedSuccess] = useState(false);
@@ -257,9 +257,13 @@ export const CustomDesignRequestPage: React.FC<CustomDesignRequestPageProps> = (
 
                           {req.status === 'open' ? (
                             <button
-                              onClick={() => {
-                                const createdOrd = acceptQuoteOffer(req.id, off.id);
-                                if (createdOrd) onOrderCreated(createdOrd.id);
+                              onClick={async () => {
+                                try {
+                                  const createdOrd = await acceptQuoteOffer(req.id, off.id);
+                                  if (createdOrd) onOrderCreated(createdOrd.id);
+                                } catch (error) {
+                                  window.alert(error instanceof Error ? error.message : 'Quote could not be accepted. Please try again.');
+                                }
                               }}
                               className="mt-1 px-3 py-1 bg-[#1B4D3E] text-white font-bold text-[10px] rounded-lg shadow"
                             >

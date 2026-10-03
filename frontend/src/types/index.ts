@@ -210,7 +210,7 @@ export interface Review {
 
 export interface SystemNotification {
   id: string;
-  targetRole: 'all' | 'customer' | 'tailor';
+  targetRole: 'all' | 'customer' | 'tailor' | 'admin';
   recipientId?: string;
   titleEn: string;
   titleHi: string;

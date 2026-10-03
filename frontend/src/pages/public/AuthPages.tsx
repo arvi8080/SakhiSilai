@@ -23,14 +23,13 @@ interface AuthPagesProps {
 export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode = 'login' }) => {
   const {
     loginWithCredentials,
+    registerWithCredentials,
     forgotPassword,
     resetPassword,
-    updateUserProfile,
     pendingRedirectTab,
     setPendingRedirectTab,
     redirectNotice,
     setRedirectNotice,
-    setRole
   } = useAuth();
   const { lang } = useLanguage();
 
@@ -58,6 +57,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
 
   // Form Fields (Email Only - Mobile Option Removed)
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -94,26 +94,23 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
   };
 
   // UNIFIED SIGNUP HANDLER (EMAIL-ONLY SIGNUP)
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoginError(null);
     setIsSubmitting(true);
-
-    updateUserProfile({
-      name: name || 'User',
-      email: email,
-      phone: '',
-      village,
-      district,
-      state: stateVal,
-      role: 'customer'
-    });
-    setRole('customer');
-    setRegSuccess(true);
-    setIsSubmitting(false);
-
-    setTimeout(() => {
-      completeAuthRedirect('customer');
-    }, 1200);
+    try {
+      const result = await registerWithCredentials({ name, email, phone, password, village, district, state: stateVal });
+      if (!result.success) {
+        setLoginError(result.message || 'Registration could not be completed.');
+        return;
+      }
+      setRegSuccess(true);
+      setTimeout(() => completeAuthRedirect('customer'), 600);
+    } catch (error) {
+      setLoginError(error instanceof Error ? error.message : 'Registration could not be completed.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // FORGOT PASSWORD HANDLER
@@ -150,8 +147,8 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
       return;
     }
 
-    if (newPassword.length < 4) {
-      setLoginError(lang === 'hi' ? 'पासवर्ड कम से कम 4 अक्षरों का होना चाहिए।' : 'Password must be at least 4 characters long.');
+    if (newPassword.length < 12) {
+      setLoginError(lang === 'hi' ? 'पासवर्ड कम से कम 12 अक्षरों का होना चाहिए।' : 'Password must be at least 12 characters long.');
       return;
     }
 
@@ -362,6 +359,12 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
             </div>
           )}
 
+          {loginError && (
+            <div role="alert" className="bg-red-50 p-4 rounded-2xl border border-red-200 text-xs font-bold text-red-700 text-center">
+              {loginError}
+            </div>
+          )}
+
           <form onSubmit={handleRegister} className="space-y-4 text-xs font-bold">
             <div>
               <label htmlFor="regName" className="block text-stone-700 mb-1">
@@ -406,9 +409,29 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ setActiveTab, initialMode 
                 id="regPassword"
                 name="regPassword"
                 type="password"
-                placeholder="******"
+                placeholder="At least 12 characters"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
+                className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3.5 text-sm text-[#2A1B3D]"
+                minLength={12}
+                maxLength={128}
+                required
+              />
+            </div>
+
+            <div>
+              <label htmlFor="regPhone" className="block text-stone-700 mb-1">
+                {lang === 'hi' ? 'मोबाइल नंबर' : 'Mobile number'}
+              </label>
+              <input
+                id="regPhone"
+                name="regPhone"
+                type="tel"
+                autoComplete="tel"
+                inputMode="tel"
+                pattern="\+?[0-9]{10,15}"
+                value={phone}
+                onChange={e => setPhone(e.target.value)}
                 className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3.5 text-sm text-[#2A1B3D]"
                 required
               />

@@ -118,6 +118,8 @@ export interface Order {
   measurements: any;
   specialInstructions: string;
   requiredDate: string;
+  appointmentDate?: string;
+  appointmentTimeSlot?: string;
   createdAt: string;
   updatedAt: string;
   statusHistory: StatusHistoryEntry[];
@@ -170,7 +172,7 @@ export interface Review {
 
 export interface SystemNotification {
   id: string;
-  targetRole: 'all' | 'customer' | 'tailor';
+  targetRole: 'all' | 'customer' | 'tailor' | 'admin';
   recipientId?: string;
   titleEn: string;
   titleHi: string;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -15,7 +15,8 @@ import {
   ArrowRight,
   ArrowLeft,
   Calendar,
-  Clock
+  Clock,
+  Loader2
 } from 'lucide-react';
 
 interface CreateOrderPageProps {
@@ -31,7 +32,7 @@ export const CreateOrderPage: React.FC<CreateOrderPageProps> = ({
   setActiveTab,
   onOrderCreated
 }) => {
-  const { tailors, designs, measurements, createOrder, selectedVillage, selectedDistrict, selectedState } = useData();
+  const { tailors, designs, measurements, createOrder, updateOrderPayment, selectedVillage, selectedDistrict, selectedState } = useData();
   const { currentUser } = useAuth();
   const { t, lang } = useLanguage();
 
@@ -44,16 +45,19 @@ export const CreateOrderPage: React.FC<CreateOrderPageProps> = ({
   const [measurementType, setMeasurementType] = useState<'saved' | 'manual' | 'drop'>('drop');
   const [selectedMeasurementId, setSelectedMeasurementId] = useState<string>(measurements[0]?.id || '');
   const [specialNotes, setSpecialNotes] = useState<string>('');
-  const [requiredDate, setRequiredDate] = useState<string>(
+  const [requiredDate, setRequiredDate] = useState<string>(() =>
     new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   );
-  const [appointmentDate, setAppointmentDate] = useState<string>(
+  const [appointmentDate, setAppointmentDate] = useState<string>(() =>
     new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   );
   const [appointmentTimeSlot, setAppointmentTimeSlot] = useState<string>('Morning (10:00 AM - 01:00 PM)');
-  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'upi' | 'partial_advance'>('upi');
+  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'upi' | 'partial_advance'>('cod');
   const [createdOrderData, setCreatedOrderData] = useState<any>(null);
   const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const orderIdempotencyKey = useRef(crypto.randomUUID());
 
   const activeDesign = designs.find(d => d.id === selectedDesignId) || selectedDesign;
   const price = activeDesign ? activeDesign.price : tailor.startingPrice;
@@ -62,16 +66,20 @@ export const CreateOrderPage: React.FC<CreateOrderPageProps> = ({
   // Delivery Availability simulation: Available if delivery runner active in district
   const isDeliveryAvailable = selectedDistrict === 'Lucknow';
 
-  const handlePlaceOrder = (e: React.FormEvent) => {
+  const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setSubmitError('');
 
-    let measurementData: any = 'Handover during fabric drop';
-    if (measurementType === 'saved') {
-      const foundM = measurements.find(m => m.id === selectedMeasurementId);
-      if (foundM) measurementData = foundM;
-    }
+    try {
+      let measurementData: any = 'Handover during fabric drop';
+      if (measurementType === 'saved') {
+        const foundM = measurements.find(m => m.id === selectedMeasurementId);
+        if (foundM) measurementData = foundM;
+      }
 
-    const created = createOrder({
+      const created = await createOrder({
       customerId: currentUser.id,
       customerName: currentUser.name,
       customerPhone: currentUser.phone,
@@ -97,13 +105,19 @@ export const CreateOrderPage: React.FC<CreateOrderPageProps> = ({
       requiredDate,
       appointmentDate,
       appointmentTimeSlot
-    });
+      }, orderIdempotencyKey.current);
+      orderIdempotencyKey.current = crypto.randomUUID();
 
-    setCreatedOrderData(created);
-    if (paymentMethod === 'upi' || paymentMethod === 'partial_advance') {
-      setShowPaymentModal(true);
-    } else {
-      onOrderCreated(created.id);
+      setCreatedOrderData(created);
+      if (paymentMethod === 'upi' || paymentMethod === 'partial_advance') {
+        setShowPaymentModal(true);
+      } else {
+        onOrderCreated(created.id);
+      }
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Order could not be saved. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -228,7 +242,7 @@ export const CreateOrderPage: React.FC<CreateOrderPageProps> = ({
                   {t('deliveryPickupDesc')}
                 </p>
                 {!isDeliveryAvailable && (
-                  <p className="text-[10px] text-stone-500 font-bold italic flex items-center gap-1 text-amber-700">
+                  <p className="text-[10px] font-bold italic flex items-center gap-1 text-amber-700">
                     <AlertCircle className="w-3.5 h-3.5" />
                     <span>{t('noDeliveryWarning')}</span>
                   </p>
@@ -368,11 +382,11 @@ export const CreateOrderPage: React.FC<CreateOrderPageProps> = ({
                 name="orderPaymentMethod"
                 value={paymentMethod}
                 onChange={e => setPaymentMethod(e.target.value as any)}
-                className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2.5 text-xs font-semibold text-[#1B4D3E]"
+                  className="w-full bg-stone-50 border border-stone-300 rounded-xl p-2.5 text-xs font-semibold text-[#1B4D3E]"
               >
-                <option value="upi">📱 UPI / QR Code Payment (100% Instant)</option>
-                <option value="partial_advance">⚡ Partial Advance (₹200 Booking)</option>
-                <option value="cod">💵 Cash on Completion (100% Direct)</option>
+                <option value="upi">Pay online with UPI / cards</option>
+                <option value="partial_advance">Pay ₹200 booking advance online</option>
+                <option value="cod">Cash on completion</option>
               </select>
             </div>
 
@@ -398,12 +412,15 @@ export const CreateOrderPage: React.FC<CreateOrderPageProps> = ({
               Zero commission platform. Tailor receives 100% of ₹{price}.
             </div>
 
+            {submitError && <p role="alert" className="w-full text-sm font-semibold text-red-700 sm:w-auto">{submitError}</p>}
+
             <button
               type="submit"
-              className="w-full sm:w-auto px-8 py-4 bg-[#D9534F] hover:bg-[#C93B37] text-white font-extrabold text-base rounded-2xl shadow-xl transition active:scale-95 flex items-center justify-center gap-2"
+              disabled={isSubmitting}
+              className="w-full sm:w-auto px-8 py-4 bg-[#D9534F] hover:bg-[#C93B37] disabled:cursor-wait disabled:opacity-70 text-white font-extrabold text-base rounded-2xl shadow-xl transition active:scale-95 flex items-center justify-center gap-2"
             >
-              <span>{paymentMethod === 'cod' ? t('placeOrderBtn') : 'Proceed to Payment & Confirm'}</span>
-              <ArrowRight className="w-5 h-5" />
+              {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowRight className="w-5 h-5" />}
+              <span>{isSubmitting ? 'Saving order...' : paymentMethod === 'cod' ? t('placeOrderBtn') : 'Proceed to Payment & Confirm'}</span>
             </button>
           </div>
         </form>
@@ -422,7 +439,9 @@ export const CreateOrderPage: React.FC<CreateOrderPageProps> = ({
           amount={price}
           tailorName={tailor.name}
           initialMethod={paymentMethod}
-          onPaymentSuccess={() => {
+          onPaymentSuccess={result => {
+            const paidOrder = result?.order;
+            if (paidOrder) updateOrderPayment(paidOrder.id, paidOrder.paymentStatus, paidOrder.advancePaid);
             setShowPaymentModal(false);
             onOrderCreated(createdOrderData.id);
           }}

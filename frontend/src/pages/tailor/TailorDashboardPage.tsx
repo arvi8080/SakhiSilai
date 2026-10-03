@@ -23,6 +23,34 @@ interface TailorDashboardPageProps {
   setActiveTab: (tab: string) => void;
 }
 
+async function imageFileToDataUrl(file: File): Promise<string> {
+  if (!file.type.startsWith('image/')) throw new Error('Choose an image file');
+
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, 900 / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+  const context = canvas.getContext('2d');
+  if (!context) throw new Error('Image could not be prepared');
+  context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+
+  let imageBlob: Blob | null = null;
+  for (const quality of [0.78, 0.65, 0.52, 0.4]) {
+    imageBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
+    if (imageBlob && imageBlob.size <= 55 * 1024) break;
+  }
+  if (!imageBlob || imageBlob.size > 55 * 1024) throw new Error('Choose a smaller image');
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('Image could not be read'));
+    reader.onerror = () => reject(new Error('Image could not be read'));
+    reader.readAsDataURL(imageBlob);
+  });
+}
+
 export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
   const { tailors, designs, orders, customRequests, updateOrderStatus, updateTailorAvailability, updateTailorCapacity, updateTailorProfile, addDesign, deleteDesign, submitQuoteOffer } = useData();
   const { currentUser } = useAuth();
@@ -33,7 +61,35 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
   const [showEditProfileModal, setShowEditProfileModal] = useState(false);
   const [quoteModalReqId, setQuoteModalReqId] = useState<string | null>(null);
 
-  const tailor = tailors.find(t => t.id === 't_sunita' || t.userId === currentUser.id) || tailors[0];
+  const tailor = tailors.find(t => t.userId === currentUser.id)
+    ?? tailors.find(t => t.id === 't_sunita' && currentUser.role === 'tailor')
+    ?? tailors[0]
+    ?? {
+      id: 't_placeholder',
+      userId: currentUser.id,
+      name: currentUser.name || 'Your Tailor Profile',
+      phone: currentUser.phone || '',
+      avatar: currentUser.avatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&auto=format&fit=crop&q=80',
+      state: currentUser.state || 'Uttar Pradesh',
+      district: currentUser.district || 'Lucknow',
+      village: currentUser.village || 'Mohanlalganj',
+      addressApprox: 'Home studio',
+      bio: 'Home tailor profile pending setup.',
+      experienceYears: 1,
+      rating: 5,
+      reviewCount: 0,
+      completedOrdersCount: 0,
+      availability: 'available',
+      maxActiveOrders: 5,
+      currentActiveOrders: 0,
+      servicesOffered: ['Blouse Stitching'],
+      startingPrice: 300,
+      estCompletionDays: 3,
+      skills: ['Blouse Stitching'],
+      galleryImages: [],
+      isVerified: true,
+      joinedDate: new Date().toISOString().split('T')[0]
+    };
 
   // Profile Edit Form State
   const [profileName, setProfileName] = useState(tailor.name);
@@ -59,6 +115,7 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
   const [designDesc, setDesignDesc] = useState('');
   const [designCategory, setDesignCategory] = useState('Blouse Stitching');
   const [designImage, setDesignImage] = useState('https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80');
+  const [designImageError, setDesignImageError] = useState('');
 
   const tailorOrders = orders.filter(o => o.tailorId === tailor.id);
   const newRequests = tailorOrders.filter(o => o.status === 'requested');
@@ -79,11 +136,22 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
 
   const handleCreateDesign = (e: React.FormEvent) => {
     e.preventDefault();
+    const submitter = (e.nativeEvent as SubmitEvent).submitter;
+    const keepAdding = submitter instanceof HTMLButtonElement && submitter.dataset.addAnother === 'true';
+    const categoryIds: Record<string, string> = {
+      'Blouse Stitching': 'blouse',
+      'Suit & Salwar Stitching': 'suit',
+      'Dress & Kurti': 'dress',
+      'Kids Clothing': 'kids',
+      Alterations: 'alterations',
+      'Custom Design': 'custom'
+    };
+    const normalizedCategory = designCategory.trim();
     addDesign({
       tailorId: tailor.id,
       tailorName: tailor.name,
-      categoryId: designCategory.toLowerCase().includes('blouse') ? 'blouse' : 'suit',
-      categoryName: designCategory,
+      categoryId: categoryIds[normalizedCategory] || Object.entries(categoryIds).find(([name]) => name.toLowerCase() === normalizedCategory.toLowerCase())?.[1] || 'custom',
+      categoryName: normalizedCategory || 'Custom Design',
       title: designTitle || (lang === 'hi' ? 'विशेष सिलाई डिज़ाइन' : 'Custom Designer Style'),
       image: designImage || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80',
       price: Number(designPrice) || 400,
@@ -91,9 +159,9 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
       description: designDesc || (lang === 'hi' ? 'उच्च गुणवत्ता सिलाई, परफेक्ट फिटिंग और सुंदर फिनिशिंग।' : 'High quality custom stitching with perfect fitting.'),
       isAvailable: true
     });
-    setShowAddDesignModal(false);
     setDesignTitle('');
     setDesignDesc('');
+    if (!keepAdding) setShowAddDesignModal(false);
   };
 
   const handleSaveProfile = (e: React.FormEvent) => {
@@ -498,8 +566,8 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
               </h3>
               <p className="text-xs text-stone-500">
                 {lang === 'hi'
-                  ? 'अपनी पसंदीदा सिलाई डिज़ाएन्स, फोटो, विवरण और दरें जोड़ें'
-                  : 'Add custom design photos, descriptions, and stitching prices for customers'}
+                  ? `${tailorDesigns.length} डिज़ाइन सूचीबद्ध • अपने सभी डिज़ाइन, फोटो, विवरण और दरें जोड़ें`
+                  : `${tailorDesigns.length} designs listed • Add as many styles, photos, details, and prices as you offer`}
               </p>
             </div>
             <button
@@ -663,20 +731,24 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
                   <label htmlFor="newDesignCategory" className="block text-stone-700 mb-1">
                     {lang === 'hi' ? 'श्रेणी (Category)' : 'Category'}
                   </label>
-                  <select
+                  <input
                     id="newDesignCategory"
                     name="newDesignCategory"
+                    type="text"
                     value={designCategory}
                     onChange={e => setDesignCategory(e.target.value)}
+                    list="designCategoryOptions"
+                    placeholder={lang === 'hi' ? 'अपनी सेवा श्रेणी लिखें' : 'Enter your service category'}
                     className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-xs text-[#2A1B3D] font-bold"
-                  >
-                    <option value="Blouse Stitching">👚 Blouse Stitching</option>
-                    <option value="Suit & Salwar Stitching">👗 Suit & Salwar</option>
-                    <option value="Dress & Kurti">👘 Dress & Kurti</option>
-                    <option value="Kids Clothing">🧒 Kids Clothing</option>
-                    <option value="Alterations">✂️ Alterations</option>
-                    <option value="Custom Design">🎨 Custom Design</option>
-                  </select>
+                  />
+                  <datalist id="designCategoryOptions">
+                    <option value="Blouse Stitching" />
+                    <option value="Suit & Salwar Stitching" />
+                    <option value="Dress & Kurti" />
+                    <option value="Kids Clothing" />
+                    <option value="Alterations" />
+                    <option value="Custom Design" />
+                  </datalist>
                 </div>
 
                 <div>
@@ -713,8 +785,25 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
 
                 <div>
                   <label htmlFor="newDesignImage" className="block text-stone-700 mb-1">
-                    {lang === 'hi' ? 'फोटो URL (Image URL)' : 'Design Photo URL'}
+                    {lang === 'hi' ? 'डिज़ाइन फोटो' : 'Design photo'}
                   </label>
+                  <input
+                    id="designImageFile"
+                    name="designImageFile"
+                    type="file"
+                    accept="image/*"
+                    onChange={async e => {
+                      const file = e.currentTarget.files?.[0];
+                      if (!file) return;
+                      try {
+                        setDesignImageError('');
+                        setDesignImage(await imageFileToDataUrl(file));
+                      } catch (error) {
+                        setDesignImageError(error instanceof Error ? error.message : 'Image could not be prepared');
+                      }
+                    }}
+                    className="w-full text-xs text-stone-600 file:mr-2 file:rounded-lg file:border-0 file:bg-pink-50 file:px-3 file:py-2 file:text-xs file:font-bold file:text-[#D43A72]"
+                  />
                   <input
                     id="newDesignImage"
                     name="newDesignImage"
@@ -722,6 +811,15 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
                     value={designImage}
                     onChange={e => setDesignImage(e.target.value)}
                     className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-xs text-[#2A1B3D]"
+                    aria-label={lang === 'hi' ? 'या फोटो URL दर्ज करें' : 'Or enter an image URL'}
+                  />
+                  {designImageError && <p role="alert" className="mt-1 text-xs font-semibold text-red-600">{designImageError}</p>}
+                  <img
+                    src={designImage}
+                    alt={lang === 'hi' ? 'डिज़ाइन फोटो का पूर्वावलोकन' : 'Design image preview'}
+                    className="mt-2 h-20 w-full rounded-lg border border-stone-200 object-cover"
+                    onError={e => { e.currentTarget.style.visibility = 'hidden'; }}
+                    onLoad={e => { e.currentTarget.style.visibility = 'visible'; }}
                   />
                 </div>
               </div>
@@ -785,6 +883,13 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
                   className="flex-1 py-3.5 border border-stone-300 rounded-2xl font-black text-stone-600 hover:bg-stone-50"
                 >
                   {lang === 'hi' ? 'रद्द करें' : 'Cancel'}
+                </button>
+                <button
+                  type="submit"
+                  data-add-another="true"
+                  className="flex-1 py-3.5 border border-[#D43A72] text-[#D43A72] font-black rounded-2xl transition hover:bg-pink-50"
+                >
+                  {lang === 'hi' ? 'सहेजें और अगला जोड़ें' : 'Save & Add Another'}
                 </button>
                 <button
                   type="submit"

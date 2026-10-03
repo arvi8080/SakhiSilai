@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
+import dotenv from 'dotenv';
 import type {
   User,
   TailorProfile,
@@ -12,13 +13,12 @@ import type {
   SystemNotification
 } from '../types';
 
+dotenv.config();
+
 // Ensure data directory exists
 const dataDir = path.join(__dirname, '../../data');
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
-}
-
-const dbPath = path.join(dataDir, 'sakhisilai.db');
+const dbPath = process.env.SQLITE_DB_PATH || path.join(dataDir, 'sakhisilai.db');
+fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 console.log(`📁 Persistent Database File: ${dbPath}`);
 
 export const sqlite = new Database(dbPath);
@@ -39,7 +39,8 @@ export function initDatabase() {
       village TEXT NOT NULL,
       avatar TEXT,
       createdAt TEXT NOT NULL,
-      isVerified INTEGER DEFAULT 0
+      isVerified INTEGER DEFAULT 0,
+      isBlocked INTEGER DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS tailors (
@@ -123,6 +124,8 @@ export function initDatabase() {
       measurements TEXT,
       specialInstructions TEXT,
       requiredDate TEXT,
+      appointmentDate TEXT,
+      appointmentTimeSlot TEXT,
       createdAt TEXT NOT NULL,
       updatedAt TEXT NOT NULL,
       statusHistory TEXT
@@ -142,6 +145,7 @@ export function initDatabase() {
       requiredDate TEXT,
       createdAt TEXT NOT NULL,
       status TEXT DEFAULT 'open',
+      acceptedQuoteId TEXT,
       offers TEXT
     );
 
@@ -169,6 +173,22 @@ export function initDatabase() {
       type TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS complaints (
+      id TEXT PRIMARY KEY,
+      orderId TEXT,
+      orderNumber TEXT,
+      complainantName TEXT NOT NULL,
+      complainantRole TEXT NOT NULL,
+      complainantPhone TEXT NOT NULL,
+      againstName TEXT NOT NULL,
+      category TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      description TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'open',
+      createdAt TEXT NOT NULL,
+      resolutionNote TEXT
+    );
+
     CREATE TABLE IF NOT EXISTS locations (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -187,6 +207,45 @@ export function initDatabase() {
       timestamp TEXT NOT NULL,
       receiptUrl TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS idempotency_records (
+      scope TEXT NOT NULL,
+      idempotencyKey TEXT NOT NULL,
+      ownerId TEXT NOT NULL,
+      responseJson TEXT NOT NULL,
+      createdAt TEXT NOT NULL,
+      PRIMARY KEY (scope, idempotencyKey)
+    );
+
+    CREATE TABLE IF NOT EXISTS payment_intents (
+      idempotencyKey TEXT PRIMARY KEY,
+      ownerId TEXT NOT NULL,
+      orderId TEXT NOT NULL,
+      amountPaise INTEGER NOT NULL,
+      paymentMethod TEXT NOT NULL,
+      razorpayOrderId TEXT UNIQUE,
+      razorpayPaymentId TEXT UNIQUE,
+      status TEXT NOT NULL,
+      createdAt TEXT NOT NULL
+    );
+  `);
+
+  for (const statement of [
+    'ALTER TABLE orders ADD COLUMN appointmentDate TEXT',
+    'ALTER TABLE orders ADD COLUMN appointmentTimeSlot TEXT',
+    'ALTER TABLE custom_requests ADD COLUMN acceptedQuoteId TEXT'
+  ]) {
+    try {
+      sqlite.exec(statement);
+    } catch (e) {
+      // Column already exists
+    }
+  }
+
+  sqlite.exec(`
+    CREATE INDEX IF NOT EXISTS idx_orders_customer_created ON orders(customerId, createdAt DESC);
+    CREATE INDEX IF NOT EXISTS idx_orders_tailor_created ON orders(tailorId, createdAt DESC);
+    CREATE INDEX IF NOT EXISTS idx_orders_created ON orders(createdAt DESC);
   `);
 
   try {
@@ -202,14 +261,33 @@ export function initDatabase() {
     // recipientId column already exists
   }
 
-  // Seed initial data if tables are empty
+  try {
+    sqlite.exec('ALTER TABLE users ADD COLUMN isBlocked INTEGER DEFAULT 0;');
+  } catch (e) {
+    // isBlocked column already exists
+  }
+
+  removeLegacyDemoRecords();
+
+  // Demo records are available only when explicitly requested for local development.
   seedIfEmpty();
+}
+
+function removeLegacyDemoRecords() {
+  sqlite.transaction(() => {
+    sqlite.prepare('DELETE FROM orders WHERE id = ?').run('ord_101');
+    sqlite.prepare('DELETE FROM custom_requests WHERE id = ?').run('req_201');
+    sqlite.prepare('DELETE FROM designs WHERE id = ?').run('d_1');
+    sqlite.prepare('DELETE FROM notifications WHERE id = ?').run('n_1');
+    sqlite.prepare('DELETE FROM tailors WHERE id IN (?, ?)').run('t_sunita', 't_radha');
+    sqlite.prepare('DELETE FROM users WHERE id IN (?, ?, ?)').run('u_pria', 'u_sunita', 'admin_1');
+  })();
 }
 
 function seedIfEmpty() {
   const userCount = (sqlite.prepare('SELECT COUNT(*) as cnt FROM users').get() as any).cnt;
 
-  if (userCount === 0) {
+  if (userCount === 0 && process.env.SEED_DEMO_DATA === 'true') {
     console.log('🌱 Seeding initial SakhiSilai database records...');
 
     // 1. Users

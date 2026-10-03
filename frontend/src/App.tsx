@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import { LanguageProvider } from './context/LanguageContext';
@@ -6,7 +6,7 @@ import { Navbar } from './components/common/Navbar';
 import { Footer } from './components/common/Footer';
 
 // Pages
-import { Home } from './pages/public/Home';
+import { HomeLanding as Home } from './pages/public/HomeLanding';
 import { ServicesPage } from './pages/public/ServicesPage';
 import { HowItWorksPage } from './pages/public/HowItWorksPage';
 import { AboutPage } from './pages/public/AboutPage';
@@ -27,10 +27,16 @@ const AppContent: React.FC = () => {
   const { currentRole, isLoggedIn, setPendingRedirectTab, setPendingTailorId, setRedirectNotice } = useAuth();
 
   const [activeTab, setActiveTab] = useState<string>('home');
-  const [selectedTailorId, setSelectedTailorId] = useState<string>('t_sunita');
+  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('sakhisilai-theme') === 'dark');
+  const [selectedTailorId, setSelectedTailorId] = useState<string>('');
   const [selectedDesignId, setSelectedDesignId] = useState<string | undefined>(undefined);
-  const [selectedOrderId, setSelectedOrderId] = useState<string>('ord_101');
+  const [selectedOrderId, setSelectedOrderId] = useState<string>('');
   const [categoryFilter, setCategoryFilter] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', isDarkMode);
+    localStorage.setItem('sakhisilai-theme', isDarkMode ? 'dark' : 'light');
+  }, [isDarkMode]);
 
   const handleNavigate = (tab: string, extraData?: { tailorId?: string; designId?: string; orderId?: string }) => {
     // Unified Join / Become a Tailor routing logic
@@ -113,7 +119,12 @@ const AppContent: React.FC = () => {
     <div className="min-h-screen bg-[#FAF7F2] text-stone-800 flex flex-col justify-between selection:bg-[#D9534F] selection:text-white">
       <div>
         {/* Navigation Bar */}
-        <Navbar activeTab={activeTab} setActiveTab={handleNavigate} />
+        <Navbar
+          activeTab={activeTab}
+          setActiveTab={handleNavigate}
+          isDarkMode={isDarkMode}
+          onToggleTheme={() => setIsDarkMode(current => !current)}
+        />
 
         {/* Main Content Area */}
         <main className="pt-6">
@@ -129,6 +140,7 @@ const AppContent: React.FC = () => {
             <ServicesPage
               setActiveTab={handleNavigate}
               onSelectCategory={handleSelectCategory}
+              onBookDesign={handleBookDesign}
             />
           )}
 
@@ -275,11 +287,11 @@ const AccessDeniedBanner: React.FC<{ targetRole: string; currentRole: string; se
 export default function App() {
   return (
     <LanguageProvider>
-      <DataProvider>
-        <AuthProvider>
+      <AuthProvider>
+        <DataProvider>
           <AppContent />
-        </AuthProvider>
-      </DataProvider>
+        </DataProvider>
+      </AuthProvider>
     </LanguageProvider>
   );
 }

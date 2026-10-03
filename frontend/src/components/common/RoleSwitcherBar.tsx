@@ -4,6 +4,7 @@ import { User, Scissors, ShieldAlert } from 'lucide-react';
 
 export const RoleSwitcherBar: React.FC = () => {
   const { currentRole, setRole, isLoggedIn, loginAsGuest } = useAuth();
+  if (import.meta.env.PROD) return null;
 
   return (
     <div className="bg-stone-900 text-white px-4 py-2 text-xs flex flex-wrap items-center justify-between gap-2 shadow-md">

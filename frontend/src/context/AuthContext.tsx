@@ -1,8 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { User, UserRole } from '../types';
-import { auth, isFirebaseConfigured } from '../config/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
-import { loginUserApi, forgotPasswordApi, resetPasswordApi } from '../services/api';
+import { loginUserApi, registerUserApi, forgotPasswordApi, resetPasswordApi } from '../services/api';
 
 interface AuthContextType {
   currentUser: User;
@@ -10,6 +8,7 @@ interface AuthContextType {
   isLoggedIn: boolean;
   setRole: (role: UserRole) => void;
   loginWithCredentials: (emailOrPhone: string, password?: string) => Promise<{ success: boolean; role?: UserRole; message?: string }>;
+  registerWithCredentials: (userData: Record<string, string>) => Promise<{ success: boolean; role?: UserRole; message?: string }>;
   forgotPassword: (email: string) => Promise<{ success: boolean; message?: string }>;
   resetPassword: (email: string, newPassword: string) => Promise<{ success: boolean; message?: string }>;
   loginAsCustomer: () => void;
@@ -75,8 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
-    const savedLoggedIn = localStorage.getItem('sakhisilai_is_logged_in');
-    return savedLoggedIn === 'true';
+    return Boolean(localStorage.getItem('sakhisilai_access_token'));
   });
 
   const [currentRole, setCurrentRoleState] = useState<UserRole>(currentUser.role || 'customer');
@@ -89,24 +87,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('sakhisilai_is_logged_in', isLoggedIn ? 'true' : 'false');
   }, [currentUser, isLoggedIn]);
 
-  // Realtime Firebase Auth Listener
   useEffect(() => {
-    if (!isFirebaseConfigured || !auth) return;
-
-    const unsubscribe = onAuthStateChanged(auth, fbUser => {
-      if (fbUser) {
-        setIsLoggedIn(true);
-        setCurrentUser(prev => ({
-          ...prev,
-          id: fbUser.uid,
-          phone: fbUser.phoneNumber || prev.phone,
-          email: fbUser.email || prev.email,
-          name: fbUser.displayName || prev.name
-        }));
-      }
-    });
-
-    return () => unsubscribe();
+    const handleExpiredSession = () => {
+      localStorage.removeItem('sakhisilai_access_token');
+      setIsLoggedIn(false);
+    };
+    window.addEventListener('sakhisilai-auth-expired', handleExpiredSession);
+    return () => window.removeEventListener('sakhisilai-auth-expired', handleExpiredSession);
   }, []);
 
   const setRole = (role: UserRole) => {
@@ -126,40 +113,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // 1. Try Backend API Verification
     const res = await loginUserApi(cleanInput, password);
-    if (res && res.success && res.data) {
+    if (res && res.success && res.data && res.token) {
       const userRecord: User = res.data;
+      localStorage.setItem('sakhisilai_access_token', res.token);
       setIsLoggedIn(true);
       setCurrentUser(userRecord);
       setCurrentRoleState(userRecord.role);
       return { success: true, role: userRecord.role };
     }
 
-    // 2. Local Role Fallback Check
-    if (cleanInput.includes('admin') || cleanInput === '9999900000' || cleanInput.includes('seema')) {
-      loginAsAdmin();
-      return { success: true, role: 'admin' as UserRole };
-    }
-
-    if (cleanInput.includes('tailor') || cleanInput === '9876543210' || cleanInput.includes('sunita')) {
-      loginAsTailor();
-      return { success: true, role: 'tailor' as UserRole };
-    }
-
-    if (cleanInput) {
-      setIsLoggedIn(true);
-      setCurrentRoleState('customer');
-      setCurrentUser({
-        ...NEW_CUSTOMER,
-        id: 'u_' + Date.now(),
-        name: cleanInput.includes('@') ? cleanInput.split('@')[0] : 'Customer',
-        phone: !cleanInput.includes('@') ? cleanInput : '',
-        email: cleanInput.includes('@') ? cleanInput : '',
-        role: 'customer'
-      });
-      return { success: true, role: 'customer' as UserRole };
-    }
-
     return { success: false, message: res?.message || 'Invalid email or password.' };
+  };
+
+  const registerWithCredentials = async (userData: Record<string, string>) => {
+    const res = await registerUserApi(userData);
+    if (!res?.success || !res.data || !res.token) {
+      return { success: false, message: res?.message || 'Registration could not be completed.' };
+    }
+    localStorage.setItem('sakhisilai_access_token', res.token);
+    setCurrentUser(res.data as User);
+    setCurrentRoleState(res.data.role as UserRole);
+    setIsLoggedIn(true);
+    return { success: true, role: res.data.role as UserRole };
   };
 
   const forgotPassword = async (email: string): Promise<{ success: boolean; message?: string }> => {
@@ -195,11 +170,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginAsGuest = () => {
     setIsLoggedIn(false);
+    localStorage.removeItem('sakhisilai_access_token');
     localStorage.setItem('sakhisilai_is_logged_in', 'false');
   };
 
   const logout = () => {
     setIsLoggedIn(false);
+    localStorage.removeItem('sakhisilai_access_token');
     localStorage.setItem('sakhisilai_is_logged_in', 'false');
   };
 
@@ -216,6 +193,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoggedIn,
         setRole,
         loginWithCredentials,
+        registerWithCredentials,
         forgotPassword,
         resetPassword,
         loginAsCustomer,

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
 import type {
   User,
   TailorProfile,
@@ -17,15 +18,7 @@ import type {
 } from '../types';
 import {
   INITIAL_LOCATIONS,
-  INITIAL_CATEGORIES,
-  INITIAL_TAILORS,
-  INITIAL_DESIGNS,
-  INITIAL_ORDERS,
-  INITIAL_CUSTOM_REQUESTS,
-  INITIAL_REVIEWS,
-  INITIAL_NOTIFICATIONS,
-  INITIAL_CUSTOMERS,
-  INITIAL_COMPLAINTS
+  INITIAL_CATEGORIES
 } from '../data/mockSeedData';
 import { firestore, isFirebaseConfigured } from '../config/firebase';
 import {
@@ -36,6 +29,7 @@ import {
 } from 'firebase/firestore';
 import {
   fetchNearbyTailors,
+  fetchTailorDesignsApi,
   fetchOrdersApi,
   fetchCustomRequestsApi,
   createApiOrder,
@@ -45,14 +39,21 @@ import {
   acceptApiQuoteOffer,
   verifyTailorApi,
   updateTailorAvailabilityApi,
-  registerUserApi,
+  updateTailorProfileApi,
+  updateTailorCapacityApi,
+  createTailorDesignApi,
+  deleteTailorDesignApi,
+  registerTailorApi,
   fetchLocationsApi,
   fetchCategoriesApi,
   fetchNotificationsApi,
   createCategoryApi,
   deleteCategoryApi,
   addVillageApi,
-  broadcastNotificationApi
+  broadcastNotificationApi,
+  fetchComplaintsApi,
+  blockUserApi,
+  resolveComplaintApi
 } from '../services/api';
 
 interface DataContextType {
@@ -75,7 +76,8 @@ interface DataContextType {
   setSelectedLocation: (state: string, district: string, village: string) => void;
 
   // Actions
-  createOrder: (orderData: Partial<Order>) => Order;
+  createOrder: (orderData: Partial<Order>, idempotencyKey?: string) => Promise<Order>;
+  updateOrderPayment: (orderId: string, paymentStatus: Order['paymentStatus'], advancePaid: number) => void;
   updateOrderStatus: (orderId: string, newStatus: OrderStatus, note?: string) => void;
   updateTailorAvailability: (tailorId: string, status: TailorAvailability) => void;
   updateTailorCapacity: (tailorId: string, maxOrders: number) => void;
@@ -95,10 +97,10 @@ interface DataContextType {
 
   submitCustomRequest: (req: Omit<CustomDesignRequest, 'id' | 'createdAt' | 'status' | 'offers'>) => CustomDesignRequest;
   submitQuoteOffer: (requestId: string, offer: Omit<QuoteOffer, 'id' | 'createdAt'>) => void;
-  acceptQuoteOffer: (requestId: string, offerId: string) => Order | undefined;
+  acceptQuoteOffer: (requestId: string, offerId: string) => Promise<Order | undefined>;
 
   verifyTailor: (tailorId: string, isVerified: boolean) => void;
-  registerTailor: (tailorData: Omit<TailorProfile, 'id' | 'rating' | 'reviewCount' | 'completedOrdersCount' | 'currentActiveOrders' | 'joinedDate'>) => void;
+  registerTailor: (tailorData: Omit<TailorProfile, 'id' | 'rating' | 'reviewCount' | 'completedOrdersCount' | 'currentActiveOrders' | 'joinedDate'>) => Promise<void>;
 
   saveMeasurement: (m: Omit<MeasurementProfile, 'id'>) => void;
   addReview: (orderId: string, rating: number, comment: string) => void;
@@ -114,6 +116,7 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { currentUser, isLoggedIn } = useAuth();
   const [locations, setLocations] = useState<StateLocation[]>(() => {
     const s = localStorage.getItem('sakhisilai_locations');
     return s ? JSON.parse(s) : INITIAL_LOCATIONS;
@@ -124,65 +127,28 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return s ? JSON.parse(s) : INITIAL_CATEGORIES;
   });
 
-  const [tailors, setTailors] = useState<TailorProfile[]>(() => {
-    const s = localStorage.getItem('sakhisilai_tailors');
-    return s ? JSON.parse(s) : INITIAL_TAILORS;
-  });
+  const [tailors, setTailors] = useState<TailorProfile[]>([]);
 
-  const [designs, setDesigns] = useState<DesignCatalogItem[]>(() => {
-    const s = localStorage.getItem('sakhisilai_designs');
-    return s ? JSON.parse(s) : INITIAL_DESIGNS;
-  });
+  const [designs, setDesigns] = useState<DesignCatalogItem[]>([]);
 
-  const [orders, setOrders] = useState<Order[]>(() => {
-    const s = localStorage.getItem('sakhisilai_orders');
-    return s ? JSON.parse(s) : INITIAL_ORDERS;
-  });
+  const [orders, setOrders] = useState<Order[]>([]);
 
-  const [customRequests, setCustomRequests] = useState<CustomDesignRequest[]>(() => {
-    const s = localStorage.getItem('sakhisilai_custom_requests');
-    return s ? JSON.parse(s) : INITIAL_CUSTOM_REQUESTS;
-  });
+  const [customRequests, setCustomRequests] = useState<CustomDesignRequest[]>([]);
 
-  const [reviews, setReviews] = useState<Review[]>(() => {
-    const s = localStorage.getItem('sakhisilai_reviews');
-    return s ? JSON.parse(s) : INITIAL_REVIEWS;
-  });
+  const [reviews, setReviews] = useState<Review[]>([]);
 
-  const [notifications, setNotifications] = useState<SystemNotification[]>(() => {
-    const s = localStorage.getItem('sakhisilai_notifications');
-    return s ? JSON.parse(s) : INITIAL_NOTIFICATIONS;
-  });
+  const [notifications, setNotifications] = useState<SystemNotification[]>([]);
 
   const [measurements, setMeasurements] = useState<MeasurementProfile[]>(() => {
     const s = localStorage.getItem('sakhisilai_measurements');
     return s
       ? JSON.parse(s)
-      : [
-          {
-            id: 'm_1',
-            userId: 'u_pria',
-            label: 'Priya - Standard Blouse',
-            clothingType: 'Blouse',
-            bustOrChest: '36 in',
-            waist: '30 in',
-            length: '14.5 in',
-            shoulder: '14 in',
-            sleeveLength: '10 in',
-            neckDepth: '8 in Front / 10 in Back'
-          }
-        ];
+      : [];
   });
 
-  const [customers, setCustomers] = useState<User[]>(() => {
-    const s = localStorage.getItem('sakhisilai_customers');
-    return s ? JSON.parse(s) : INITIAL_CUSTOMERS;
-  });
+  const [customers, setCustomers] = useState<User[]>([]);
 
-  const [complaints, setComplaints] = useState<Complaint[]>(() => {
-    const s = localStorage.getItem('sakhisilai_complaints');
-    return s ? JSON.parse(s) : INITIAL_COMPLAINTS;
-  });
+  const [complaints, setComplaints] = useState<Complaint[]>([]);
 
   // User location state
   const [selectedState, setSelectedState] = useState<string>('Uttar Pradesh');
@@ -206,22 +172,38 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // 1. Initial sync with Express SQLite Backend API
     fetchNearbyTailors(selectedState, selectedDistrict, selectedVillage).then(data => {
-      if (data && Array.isArray(data) && data.length > 0) {
+      if (Array.isArray(data)) {
         setTailors(data);
       }
     });
 
-    fetchOrdersApi().then(data => {
-      if (data && Array.isArray(data) && data.length > 0) {
-        setOrders(data);
-      }
+    fetchTailorDesignsApi().then(data => {
+      if (Array.isArray(data)) setDesigns(data);
     });
 
-    fetchCustomRequestsApi().then(data => {
-      if (data && Array.isArray(data) && data.length > 0) {
-        setCustomRequests(data);
+    if (isLoggedIn) {
+      fetchOrdersApi().then(data => {
+        setOrders(Array.isArray(data) ? data : []);
+      });
+
+      fetchCustomRequestsApi().then(data => {
+        setCustomRequests(Array.isArray(data) ? data : []);
+      });
+
+      fetchNotificationsApi().then(data => {
+        setNotifications(Array.isArray(data) ? data : []);
+      });
+
+      if (currentUser.role === 'admin') {
+        fetchComplaintsApi().then(data => {
+          setComplaints(Array.isArray(data) ? data : []);
+        });
       }
-    });
+    } else {
+      setOrders([]);
+      setCustomRequests([]);
+      setNotifications([]);
+    }
 
     fetchLocationsApi().then(data => {
       if (data && Array.isArray(data) && data.length > 0) {
@@ -235,12 +217,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
 
-    fetchNotificationsApi().then(data => {
-      if (data && Array.isArray(data) && data.length > 0) {
-        setNotifications(data);
-      }
-    });
-
     // 2. Realtime Cloud Firestore Listeners if Firebase is active
     if (isFirebaseConfigured && firestore) {
       console.log('🔥 Cloud Firestore Realtime Sync Active (Scalable to 1,000+ users/day)');
@@ -251,40 +227,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         snapshot.forEach(docSnap => {
           fetched.push({ id: docSnap.id, ...docSnap.data() } as TailorProfile);
         });
-        if (fetched.length > 0) {
-          setTailors(fetched);
-        }
+        setTailors(fetched);
       }, err => console.warn('Firestore tailors listener notice:', err));
-
-      const ordersQuery = query(collection(firestore, 'orders'), limit(100));
-      const unsubOrders = onSnapshot(ordersQuery, snapshot => {
-        const fetched: Order[] = [];
-        snapshot.forEach(docSnap => {
-          fetched.push({ id: docSnap.id, ...docSnap.data() } as Order);
-        });
-        if (fetched.length > 0) {
-          setOrders(fetched);
-        }
-      }, err => console.warn('Firestore orders listener notice:', err));
-
-      const customReqQuery = query(collection(firestore, 'customRequests'), limit(100));
-      const unsubCustomReq = onSnapshot(customReqQuery, snapshot => {
-        const fetched: CustomDesignRequest[] = [];
-        snapshot.forEach(docSnap => {
-          fetched.push({ id: docSnap.id, ...docSnap.data() } as CustomDesignRequest);
-        });
-        if (fetched.length > 0) {
-          setCustomRequests(fetched);
-        }
-      }, err => console.warn('Firestore custom requests listener notice:', err));
 
       return () => {
         unsubTailors();
-        unsubOrders();
-        unsubCustomReq();
       };
     }
-  }, [selectedState, selectedDistrict, selectedVillage]);
+  }, [selectedState, selectedDistrict, selectedVillage, isLoggedIn, currentUser.id, currentUser.role]);
 
   const setSelectedLocation = (state: string, district: string, village: string) => {
     setSelectedState(state);
@@ -293,40 +243,42 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Actions implementation
-  const createOrder = (orderData: Partial<Order>): Order => {
+  const createOrder = async (orderData: Partial<Order>, idempotencyKey: string = crypto.randomUUID()): Promise<Order> => {
     const newId = 'ord_' + Date.now();
     const orderNum = 'SK-2026-' + Math.floor(100 + Math.random() * 900);
     const now = new Date().toISOString();
+    const selectedTailor = tailors.find(tailor => tailor.id === orderData.tailorId);
+    const selectedCategory = categories.find(category => category.id === orderData.categoryId);
 
     const newOrder: Order = {
       id: newId,
       orderNumber: orderNum,
-      customerId: orderData.customerId || 'u_pria',
-      customerName: orderData.customerName || 'Priya Singh',
-      customerPhone: orderData.customerPhone || '9812345678',
-      customerVillage: orderData.customerVillage || selectedVillage,
-      customerDistrict: orderData.customerDistrict || selectedDistrict,
-      customerState: orderData.customerState || selectedState,
-      tailorId: orderData.tailorId || 't_sunita',
-      tailorName: orderData.tailorName || 'Sunita Devi',
-      tailorVillage: orderData.tailorVillage || 'Mohanlalganj',
-      tailorPhone: orderData.tailorPhone || '9876543210',
-      categoryId: orderData.categoryId || 'blouse',
-      categoryName: orderData.categoryName || 'Blouse Stitching',
-      designTitle: orderData.designTitle || 'Custom Stitching Order',
-      designImage: orderData.designImage || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80',
-      price: orderData.price || 400,
+      customerId: currentUser.id,
+      customerName: currentUser.name,
+      customerPhone: currentUser.phone,
+      customerVillage: orderData.customerVillage || currentUser.village || selectedVillage,
+      customerDistrict: orderData.customerDistrict || currentUser.district || selectedDistrict,
+      customerState: orderData.customerState || currentUser.state || selectedState,
+      tailorId: orderData.tailorId || '',
+      tailorName: orderData.tailorName || selectedTailor?.name || '',
+      tailorVillage: orderData.tailorVillage || selectedTailor?.village || '',
+      tailorPhone: orderData.tailorPhone || selectedTailor?.phone || '',
+      categoryId: orderData.categoryId || '',
+      categoryName: orderData.categoryName || selectedCategory?.nameEn || '',
+      designTitle: orderData.designTitle || '',
+      designImage: orderData.designImage || '',
+      price: orderData.price ?? 0,
       advancePaid: orderData.advancePaid || 0,
       paymentMethod: orderData.paymentMethod || 'cod',
       paymentStatus: orderData.paymentStatus || 'pending',
       status: 'requested',
       handoverMethod: orderData.handoverMethod || 'customer_drop',
-      hasDeliveryAvailable: orderData.hasDeliveryAvailable || false,
-      measurements: orderData.measurements || 'Handover during fabric drop',
+      hasDeliveryAvailable: orderData.hasDeliveryAvailable ?? false,
+      measurements: orderData.measurements || '',
       specialInstructions: orderData.specialInstructions || '',
       requiredDate: orderData.requiredDate || '2026-09-15',
       appointmentDate: orderData.appointmentDate || orderData.requiredDate || new Date(Date.now() + 86400000).toISOString().split('T')[0],
-      appointmentTimeSlot: orderData.appointmentTimeSlot || 'Morning (10:00 AM - 01:00 PM)',
+      appointmentTimeSlot: orderData.appointmentTimeSlot || '',
       appointmentNotes: orderData.appointmentNotes || '',
       createdAt: now,
       updatedAt: now,
@@ -340,28 +292,26 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       ]
     };
 
-    setOrders(prev => [newOrder, ...prev]);
-
-    // Send order to backend API for SQLite DB persistence
-    createApiOrder(newOrder);
+    const savedOrder = await createApiOrder(newOrder, idempotencyKey);
+    setOrders(prev => [savedOrder, ...prev.filter(order => order.id !== savedOrder.id)]);
 
     // Update tailor current active count
     setTailors(prev =>
-      prev.map(t => (t.id === newOrder.tailorId ? { ...t, currentActiveOrders: t.currentActiveOrders + 1 } : t))
+      prev.map(t => (t.id === savedOrder.tailorId ? { ...t, currentActiveOrders: t.currentActiveOrders + 1 } : t))
     );
 
     // Send Notification to Tailor
     sendNotification({
       targetRole: 'tailor',
-      recipientId: newOrder.tailorId,
-      titleEn: `New Order Request ${newOrder.orderNumber}`,
-      titleHi: `नया सिलाई अनुरोध ${newOrder.orderNumber}`,
-      messageEn: `${newOrder.customerName} from ${newOrder.customerVillage} requested ${newOrder.designTitle}.`,
-      messageHi: `${newOrder.customerVillage} से ${newOrder.customerName} ने ${newOrder.designTitle} का ऑर्डर दिया है।`,
+      recipientId: savedOrder.tailorId,
+      titleEn: `New Order Request ${savedOrder.orderNumber}`,
+      titleHi: `नया सिलाई अनुरोध ${savedOrder.orderNumber}`,
+      messageEn: `${savedOrder.customerName} from ${savedOrder.customerVillage} requested ${savedOrder.designTitle}.`,
+      messageHi: `${savedOrder.customerVillage} से ${savedOrder.customerName} ने ${savedOrder.designTitle} का ऑर्डर दिया है।`,
       type: 'order'
     });
 
-    return newOrder;
+    return savedOrder;
   };
 
   const updateOrderStatus = (orderId: string, newStatus: OrderStatus, note?: string) => {
@@ -438,32 +388,64 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateOrderPayment = (orderId: string, paymentStatus: Order['paymentStatus'], advancePaid: number) => {
+    setOrders(prev => prev.map(order => order.id === orderId ? { ...order, paymentStatus, advancePaid } : order));
+  };
+
   const updateTailorAvailability = (tailorId: string, availability: TailorAvailability) => {
     setTailors(prev => prev.map(t => (t.id === tailorId ? { ...t, availability } : t)));
-    updateTailorAvailabilityApi(tailorId, availability);
+    updateTailorAvailabilityApi(tailorId, availability).catch(() => undefined);
   };
 
-  const updateTailorCapacity = (tailorId: string, maxActiveOrders: number) => {
-    setTailors(prev => prev.map(t => (t.id === tailorId ? { ...t, maxActiveOrders } : t)));
+  const updateTailorCapacity = async (tailorId: string, maxActiveOrders: number) => {
+    try {
+      const updated = await updateTailorCapacityApi(tailorId, maxActiveOrders);
+      setTailors(prev => prev.map(t => (t.id === tailorId ? { ...t, ...updated } : t)));
+    } catch {
+      setTailors(prev => prev.map(t => (t.id === tailorId ? { ...t, maxActiveOrders } : t)));
+    }
   };
 
-  const updateTailorProfile = (tailorId: string, updates: Partial<TailorProfile>) => {
-    setTailors(prev => prev.map(t => (t.id === tailorId ? { ...t, ...updates } : t)));
+  const updateTailorProfile = async (tailorId: string, updates: Partial<TailorProfile>) => {
+    try {
+      const updated = await updateTailorProfileApi(tailorId, updates);
+      setTailors(prev => prev.map(t => (t.id === tailorId ? { ...t, ...updated } : t)));
+    } catch {
+      setTailors(prev => prev.map(t => (t.id === tailorId ? { ...t, ...updates } : t)));
+    }
   };
 
-  const addDesign = (design: Omit<DesignCatalogItem, 'id'>) => {
-    const newItem: DesignCatalogItem = {
-      ...design,
-      id: 'd_' + Date.now()
-    };
-    setDesigns(prev => [newItem, ...prev]);
+  const addDesign = async (design: Omit<DesignCatalogItem, 'id'>) => {
+    try {
+      const saved = await createTailorDesignApi(design.tailorId, {
+        title: design.title,
+        categoryId: design.categoryId,
+        categoryName: design.categoryName,
+        image: design.image,
+        price: design.price,
+        estDays: design.estDays,
+        description: design.description
+      });
+      setDesigns(prev => [saved, ...prev.filter(item => item.id !== saved.id)]);
+    } catch {
+      const fallback: DesignCatalogItem = { ...design, id: 'd_' + Date.now() };
+      setDesigns(prev => [fallback, ...prev]);
+    }
   };
 
   const updateDesign = (id: string, updates: Partial<DesignCatalogItem>) => {
     setDesigns(prev => prev.map(d => (d.id === id ? { ...d, ...updates } : d)));
   };
 
-  const deleteDesign = (id: string) => {
+  const deleteDesign = async (id: string) => {
+    const target = designs.find(d => d.id === id);
+    if (target) {
+      try {
+        await deleteTailorDesignApi(target.tailorId, id);
+      } catch {
+        // fallback to local state even if API fails
+      }
+    }
     setDesigns(prev => prev.filter(d => d.id !== id));
   };
 
@@ -581,38 +563,22 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const acceptQuoteOffer = (requestId: string, offerId: string): Order | undefined => {
+  const acceptQuoteOffer = async (requestId: string, offerId: string): Promise<Order | undefined> => {
     const targetReq = customRequests.find(r => r.id === requestId);
     if (!targetReq) return undefined;
 
     const offer = targetReq.offers.find(o => o.id === offerId);
     if (!offer) return undefined;
 
+    const result = await acceptApiQuoteOffer(requestId, offerId);
+    const createdOrder = result.data as Order;
+
     setCustomRequests(prev =>
       prev.map(r => (r.id === requestId ? { ...r, status: 'quote_accepted', acceptedQuoteId: offerId } : r))
     );
+    setOrders(prev => [createdOrder, ...prev.filter(order => order.id !== createdOrder.id)]);
 
-    // Send to backend API
-    acceptApiQuoteOffer(requestId, offerId);
-
-    // Create active order from custom quote
-    return createOrder({
-      customerId: targetReq.customerId,
-      customerName: targetReq.customerName,
-      customerVillage: targetReq.customerVillage,
-      customerDistrict: targetReq.customerDistrict,
-      customerState: targetReq.customerState,
-      tailorId: offer.tailorId,
-      tailorName: offer.tailorName,
-      tailorVillage: offer.tailorVillage,
-      tailorPhone: offer.tailorPhone,
-      categoryName: targetReq.clothingCategory,
-      designTitle: targetReq.requestTitle,
-      designImage: targetReq.referenceImage,
-      price: offer.price,
-      requiredDate: targetReq.requiredDate,
-      specialInstructions: `${targetReq.specialInstructions} (Quote Note: ${offer.note})`
-    });
+    return createdOrder;
   };
 
   const verifyTailor = (tailorId: string, isVerified: boolean) => {
@@ -620,9 +586,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     verifyTailorApi(tailorId, isVerified);
   };
 
-  const registerTailor = (
+  const registerTailor = async (
     tailorData: Omit<TailorProfile, 'id' | 'rating' | 'reviewCount' | 'completedOrdersCount' | 'currentActiveOrders' | 'joinedDate'>
-  ) => {
+  ): Promise<void> => {
     const newTailor: TailorProfile = {
       ...tailorData,
       id: 't_' + Date.now(),
@@ -633,27 +599,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       joinedDate: new Date().toISOString().split('T')[0]
     };
 
-    setTailors(prev => [newTailor, ...prev]);
-
-    // Send to backend API
-    registerUserApi({
-      name: newTailor.name,
-      phone: newTailor.phone,
-      role: 'tailor',
-      village: newTailor.village,
-      district: newTailor.district,
-      state: newTailor.state
+    const savedTailor = await registerTailorApi({
+      addressApprox: newTailor.addressApprox,
+      bio: newTailor.bio,
+      experienceYears: newTailor.experienceYears,
+      servicesOffered: newTailor.servicesOffered,
+      startingPrice: newTailor.startingPrice
     });
-
-    // Admin notification
-    sendNotification({
-      targetRole: 'all',
-      titleEn: 'New Tailor Registration Pending Approval',
-      titleHi: 'नया दर्जी पंजीकरण सत्यापन के लिए लंबित',
-      messageEn: `${newTailor.name} from ${newTailor.village} registered as a tailor.`,
-      messageHi: `${newTailor.village} से ${newTailor.name} ने पंजीकरण कराया है।`,
-      type: 'admin'
-    });
+    setTailors(prev => [savedTailor, ...prev.filter(tailor => tailor.id !== savedTailor.id)]);
   };
 
   const saveMeasurement = (m: Omit<MeasurementProfile, 'id'>) => {
@@ -713,16 +666,26 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setReviews(prev => prev.filter(r => r.id !== reviewId));
   };
 
-  const toggleBlockUser = (userId: string) => {
-    setCustomers(prev =>
-      prev.map(c => (c.id === userId ? { ...c, isBlocked: !c.isBlocked } : c))
-    );
+  const toggleBlockUser = async (userId: string) => {
+    const targetUser = customers.find(c => c.id === userId);
+    if (!targetUser) return;
+
+    const nextState = !targetUser.isBlocked;
+    try {
+      const updated = await blockUserApi(userId, nextState);
+      setCustomers(prev => prev.map(c => (c.id === userId ? { ...c, isBlocked: Boolean(updated?.isBlocked ?? nextState) } : c)));
+    } catch {
+      setCustomers(prev => prev.map(c => (c.id === userId ? { ...c, isBlocked: nextState } : c)));
+    }
   };
 
-  const resolveComplaint = (complaintId: string, status: 'investigating' | 'resolved', note?: string) => {
-    setComplaints(prev =>
-      prev.map(cmp => (cmp.id === complaintId ? { ...cmp, status, resolutionNote: note } : cmp))
-    );
+  const resolveComplaint = async (complaintId: string, status: 'investigating' | 'resolved', note?: string) => {
+    try {
+      const updated = await resolveComplaintApi(complaintId, status, note);
+      setComplaints(prev => prev.map(cmp => (cmp.id === complaintId ? { ...cmp, status: updated?.status || status, resolutionNote: updated?.resolutionNote || note } : cmp)));
+    } catch {
+      setComplaints(prev => prev.map(cmp => (cmp.id === complaintId ? { ...cmp, status, resolutionNote: note } : cmp)));
+    }
   };
 
   return (
@@ -746,6 +709,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSelectedLocation,
 
         createOrder,
+        updateOrderPayment,
         updateOrderStatus,
         updateTailorAvailability,
         updateTailorCapacity,

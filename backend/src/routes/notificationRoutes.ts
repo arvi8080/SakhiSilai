@@ -1,27 +1,32 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../data/db';
+import { AuthenticatedRequest, requireRole } from '../middleware/auth';
 import type { SystemNotification } from '../types';
 
 export const notificationRouter = Router();
 
 // GET /api/notifications
 notificationRouter.get('/', (req: Request, res: Response) => {
-  const role = req.query.role as string;
-  const recipientId = req.query.recipientId as string;
+  const auth = (req as AuthenticatedRequest).auth!;
+  const tailor = auth.role === 'tailor' ? db.tailors.find(item => item.userId === auth.userId) : undefined;
 
-  let results = db.notifications;
-  if (role || recipientId) {
-    results = results.filter(
-      n => n.targetRole === 'all' || n.targetRole === role || n.recipientId === recipientId
-    );
-  }
+  const results = db.notifications.filter(notification => auth.role === 'admin' ||
+    notification.targetRole === 'all' ||
+    notification.recipientId === auth.userId ||
+    (tailor && notification.recipientId === tailor.id)
+  );
 
   res.json({ success: true, count: results.length, data: results });
 });
 
 // POST /api/notifications
-notificationRouter.post('/', (req: Request, res: Response) => {
+notificationRouter.post('/', requireRole('admin'), (req: Request, res: Response) => {
   const { titleEn, titleHi, messageEn, messageHi, targetRole, recipientId, type } = req.body;
+  if (!['all', 'customer', 'tailor', 'admin'].includes(targetRole) ||
+    typeof titleEn !== 'string' || titleEn.trim().length < 1 || titleEn.length > 160 ||
+    typeof messageEn !== 'string' || messageEn.length > 2000) {
+    return res.status(400).json({ success: false, message: 'Notification details are invalid' });
+  }
 
   const newNotif: SystemNotification = {
     id: 'n_' + Date.now(),
@@ -41,8 +46,13 @@ notificationRouter.post('/', (req: Request, res: Response) => {
 });
 
 // POST /api/notifications/broadcast
-notificationRouter.post('/broadcast', (req: Request, res: Response) => {
+notificationRouter.post('/broadcast', requireRole('admin'), (req: Request, res: Response) => {
   const { titleEn, titleHi, messageEn, messageHi, targetRole } = req.body;
+  if (!['all', 'customer', 'tailor'].includes(targetRole) ||
+    typeof titleEn !== 'string' || titleEn.trim().length < 1 || titleEn.length > 160 ||
+    typeof messageEn !== 'string' || messageEn.length > 2000) {
+    return res.status(400).json({ success: false, message: 'Broadcast details are invalid' });
+  }
 
   const newNotif: SystemNotification = {
     id: 'n_' + Date.now(),

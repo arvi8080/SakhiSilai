@@ -1,14 +1,6 @@
 import React from 'react';
 import { useLanguage } from '../../context/LanguageContext';
-import {
-  Heart,
-  ShieldCheck,
-  MapPin,
-  Sparkles,
-  Award,
-  Scissors,
-  UserCheck
-} from 'lucide-react';
+import { ArrowRight, Heart, MapPin, Scissors, ShieldCheck, Sparkles, UserCheck } from 'lucide-react';
 
 interface AboutPageProps {
   setActiveTab: (tab: string) => void;
@@ -16,142 +8,110 @@ interface AboutPageProps {
 
 export const AboutPage: React.FC<AboutPageProps> = ({ setActiveTab }) => {
   const { lang, t } = useLanguage();
+  const benefits = [
+    {
+      icon: Heart,
+      title: lang === 'hi' ? 'महिलाओं का हुनर, उनकी कमाई' : 'Women-led work',
+      description: lang === 'hi'
+        ? 'दर्जी अपने घर से काम करती हैं और अपने काम व समय पर नियंत्रण रखती हैं।'
+        : 'Home tailors choose the work they take on and build income around their schedule.',
+      iconClass: 'bg-[#FFF1F6] text-[#D43A72]'
+    },
+    {
+      icon: MapPin,
+      title: lang === 'hi' ? 'आपके गाँव के पास' : 'Close to home',
+      description: lang === 'hi'
+        ? 'अपने गाँव की दर्जी खोजें और कपड़ा देने या माप लेने के लिए आसानी से मिलें।'
+        : 'Find a tailor nearby and meet in person for measurements and fabric handover.',
+      iconClass: 'bg-[#F2F8F6] text-[#1B4D3E]'
+    },
+    {
+      icon: ShieldCheck,
+      title: lang === 'hi' ? 'भरोसे के साथ बुक करें' : 'Book with confidence',
+      description: lang === 'hi'
+        ? 'प्रोफ़ाइल और उपलब्ध जानकारी देखकर अपनी ज़रूरत के अनुसार दर्जी चुनें।'
+        : 'Compare tailor profiles and service details to choose the right fit for your order.',
+      iconClass: 'bg-[#FFF7E4] text-[#9A6A00]'
+    }
+  ];
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-12 animate-fade-in pb-16 pt-4">
-      {/* HERO / MISSION BANNER */}
-      <div className="bg-gradient-to-r from-[#2A1B3D] via-[#372A45] to-[#1F162B] text-white rounded-3xl p-8 sm:p-12 shadow-2xl relative overflow-hidden border border-pink-900/30 space-y-6">
-        <div className="inline-flex items-center gap-2 bg-[#E91E63]/20 text-pink-300 px-3.5 py-1 rounded-full text-xs font-extrabold border border-pink-500/30">
-          <Sparkles className="w-4 h-4 text-[#E91E63]" />
-          <span>{lang === 'hi' ? 'सखीसिलाई के बारे में' : 'About SakhiSilai'}</span>
-        </div>
+    <div className="mx-auto max-w-6xl space-y-10 px-4 pb-16 pt-4 animate-fade-in sm:px-6">
+      <section className="grid overflow-hidden rounded-[32px] border border-[#F2D6E1] bg-[#FFF5F8] shadow-[0_20px_60px_rgba(42,27,61,0.07)] md:grid-cols-[1.1fr_0.9fr]">
+        <div className="flex flex-col items-start justify-center p-6 sm:p-10 lg:p-12">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#F7C0D8] bg-white px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#D43A72]">
+            <Sparkles className="h-3.5 w-3.5" />
+            {lang === 'hi' ? 'हमारा उद्देश्य' : 'Our purpose'}
+          </div>
 
-        <div className="max-w-3xl space-y-4">
-          <h1 className="text-3xl sm:text-5xl font-black text-amber-300 leading-tight">
+          <h1 className="mt-5 text-4xl font-black leading-tight text-[#2A1B3D] sm:text-5xl">
             “{t('tagline')}”
           </h1>
-          <p className="text-stone-200 text-sm sm:text-base leading-relaxed">
+
+          <p className="mt-4 max-w-xl text-sm leading-7 text-stone-600 sm:text-base">
             {lang === 'hi'
-              ? 'भारत के ग्रामीण क्षेत्रों और छोटे कस्बों में लाखों ऐसी हुनरमंद महिलाएं हैं, जिन्हें बेहतरीन सिलाई (ब्लाउज, सूट, ड्रेस, बच्चों के कपड़े) आती है। SakhiSilai का लक्ष्य इन दर्जी बहनों को सीधे उनके गाँव के ग्राहकों से जोड़ना है ताकि वे घर संभालने के साथ अपनी खुद की कमाई कर सकें।'
-              : 'Millions of skilled women in Indian villages and small towns possess incredible tailoring talents. SakhiSilai connects them directly with nearby customers, allowing them to earn financial independence from home while managing family responsibilities.'}
+              ? 'SakhiSilai गाँव और छोटे शहरों की महिलाओं को उनके हुनर से जोड़ता है। ग्राहक अपने पास की दर्जी खोज सकते हैं और दर्जी घर से अपना काम आगे बढ़ा सकती हैं।'
+              : 'SakhiSilai brings local customers and skilled home tailors together. Customers can find stitching nearby, while women grow their craft and work from home.'}
           </p>
+
+          <div className="mt-7 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+            <button
+              type="button"
+              onClick={() => setActiveTab('find_tailors')}
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#1B4D3E] px-5 text-sm font-extrabold text-white transition hover:bg-[#133A2E]"
+            >
+              <Scissors className="h-4 w-4" />
+              {lang === 'hi' ? 'पास की दर्जी खोजें' : 'Find a nearby tailor'}
+              <ArrowRight className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('become_tailor')}
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-[#E8CAD7] bg-white px-5 text-sm font-extrabold text-[#2A1B3D] transition hover:border-[#D43A72] hover:text-[#D43A72]"
+            >
+              <UserCheck className="h-4 w-4" />
+              {lang === 'hi' ? 'दर्जी के रूप में जुड़ें' : 'Join as a tailor'}
+            </button>
+          </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 pt-2">
-          <button
-            onClick={() => setActiveTab('become_tailor')}
-            className="px-6 py-3.5 bg-[#E91E63] hover:bg-[#D81B60] text-white font-extrabold text-xs rounded-xl shadow-lg transition active:scale-95 flex items-center justify-center gap-2"
-          >
-            <UserCheck className="w-4 h-4" />
-            <span>{lang === 'hi' ? 'दर्जी के रूप में जुड़ें' : 'Join as a Tailor'}</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('find_tailors')}
-            className="px-6 py-3.5 bg-white/10 hover:bg-white/20 text-white font-extrabold text-xs rounded-xl border border-white/20 transition active:scale-95 flex items-center justify-center gap-2"
-          >
-            <Scissors className="w-4 h-4 rotate-45" />
-            <span>{lang === 'hi' ? 'आस-पास दर्जी खोजें' : 'Find Nearby Tailors'}</span>
-          </button>
+        <div className="relative min-h-64 md:min-h-full">
+          <img
+            src="https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1200&auto=format&fit=crop&q=85"
+            alt={lang === 'hi' ? 'भारतीय फैशन और स्थानीय सिलाई का वास्तविक दृश्य' : 'Real Indian fashion and local tailoring scene'}
+            className="absolute inset-0 h-full w-full object-cover"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#2A1B3D]/45 via-transparent to-transparent md:bg-gradient-to-l md:from-transparent md:to-[#FFF5F8]/10" />
+          <div className="absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-xl border border-white/70 bg-white/90 px-3 py-2 text-xs font-bold text-[#2A1B3D] shadow-lg backdrop-blur-sm sm:bottom-6 sm:left-6">
+            <Heart className="h-4 w-4 text-[#D43A72]" />
+            {lang === 'hi' ? 'स्थानीय हुनर, स्थानीय भरोसा' : 'Local craft, local connection'}
+          </div>
         </div>
-      </div>
+      </section>
 
-      {/* OUR 4 PILLARS */}
-      <div className="space-y-6">
-        <div className="text-center max-w-xl mx-auto space-y-2">
-          <h2 className="text-3xl font-black text-[#2A1B3D]">
-            {lang === 'hi' ? 'सखीसिलाई के 4 मुख्य स्तंभ' : 'Our 4 Foundational Pillars'}
+      <section className="space-y-5">
+        <div className="max-w-2xl">
+          <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#D43A72]">
+            {lang === 'hi' ? 'सखीसिलाई क्यों?' : 'Why SakhiSilai'}
+          </p>
+          <h2 className="mt-2 text-2xl font-black text-[#2A1B3D] sm:text-3xl">
+            {lang === 'hi' ? 'सिलाई का काम, आसान और पास' : 'Good tailoring, closer to home'}
           </h2>
-          <p className="text-xs text-stone-500">
-            {lang === 'hi' ? 'ग्रामीण भारत की बहनों को आत्मनिर्भर बनाने का संकल्प' : 'Building trust and economic freedom for rural women artisans'}
-          </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-md space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-pink-50 text-[#E91E63] flex items-center justify-center">
-              <Heart className="w-6 h-6" />
-            </div>
-            <h3 className="font-extrabold text-base text-[#2A1B3D]">
-              {lang === 'hi' ? 'महिला सशक्तिकरण' : 'Women Empowerment'}
-            </h3>
-            <p className="text-xs text-stone-600 leading-relaxed">
-              {lang === 'hi'
-                ? 'दर्जी बहनें स्वयं की उद्यमी हैं। वे अपनी दरें, काम के घंटे और सिलाई के प्रकार खुद तय करती हैं।'
-                : 'Tailors operate as independent entrepreneurs, deciding their own rates, working hours, and workload.'}
-            </p>
-          </div>
-
-          <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-md space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
-              <ShieldCheck className="w-6 h-6" />
-            </div>
-            <h3 className="font-extrabold text-base text-[#2A1B3D]">
-              {lang === 'hi' ? '100% सीधी कमाई' : '100% Direct Payout'}
-            </h3>
-            <p className="text-xs text-stone-600 leading-relaxed">
-              {lang === 'hi'
-                ? 'सखीसिलाई दर्जियों से 0% कमीशन लेता है। ग्राहक द्वारा दी गई सिलाई का पूरा 100% पैसा दर्जी बहन को मिलता है।'
-                : 'SakhiSilai charges ZERO commission from tailors. 100% of the stitching fee goes straight to the tailor.'}
-            </p>
-          </div>
-
-          <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-md space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center">
-              <MapPin className="w-6 h-6" />
-            </div>
-            <h3 className="font-extrabold text-base text-[#2A1B3D]">
-              {lang === 'hi' ? 'गाँव की पहली प्राथमिकता' : 'Same Village Priority'}
-            </h3>
-            <p className="text-xs text-stone-600 leading-relaxed">
-              {lang === 'hi'
-                ? 'ग्राहक को सबसे पहले उसी के गाँव की दर्जी दिखाई जाती है, जिससे आपसी भरोसा और सुरक्षा बनी रहती है।'
-                : 'Prioritizing same-village tailors ensures high trust, easy fabric handover, and localized convenience.'}
-            </p>
-          </div>
-
-          <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-md space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-700 flex items-center justify-center">
-              <Award className="w-6 h-6" />
-            </div>
-            <h3 className="font-extrabold text-base text-[#2A1B3D]">
-              {lang === 'hi' ? 'गुणवत्ता व भरोसा' : 'Quality & Verification'}
-            </h3>
-            <p className="text-xs text-stone-600 leading-relaxed">
-              {lang === 'hi'
-                ? 'सभी दर्जी बहनों का एडमिन द्वारा सत्यापन (Verification) किया जाता है ताकि ग्राहकों को उच्च गुणवत्ता मिले।'
-                : 'All tailors undergo admin verification and rating reviews to ensure top-notch stitching quality.'}
-            </p>
-          </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          {benefits.map(({ icon: Icon, title, description, iconClass }) => (
+            <article key={title} className="rounded-[24px] border border-stone-200 bg-white p-5 sm:p-6">
+              <div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${iconClass}`}>
+                <Icon className="h-5 w-5" />
+              </div>
+              <h3 className="mt-4 text-base font-extrabold text-[#2A1B3D]">{title}</h3>
+              <p className="mt-2 text-sm leading-6 text-stone-600">{description}</p>
+            </article>
+          ))}
         </div>
-      </div>
-
-      {/* IMPACT NUMBERS */}
-      <div className="bg-stone-900 text-white rounded-3xl p-8 sm:p-10 shadow-xl grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-        <div>
-          <span className="text-3xl sm:text-4xl font-black text-pink-400">15,000+</span>
-          <span className="text-xs font-bold text-stone-400 block mt-1">
-            {lang === 'hi' ? 'पंजीकृत दर्जी बहनें' : 'Registered Women Tailors'}
-          </span>
-        </div>
-        <div>
-          <span className="text-3xl sm:text-4xl font-black text-amber-400">50,000+</span>
-          <span className="text-xs font-bold text-stone-400 block mt-1">
-            {lang === 'hi' ? 'संतुष्ट ग्राहक' : 'Happy Customers'}
-          </span>
-        </div>
-        <div>
-          <span className="text-3xl sm:text-4xl font-black text-emerald-400">1,20,000+</span>
-          <span className="text-xs font-bold text-stone-400 block mt-1">
-            {lang === 'hi' ? 'पूरे किए गए ऑर्डर' : 'Stitching Orders Completed'}
-          </span>
-        </div>
-        <div>
-          <span className="text-3xl sm:text-4xl font-black text-purple-400">800+</span>
-          <span className="text-xs font-bold text-stone-400 block mt-1">
-            {lang === 'hi' ? 'शामिल गाँव व क्षेत्र' : 'Villages Covered'}
-          </span>
-        </div>
-      </div>
+      </section>
     </div>
   );
 };

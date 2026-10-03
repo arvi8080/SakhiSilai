@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
-import { Scissors, ArrowRight } from 'lucide-react';
+import { ArrowRight, CheckCircle, MapPin, Scissors, ShieldCheck, Sparkles, Users } from 'lucide-react';
 
 interface HowItWorksPageProps {
   setActiveTab: (tab: string) => void;
@@ -10,213 +10,217 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({ setActiveTab }) 
   const { lang } = useLanguage();
   const [activeRoleTab, setActiveRoleTab] = useState<'customer' | 'tailor'>('customer');
 
+  const customerSteps = [
+    {
+      number: '1',
+      title: lang === 'hi' ? 'गाँव चुनें' : 'Choose your village',
+      text: lang === 'hi'
+        ? 'अपना गाँव चुनें और पास के सत्यापित दर्जी देखें।'
+        : 'Pick your village and browse trusted home tailors nearby.'
+    },
+    {
+      number: '2',
+      title: lang === 'hi' ? 'ऑर्डर भेजें' : 'Send request',
+      text: lang === 'hi'
+        ? 'आकृति, माप और डिज़ाइन चुनकर अनुरोध भेजें।'
+        : 'Share your style, fabric requirement, and delivery preference.'
+    },
+    {
+      number: '3',
+      title: lang === 'hi' ? 'मिलन की पुष्टि' : 'Confirm visit',
+      text: lang === 'hi'
+        ? 'दर्जी द्वारा स्वीकार करने पर पता और समय खुल जाएगा।'
+        : 'Once accepted, your tailor shares the address and visit time.'
+    },
+    {
+      number: '4',
+      title: lang === 'hi' ? 'सिलाई और संग्रह' : 'Stitch and collect',
+      text: lang === 'hi'
+        ? 'कपड़ा देकर माप लें और सिलाई के बाद अपने चुने हुए कपड़े लेकर जाएँ।'
+        : 'Drop off fabric, get measurements, and collect the finished outfit.'
+    }
+  ];
+
+  const tailorSteps = [
+    {
+      number: '1',
+      title: lang === 'hi' ? 'घर से काम शुरू करें' : 'Work from home',
+      text: lang === 'hi'
+        ? 'अपने घर से सिलाई करें और अपने गाँव के ग्राहकों से जुड़ें।'
+        : 'Stitch from home and serve customers in your own village.'
+    },
+    {
+      number: '2',
+      title: lang === 'hi' ? 'ऑर्डर स्वीकार करें' : 'Accept bookings',
+      text: lang === 'hi'
+        ? 'अनुरोध को देखें, माप और समय की पुष्टि करें।'
+        : 'Review requests and confirm visit details with the customer.'
+    },
+    {
+      number: '3',
+      title: lang === 'hi' ? 'सीधा भुगतान' : 'Direct earning',
+      text: lang === 'hi'
+        ? 'संपूर्ण भुगतान सीधे ग्राहक से प्राप्त करें।'
+        : 'Receive honest, direct payment from the customer after handover.'
+    }
+  ];
+
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-12 animate-fade-in pb-16">
-      {/* HEADER BANNER */}
-      <div className="text-center max-w-3xl mx-auto space-y-3">
-        <span className="bg-amber-100 text-[#1B4D3E] text-xs font-bold px-3.5 py-1 rounded-full uppercase tracking-wider">
+    <div className="mx-auto max-w-6xl animate-fade-in space-y-12 px-4 pb-16 sm:px-6">
+      <section className="mx-auto max-w-4xl text-center">
+        <div className="inline-flex items-center gap-2 rounded-full border border-[#F5D6E5] bg-[#FFF8FB] px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.22em] text-[#D43A72]">
+          <Sparkles className="h-3.5 w-3.5" />
           Hyperlocal Village Tailor Platform
-        </span>
-        <h1 className="text-3xl sm:text-5xl font-black text-stone-900">
-          {lang === 'hi' ? 'सखीसिलाई कैसे काम करता है?' : 'How SakhiSilai Works'}
+        </div>
+
+        <h1 className="mt-5 text-4xl font-black leading-tight text-[#2A1B3D] sm:text-5xl">
+          {lang === 'hi' ? 'सखीसिलाई कैसे काम करती है?' : 'How SakhiSilai works'}
         </h1>
-        <p className="text-stone-600 text-sm sm:text-base">
-          “Ghar Se Hunar, Apni Kamai” — Tailor stays at home, customer visits tailor in same village.
+
+        <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-stone-600">
+          “Ghar Se Hunar, Apni Kamai” — {lang === 'hi'
+            ? 'दर्जी घर पर रहती है, ग्राहक उसी गाँव में उसके घर तक जाता है।'
+            : 'The tailor stays at home, and the customer visits her nearby home in the same village.'}
         </p>
 
-        {/* ROLE SWITCH TAB */}
-        <div className="inline-flex bg-stone-200 p-1.5 rounded-full border border-stone-300 mt-4">
+        <div className="mt-6 inline-flex rounded-full border border-stone-200 bg-stone-100 p-1.5 shadow-inner">
           <button
             onClick={() => setActiveRoleTab('customer')}
-            className={`px-6 py-2 rounded-full font-bold text-xs transition ${
+            className={`rounded-full px-5 py-2.5 text-xs font-extrabold transition sm:px-7 ${
               activeRoleTab === 'customer'
-                ? 'bg-[#E91E63] text-white shadow'
+                ? 'bg-[#E91E63] text-white shadow-lg shadow-pink-500/20'
                 : 'text-stone-700 hover:text-stone-900'
             }`}
           >
-            For Customers (कपड़े सिलवाने वालों के लिए)
+            {lang === 'hi' ? 'ग्राहक के लिए' : 'For customers'}
           </button>
           <button
             onClick={() => setActiveRoleTab('tailor')}
-            className={`px-6 py-2 rounded-full font-bold text-xs transition ${
+            className={`rounded-full px-5 py-2.5 text-xs font-extrabold transition sm:px-7 ${
               activeRoleTab === 'tailor'
-                ? 'bg-[#2A1B3D] text-amber-400 shadow'
+                ? 'bg-[#1B4D3E] text-white shadow-lg shadow-emerald-900/20'
                 : 'text-stone-700 hover:text-stone-900'
             }`}
           >
-            For Home Tailors (दर्जी बहनों के लिए)
+            {lang === 'hi' ? 'दर्जी बहन के लिए' : 'For home tailors'}
           </button>
         </div>
-      </div>
+      </section>
 
-      {/* SAME VILLAGE HOME TAILOR WORKFLOW HIGHLIGHT */}
-      <div className="bg-gradient-to-r from-stone-900 via-stone-800 to-[#2A1B3D] text-white p-6 sm:p-8 rounded-3xl shadow-xl space-y-6 border border-stone-700">
-        <div className="text-center space-y-2">
-          <span className="bg-amber-400 text-stone-900 font-extrabold text-[10px] px-3 py-1 rounded-full uppercase tracking-wider">
-            Same Village Home Tailor Process
-          </span>
-          <h2 className="text-xl sm:text-3xl font-black text-amber-300">
-            {lang === 'hi' ? 'ग्रामीण होम दर्जी एवं ग्राहक प्रक्रिया' : '5-Step Same Village Booking & Handover Flow'}
+      <section className="overflow-hidden rounded-[32px] border border-[#E8DDE5] bg-[linear-gradient(135deg,#1f1628_0%,#2d1d35_45%,#1a1a1a_100%)] p-6 text-white shadow-[0_24px_70px_rgba(42,27,61,0.12)] sm:p-8">
+        <div className="text-center">
+          <div className="inline-flex items-center gap-2 rounded-full bg-[#F8C74D] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.22em] text-stone-900">
+            <MapPin className="h-3.5 w-3.5" />
+            {lang === 'hi' ? 'समान गाँव की प्रक्रिया' : 'Same-village home tailor process'}
+          </div>
+
+          <h2 className="mt-4 text-2xl font-black text-[#F7D565] sm:text-3xl">
+            {lang === 'hi' ? '4 आसान कदम' : 'A simple 4-step flow'}
           </h2>
-          <p className="text-xs text-stone-300 max-w-xl mx-auto font-medium">
-            The tailor stays at home. Once request is accepted, appointment & home address are confirmed!
-          </p>
         </div>
 
-        {/* 5-STEP LIFECYCLE GRID */}
-        <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 text-xs font-bold">
-          <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/15 text-center space-y-2">
-            <div className="w-9 h-9 rounded-xl bg-pink-500 text-white flex items-center justify-center mx-auto text-sm">
-              1
+        <div className="mt-8 grid gap-4 md:grid-cols-4">
+          {customerSteps.map((step) => (
+            <div key={step.number} className="rounded-[24px] border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-[#F871A7] to-[#E91E63] text-lg font-black text-white shadow-lg">
+                {step.number}
+              </div>
+              <h3 className="mt-4 text-base font-extrabold text-white">{step.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-stone-300">{step.text}</p>
             </div>
-            <h4 className="text-white font-black">1. Send Request</h4>
-            <p className="text-[11px] text-stone-300 font-normal">Customer selects nearby tailor in same village & sends request.</p>
-          </div>
-
-          <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/15 text-center space-y-2">
-            <div className="w-9 h-9 rounded-xl bg-amber-500 text-stone-900 flex items-center justify-center mx-auto text-sm">
-              2
-            </div>
-            <h4 className="text-amber-300 font-black">2. Tailor Accepts</h4>
-            <p className="text-[11px] text-stone-300 font-normal">Tailor reviews design & clicks Accept Order ✅.</p>
-          </div>
-
-          <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/15 text-center space-y-2">
-            <div className="w-9 h-9 rounded-xl bg-emerald-500 text-white flex items-center justify-center mx-auto text-sm">
-              3
-            </div>
-            <h4 className="text-emerald-300 font-black">3. Visit Confirmed</h4>
-            <p className="text-[11px] text-stone-300 font-normal">🔓 Home address & visit appointment time unlocked & shared!</p>
-          </div>
-
-          <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/15 text-center space-y-2">
-            <div className="w-9 h-9 rounded-xl bg-blue-500 text-white flex items-center justify-center mx-auto text-sm">
-              4
-            </div>
-            <h4 className="text-blue-300 font-black">4. Drop & Measure</h4>
-            <p className="text-[11px] text-stone-300 font-normal">Customer visits tailor's home, drops fabric & gives measurements.</p>
-          </div>
-
-          <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/15 text-center space-y-2">
-            <div className="w-9 h-9 rounded-xl bg-purple-500 text-white flex items-center justify-center mx-auto text-sm">
-              5
-            </div>
-            <h4 className="text-purple-300 font-black">5. Stitch & Collect</h4>
-            <p className="text-[11px] text-stone-300 font-normal">Tailor stitches at home. Customer collects finished outfit & pays!</p>
-          </div>
+          ))}
         </div>
-      </div>
+      </section>
 
-      {/* CUSTOMER FLOW DETAILS */}
       {activeRoleTab === 'customer' && (
-        <div className="space-y-10">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {/* Step 1 */}
-            <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-md space-y-3 relative overflow-hidden">
-              <span className="w-10 h-10 rounded-2xl bg-pink-100 text-[#E91E63] font-black text-base flex items-center justify-center">
-                1
-              </span>
-              <h3 className="font-extrabold text-lg text-stone-900">Select Village & Tailor</h3>
-              <p className="text-xs text-stone-600 leading-relaxed">
-                Choose your village in Uttar Pradesh. SakhiSilai connects you with verified women tailors working right from home in your village.
-              </p>
-            </div>
-
-            {/* Step 2 */}
-            <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-md space-y-3 relative overflow-hidden">
-              <span className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 font-black text-base flex items-center justify-center">
-                2
-              </span>
-              <h3 className="font-extrabold text-lg text-stone-900">Tailor Accepts Order</h3>
-              <p className="text-xs text-stone-600 leading-relaxed">
-                Tailor checks design style & availability. When tailor accepts, the order status changes to "Visit Appointment Confirmed".
-              </p>
-            </div>
-
-            {/* Step 3 */}
-            <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-md space-y-3 relative overflow-hidden">
-              <span className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-800 font-black text-base flex items-center justify-center">
-                3
-              </span>
-              <h3 className="font-extrabold text-lg text-stone-900">Visit Tailor's Home & Drop Fabric</h3>
-              <p className="text-xs text-stone-600 leading-relaxed">
-                Tailor's home address & phone number unlock! Visit tailor's home, drop your cloth, and get accurate measurements taken.
-              </p>
-            </div>
-
-            {/* Step 4 */}
-            <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-md space-y-3 relative overflow-hidden">
-              <span className="w-10 h-10 rounded-2xl bg-purple-100 text-purple-800 font-black text-base flex items-center justify-center">
-                4
-              </span>
-              <h3 className="font-extrabold text-lg text-stone-900">Collect Finished Clothes</h3>
-              <p className="text-xs text-stone-600 leading-relaxed">
-                Receive live updates (Fabric Received &rarr; Stitching &rarr; Ready). Visit tailor's home to collect finished outfit & pay.
-              </p>
-            </div>
+        <section className="space-y-6">
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+            {customerSteps.map((step) => (
+              <div key={step.number} className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-[0_14px_24px_rgba(42,27,61,0.04)]">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FFF0F6] text-xl font-black text-[#D43A72]">
+                  {step.number}
+                </div>
+                <h3 className="text-lg font-extrabold text-[#2A1B3D]">{step.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-stone-600">{step.text}</p>
+              </div>
+            ))}
           </div>
 
-          <div className="text-center pt-4">
+          <div className="text-center">
             <button
+              type="button"
               onClick={() => setActiveTab('find_tailors')}
-              className="px-8 py-4 bg-[#E91E63] hover:bg-[#D81B60] text-white font-black rounded-2xl shadow-lg transition active:scale-95 inline-flex items-center gap-2 text-sm"
+              className="inline-flex items-center gap-2 rounded-2xl bg-[#E91E63] px-6 py-3.5 text-sm font-extrabold text-white shadow-[0_18px_32px_rgba(233,30,99,0.22)] transition hover:bg-[#D81B60]"
             >
-              <span>Find Nearby Tailor Now</span>
-              <ArrowRight className="w-5 h-5" />
+              <span>{lang === 'hi' ? 'पास की दर्जी देखें' : 'Find nearby tailor now'}</span>
+              <ArrowRight className="h-4 w-4" />
             </button>
           </div>
-        </div>
+        </section>
       )}
 
-      {/* TAILOR FLOW DETAILS */}
       {activeRoleTab === 'tailor' && (
-        <div className="space-y-10">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Step 1 */}
-            <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-md space-y-3">
-              <span className="w-10 h-10 rounded-2xl bg-[#2A1B3D] text-amber-400 font-black text-base flex items-center justify-center">
-                1
-              </span>
-              <h3 className="font-extrabold text-lg text-stone-900">Stitch Comfortably From Home</h3>
-              <p className="text-xs text-stone-600 leading-relaxed">
-                Work independently from your home in your village. Set your own prices and control active order limits.
-              </p>
-            </div>
-
-            {/* Step 2 */}
-            <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-md space-y-3">
-              <span className="w-10 h-10 rounded-2xl bg-amber-500 text-stone-900 font-black text-base flex items-center justify-center">
-                2
-              </span>
-              <h3 className="font-extrabold text-lg text-stone-900">Accept Bookings & Confirm Visit</h3>
-              <p className="text-xs text-stone-600 leading-relaxed">
-                Review incoming requests from village customers. Click Accept Order to confirm visit appointment and share your home drop location.
-              </p>
-            </div>
-
-            {/* Step 3 */}
-            <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-md space-y-3">
-              <span className="w-10 h-10 rounded-2xl bg-emerald-600 text-white font-black text-base flex items-center justify-center">
-                3
-              </span>
-              <h3 className="font-extrabold text-lg text-stone-900">100% Direct Payouts</h3>
-              <p className="text-xs text-stone-600 leading-relaxed">
-                SakhiSilai charges zero commission. Collect 100% stitching payout directly from village customers upon handover.
-              </p>
-            </div>
+        <section className="space-y-6">
+          <div className="grid gap-5 md:grid-cols-3">
+            {tailorSteps.map((step) => (
+              <div key={step.number} className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-[0_14px_24px_rgba(42,27,61,0.04)]">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F2F8F6] text-xl font-black text-[#1B4D3E]">
+                  {step.number}
+                </div>
+                <h3 className="text-lg font-extrabold text-[#2A1B3D]">{step.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-stone-600">{step.text}</p>
+              </div>
+            ))}
           </div>
 
-          <div className="text-center pt-4">
+          <div className="text-center">
             <button
+              type="button"
               onClick={() => setActiveTab('become_tailor')}
-              className="px-8 py-4 bg-[#2A1B3D] hover:bg-[#1f132f] text-white font-black rounded-2xl shadow-lg transition active:scale-95 inline-flex items-center gap-2 text-sm"
+              className="inline-flex items-center gap-2 rounded-2xl bg-[#1B4D3E] px-6 py-3.5 text-sm font-extrabold text-white shadow-[0_18px_32px_rgba(27,77,62,0.2)] transition hover:bg-[#133A2E]"
             >
-              <Scissors className="w-5 h-5 rotate-45 text-amber-400" />
-              <span>Apply to Become a Home Tailor</span>
+              <Scissors className="h-4 w-4 rotate-45 text-amber-300" />
+              <span>{lang === 'hi' ? 'दर्जी बनें' : 'Become a home tailor'}</span>
             </button>
           </div>
-        </div>
+        </section>
       )}
+
+      <section className="rounded-[30px] border border-stone-200 bg-[#F7F5F0] p-6 sm:p-8">
+        <div className="grid gap-5 md:grid-cols-3">
+          {[
+            {
+              icon: Users,
+              title: lang === 'hi' ? 'स्थानिक भरोसा' : 'Local trust',
+              text: lang === 'hi'
+                ? 'आपके गाँव की दर्जियों को आसानी से ढूँढें और भरोसा करें।'
+                : 'Find trusted local tailors you can easily meet in your village.'
+            },
+            {
+              icon: ShieldCheck,
+              title: lang === 'hi' ? 'सत्यापित सेवाएँ' : 'Verified service',
+              text: lang === 'hi'
+                ? 'सत्यापन और रेटिंग के साथ सुरक्षित अनुभव।'
+                : 'Verified profiles and reviews make every order more reliable.'
+            },
+            {
+              icon: CheckCircle,
+              title: lang === 'hi' ? 'सीधा भुगतान' : 'Simple payment',
+              text: lang === 'hi'
+                ? 'सिलाई के बाद सीधा भुगतान और स्पष्ट प्रक्रिया।'
+                : 'Clear order flow and direct payment after completion.'
+            }
+          ].map(({ icon: Icon, title, text }) => (
+            <div key={title} className="rounded-[24px] border border-stone-200 bg-white p-5">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FDECF3] text-[#D43A72]">
+                <Icon className="h-5 w-5" />
+              </div>
+              <h3 className="text-lg font-extrabold text-[#2A1B3D]">{title}</h3>
+              <p className="mt-2 text-sm leading-6 text-stone-600">{text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 };

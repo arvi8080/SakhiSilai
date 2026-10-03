@@ -16,6 +16,15 @@ import type {
 // Ensure SQLite schemas and initial seeds are present
 initDatabase();
 
+function parseStoredJson(value: string | null | undefined, fallback: unknown = '') {
+  if (!value) return fallback;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+}
+
 class SQLiteDatabaseProxy {
   // ------------------------------------------------------------------
   // READ GETTERS (Querying persistent SQLite database)
@@ -24,8 +33,13 @@ class SQLiteDatabaseProxy {
     const rows = sqlite.prepare('SELECT * FROM users').all() as any[];
     return rows.map(r => ({
       ...r,
-      isVerified: Boolean(r.isVerified)
+      isVerified: Boolean(r.isVerified),
+      isBlocked: Boolean(r.isBlocked)
     }));
+  }
+
+  get complaints(): any[] {
+    return sqlite.prepare('SELECT * FROM complaints ORDER BY createdAt DESC').all() as any[];
   }
 
   get tailors(): TailorProfile[] {
@@ -56,12 +70,40 @@ class SQLiteDatabaseProxy {
   }
 
   get orders(): Order[] {
-    const rows = sqlite.prepare('SELECT * FROM orders ORDER BY createdAt DESC').all() as any[];
+    return this.listOrders();
+  }
+
+  listOrders(customerId?: string, tailorId?: string): Order[] {
+    const filters: string[] = [];
+    const values: string[] = [];
+    if (customerId) {
+      filters.push('customerId = ?');
+      values.push(customerId);
+    }
+    if (tailorId) {
+      filters.push('tailorId = ?');
+      values.push(tailorId);
+    }
+
+    const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
+    const rows = sqlite.prepare(`SELECT * FROM orders ${whereClause} ORDER BY createdAt DESC`).all(...values) as any[];
     return rows.map(r => ({
       ...r,
       hasDeliveryAvailable: Boolean(r.hasDeliveryAvailable),
+      measurements: parseStoredJson(r.measurements),
       statusHistory: r.statusHistory ? JSON.parse(r.statusHistory) : []
     }));
+  }
+
+  getOrderById(orderId: string): Order | undefined {
+    const row = sqlite.prepare('SELECT * FROM orders WHERE id = ?').get(orderId) as any;
+    if (!row) return undefined;
+    return {
+      ...row,
+      hasDeliveryAvailable: Boolean(row.hasDeliveryAvailable),
+      measurements: parseStoredJson(row.measurements),
+      statusHistory: row.statusHistory ? JSON.parse(row.statusHistory) : []
+    } as Order;
   }
 
   get customRequests(): CustomDesignRequest[] {
@@ -98,21 +140,39 @@ class SQLiteDatabaseProxy {
   // ------------------------------------------------------------------
   addUser(user: User & { password?: string }) {
     const stmt = sqlite.prepare(`
-      INSERT OR REPLACE INTO users (id, name, phone, email, password, role, state, district, village, avatar, createdAt, isVerified)
-      VALUES (@id, @name, @phone, @email, @password, @role, @state, @district, @village, @avatar, @createdAt, @isVerified)
+      INSERT OR REPLACE INTO users (id, name, phone, email, password, role, state, district, village, avatar, createdAt, isVerified, isBlocked)
+      VALUES (@id, @name, @phone, @email, @password, @role, @state, @district, @village, @avatar, @createdAt, @isVerified, @isBlocked)
     `);
     stmt.run({
       ...user,
       email: user.email || '',
       password: (user as any).password || '',
       avatar: user.avatar || '',
-      isVerified: user.isVerified ? 1 : 0
+      isVerified: user.isVerified ? 1 : 0,
+      isBlocked: (user as any).isBlocked ? 1 : 0
     });
   }
 
   updateUserPassword(email: string, newPassword: string) {
     const cleanEmail = email.trim().toLowerCase();
     sqlite.prepare('UPDATE users SET password = ? WHERE LOWER(email) = ? OR LOWER(phone) = ?').run(newPassword, cleanEmail, cleanEmail);
+  }
+
+  updateUserPasswordById(userId: string, passwordHash: string) {
+    sqlite.prepare('UPDATE users SET password = ? WHERE id = ?').run(passwordHash, userId);
+  }
+
+  getIdempotencyRecord(scope: string, key: string) {
+    return sqlite.prepare(
+      'SELECT ownerId, responseJson FROM idempotency_records WHERE scope = ? AND idempotencyKey = ?'
+    ).get(scope, key) as { ownerId: string; responseJson: string } | undefined;
+  }
+
+  addIdempotencyRecord(scope: string, key: string, ownerId: string, response: unknown) {
+    sqlite.prepare(`
+      INSERT INTO idempotency_records (scope, idempotencyKey, ownerId, responseJson, createdAt)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(scope, key, ownerId, JSON.stringify(response), new Date().toISOString());
   }
 
   addTailor(tailor: TailorProfile) {
@@ -142,7 +202,7 @@ class SQLiteDatabaseProxy {
     
     sqlite.prepare('UPDATE tailors SET isVerified = ? WHERE id = ?').run(flag, tailorId);
     if (tailor?.userId) {
-      sqlite.prepare('UPDATE users SET isVerified = ? WHERE id = ?').run(flag, tailor.userId);
+      sqlite.prepare('UPDATE users SET isVerified = ?, role = ? WHERE id = ?').run(flag, isVerified ? 'tailor' : 'customer', tailor.userId);
     }
   }
 
@@ -152,12 +212,12 @@ class SQLiteDatabaseProxy {
         id, orderNumber, customerId, customerName, customerPhone, customerVillage, customerDistrict, customerState,
         tailorId, tailorName, tailorVillage, tailorPhone, categoryId, categoryName, designTitle, designImage, price,
         advancePaid, paymentMethod, paymentStatus, status, handoverMethod, hasDeliveryAvailable, measurements,
-        specialInstructions, requiredDate, createdAt, updatedAt, statusHistory
+        specialInstructions, requiredDate, appointmentDate, appointmentTimeSlot, createdAt, updatedAt, statusHistory
       ) VALUES (
         @id, @orderNumber, @customerId, @customerName, @customerPhone, @customerVillage, @customerDistrict, @customerState,
         @tailorId, @tailorName, @tailorVillage, @tailorPhone, @categoryId, @categoryName, @designTitle, @designImage, @price,
         @advancePaid, @paymentMethod, @paymentStatus, @status, @handoverMethod, @hasDeliveryAvailable, @measurements,
-        @specialInstructions, @requiredDate, @createdAt, @updatedAt, @statusHistory
+        @specialInstructions, @requiredDate, @appointmentDate, @appointmentTimeSlot, @createdAt, @updatedAt, @statusHistory
       )
     `);
     stmt.run({
@@ -165,8 +225,10 @@ class SQLiteDatabaseProxy {
       designTitle: order.designTitle || '',
       designImage: order.designImage || '',
       hasDeliveryAvailable: order.hasDeliveryAvailable ? 1 : 0,
-      measurements: order.measurements || '',
+      measurements: JSON.stringify(order.measurements ?? ''),
       specialInstructions: order.specialInstructions || '',
+      appointmentDate: order.appointmentDate || '',
+      appointmentTimeSlot: order.appointmentTimeSlot || '',
       statusHistory: JSON.stringify(order.statusHistory || [])
     });
   }
@@ -205,6 +267,14 @@ class SQLiteDatabaseProxy {
     });
   }
 
+  acceptCustomRequestQuote(requestId: string, offerId: string) {
+    return sqlite.prepare(`
+      UPDATE custom_requests
+      SET status = 'quote_accepted', acceptedQuoteId = ?
+      WHERE id = ? AND status = 'open'
+    `).run(offerId, requestId).changes === 1;
+  }
+
   addOfferToCustomRequest(requestId: string, offer: QuoteOffer) {
     const row = sqlite.prepare('SELECT offers FROM custom_requests WHERE id = ?').get(requestId) as any;
     if (!row) return;
@@ -217,6 +287,75 @@ class SQLiteDatabaseProxy {
 
   updateTailorAvailability(tailorId: string, availability: string) {
     sqlite.prepare('UPDATE tailors SET availability = ? WHERE id = ?').run(availability, tailorId);
+  }
+
+  updateTailorProfile(tailorId: string, updates: Partial<TailorProfile>) {
+    const patch: Record<string, unknown> = {
+      ...updates,
+      isVerified: updates.isVerified !== undefined ? (updates.isVerified ? 1 : 0) : undefined,
+      servicesOffered: updates.servicesOffered ? JSON.stringify(updates.servicesOffered) : undefined,
+      skills: updates.skills ? JSON.stringify(updates.skills) : undefined,
+      galleryImages: updates.galleryImages ? JSON.stringify(updates.galleryImages) : undefined
+    };
+
+    const entries = Object.entries(patch).filter(([, value]) => value !== undefined);
+    if (!entries.length) return;
+
+    const columns = entries.map(([key]) => `${key} = @${key}`).join(', ');
+    const params = Object.fromEntries(entries.map(([key, value]) => [key, value]));
+
+    sqlite.prepare(`UPDATE tailors SET ${columns} WHERE id = @tailorId`).run({
+      ...params,
+      tailorId
+    });
+  }
+
+  updateTailorCapacity(tailorId: string, maxActiveOrders: number) {
+    sqlite.prepare('UPDATE tailors SET maxActiveOrders = ? WHERE id = ?').run(maxActiveOrders, tailorId);
+  }
+
+  toggleUserBlock(userId: string, isBlocked: boolean) {
+    sqlite.prepare('UPDATE users SET isBlocked = ? WHERE id = ?').run(isBlocked ? 1 : 0, userId);
+  }
+
+  addComplaint(complaint: any) {
+    sqlite.prepare(`
+      INSERT OR REPLACE INTO complaints (
+        id, orderId, orderNumber, complainantName, complainantRole, complainantPhone, againstName, category, subject,
+        description, status, createdAt, resolutionNote
+      ) VALUES (
+        @id, @orderId, @orderNumber, @complainantName, @complainantRole, @complainantPhone, @againstName, @category, @subject,
+        @description, @status, @createdAt, @resolutionNote
+      )
+    `).run({
+      ...complaint,
+      status: complaint.status || 'open',
+      resolutionNote: complaint.resolutionNote || ''
+    });
+  }
+
+  resolveComplaint(complaintId: string, status: 'investigating' | 'resolved', note?: string) {
+    sqlite.prepare('UPDATE complaints SET status = ?, resolutionNote = ? WHERE id = ?').run(status, note || '', complaintId);
+  }
+
+  addDesign(design: DesignCatalogItem) {
+    const stmt = sqlite.prepare(`
+      INSERT OR REPLACE INTO designs (
+        id, tailorId, tailorName, categoryId, categoryName, title, titleHi, image, price, estDays, description, isAvailable
+      ) VALUES (
+        @id, @tailorId, @tailorName, @categoryId, @categoryName, @title, @titleHi, @image, @price, @estDays, @description, @isAvailable
+      )
+    `);
+    stmt.run({
+      ...design,
+      tailorName: design.tailorName || '',
+      titleHi: design.titleHi || '',
+      isAvailable: design.isAvailable ? 1 : 0
+    });
+  }
+
+  deleteDesign(id: string) {
+    sqlite.prepare('DELETE FROM designs WHERE id = ?').run(id);
   }
 
   addCategory(cat: ServiceCategory) {
