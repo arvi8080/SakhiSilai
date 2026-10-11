@@ -59,6 +59,13 @@ import {
   resolveComplaintApi
 } from '../services/api';
 
+const normalizeCategories = (categories: ServiceCategory[]): ServiceCategory[] =>
+  categories.map(category =>
+    category.id === 'kids' && category.nameEn === 'Kids Clothing'
+      ? { ...category, nameEn: 'Kids' }
+      : category
+  );
+
 interface DataContextType {
   locations: StateLocation[];
   categories: ServiceCategory[];
@@ -129,7 +136,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const [categories, setCategories] = useState<ServiceCategory[]>(() => {
     const s = localStorage.getItem('sakhisilai_categories');
-    return s ? JSON.parse(s) : INITIAL_CATEGORIES;
+    return s ? normalizeCategories(JSON.parse(s)) : INITIAL_CATEGORIES;
   });
 
   const [tailors, setTailors] = useState<TailorProfile[]>([]);
@@ -261,7 +268,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     fetchCategoriesApi().then(data => {
       if (data && Array.isArray(data) && data.length > 0) {
-        setCategories(data);
+        setCategories(normalizeCategories(data));
       }
     });
 
