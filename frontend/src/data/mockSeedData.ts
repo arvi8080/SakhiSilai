@@ -102,7 +102,7 @@ export const INITIAL_CATEGORIES: ServiceCategory[] = [
   },
   {
     id: 'kids',
-    nameEn: 'Kids Clothing',
+    nameEn: 'Kids',
     nameHi: 'बच्चों के कपड़े',
     iconName: 'Smile',
     descriptionEn: 'Lehenga choli for girls, kurta pyjama for boys, cute frock stitching.',
@@ -182,7 +182,7 @@ export const INITIAL_TAILORS: TailorProfile[] = [
     availability: 'available',
     maxActiveOrders: 4,
     currentActiveOrders: 1,
-    servicesOffered: ['Blouse Stitching', 'Suit & Salwar Stitching', 'Kids Clothing', 'Alterations'],
+    servicesOffered: ['Blouse Stitching', 'Suit & Salwar Stitching', 'Kids', 'Alterations'],
     startingPrice: 280,
     estCompletionDays: 2,
     skills: ['Bridal Sharara', 'Dori Neckline', 'Pipe Fitting', 'Quick Alteration'],
@@ -211,7 +211,7 @@ export const INITIAL_TAILORS: TailorProfile[] = [
     availability: 'limited',
     maxActiveOrders: 3,
     currentActiveOrders: 3,
-    servicesOffered: ['Suit & Salwar Stitching', 'Kids Clothing', 'Dress & Kurti'],
+    servicesOffered: ['Suit & Salwar Stitching', 'Kids', 'Dress & Kurti'],
     startingPrice: 250,
     estCompletionDays: 4,
     skills: ['Frock Stitching', 'Girl Lehenga', 'Straight Kurti', 'Button Crafting'],
@@ -584,4 +584,3 @@ export const INITIAL_COMPLAINTS: Complaint[] = [
     createdAt: '2026-09-06T09:30:00Z'
   }
 ];
-

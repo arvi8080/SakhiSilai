@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
+import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { ProfilePhotoControl } from '../../components/common/ProfilePhotoControl';
 import {
   LayoutDashboard,
   Users,
@@ -20,6 +22,8 @@ import {
   Lock
 } from 'lucide-react';
 import type { OrderStatus } from '../../types';
+import { broadcastNotificationApi } from '../../services/api';
+import { imageSource } from '../../utils/imageSource';
 
 interface AdminDashboardPageProps {
   setActiveTab: (tab: string) => void;
@@ -59,9 +63,12 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = () => {
     deleteReview,
     updateOrderStatus
   } = useData();
+  const { currentUser } = useAuth();
   const { lang } = useLanguage();
 
   const [activeAdminTab, setActiveAdminTab] = useState<AdminTab>('dashboard');
+  const [tailorVerificationError, setTailorVerificationError] = useState<string | null>(null);
+  const [verifyingTailorId, setVerifyingTailorId] = useState<string | null>(null);
 
   // Filters & State
   const [tailorSubFilter, setTailorSubFilter] = useState<'all' | 'pending' | 'verified' | 'suspended'>('all');
@@ -84,6 +91,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = () => {
   const [broadcastMsg, setBroadcastMsg] = useState('');
   const [broadcastRole, setBroadcastRole] = useState<'all' | 'customer' | 'tailor'>('all');
   const [broadcastSent, setBroadcastSent] = useState(false);
+  const [broadcastError, setBroadcastError] = useState<string | null>(null);
 
   // Complaint Modal/Note state
   const [resolvingCmpId, setResolvingCmpId] = useState<string | null>(null);
@@ -94,6 +102,18 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = () => {
   const verifiedTailors = tailors.filter(t => t.isVerified);
   const activeOrders = orders.filter(o => o.status !== 'completed' && o.status !== 'cancelled');
   const openComplaints = complaints.filter(c => c.status !== 'resolved');
+
+  const handleVerifyTailor = async (tailorId: string, isVerified: boolean) => {
+    setTailorVerificationError(null);
+    setVerifyingTailorId(tailorId);
+    try {
+      await verifyTailor(tailorId, isVerified);
+    } catch (error) {
+      setTailorVerificationError(error instanceof Error ? error.message : 'Could not update tailor approval. Please try again.');
+    } finally {
+      setVerifyingTailorId(null);
+    }
+  };
 
   const totalVillagesCount = locations.reduce(
     (sum, st) => sum + st.districts.reduce((dSum, d) => dSum + d.villages.length, 0),
@@ -142,20 +162,32 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = () => {
   };
 
   // Submit Broadcast
-  const handleSendBroadcast = (e: React.FormEvent) => {
+  const handleSendBroadcast = async (e: React.FormEvent) => {
     e.preventDefault();
-    sendNotification({
-      targetRole: broadcastRole,
-      titleEn: broadcastTitle,
-      titleHi: broadcastTitle,
-      messageEn: broadcastMsg,
-      messageHi: broadcastMsg,
-      type: 'admin'
-    });
-    setBroadcastSent(true);
-    setBroadcastTitle('');
-    setBroadcastMsg('');
-    setTimeout(() => setBroadcastSent(false), 4000);
+    setBroadcastError(null);
+    try {
+      await broadcastNotificationApi({
+        targetRole: broadcastRole,
+        titleEn: broadcastTitle,
+        titleHi: broadcastTitle,
+        messageEn: broadcastMsg,
+        messageHi: broadcastMsg
+      });
+      sendNotification({
+        targetRole: broadcastRole,
+        titleEn: broadcastTitle,
+        titleHi: broadcastTitle,
+        messageEn: broadcastMsg,
+        messageHi: broadcastMsg,
+        type: 'admin'
+      });
+      setBroadcastSent(true);
+      setBroadcastTitle('');
+      setBroadcastMsg('');
+      setTimeout(() => setBroadcastSent(false), 4000);
+    } catch (error) {
+      setBroadcastError(error instanceof Error ? error.message : 'Could not send broadcast. Please try again.');
+    }
   };
 
   // Handle Complaint Resolution
@@ -201,11 +233,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = () => {
         </div>
 
         <div className="flex items-center gap-3 bg-stone-800/80 p-2.5 rounded-2xl border border-stone-700">
-          <div className="w-10 h-10 rounded-full bg-amber-500 text-stone-900 font-black flex items-center justify-center text-sm shadow">
-            SA
-          </div>
+          <ProfilePhotoControl className="h-10 w-10" />
           <div className="text-xs">
-            <h4 className="font-extrabold text-stone-100">Seema Sharma</h4>
+            <h4 className="font-extrabold text-stone-100">{currentUser.name}</h4>
             <p className="text-[10px] text-amber-400 font-semibold">Chief Admin Manager</p>
           </div>
         </div>
@@ -240,6 +270,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = () => {
                     >
                       {item.badge}
                     </span>
+                  )}
+                  {broadcastError && (
+                    <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                      {broadcastError}
+                    </p>
                   )}
                 </button>
               );
@@ -465,6 +500,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = () => {
 
               {/* TAILOR PROFILES GRID */}
               <div className="space-y-4">
+                {tailorVerificationError && (
+                  <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                    {tailorVerificationError}
+                  </p>
+                )}
                 {tailors
                   .filter(t => {
                     if (tailorSubFilter === 'pending') return !t.isVerified;
@@ -480,7 +520,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = () => {
                     >
                       <div className="flex gap-4 items-start sm:items-center">
                         <img
-                          src={tProfile.avatar}
+                          src={imageSource(tProfile.avatar)}
                           alt={tProfile.name}
                           className="w-16 h-16 rounded-2xl object-cover border-2 border-stone-200 shrink-0"
                         />
@@ -515,14 +555,16 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = () => {
                         {!tProfile.isVerified ? (
                           <>
                             <button
-                              onClick={() => verifyTailor(tProfile.id, true)}
+                              onClick={() => void handleVerifyTailor(tProfile.id, true)}
+                              disabled={verifyingTailorId === tProfile.id}
                               className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow flex items-center gap-1.5"
                             >
                               <CheckCircle className="w-4 h-4" />
                               <span>स्वीकृत करें (Approve)</span>
                             </button>
                             <button
-                              onClick={() => verifyTailor(tProfile.id, false)}
+                              onClick={() => void handleVerifyTailor(tProfile.id, false)}
+                              disabled={verifyingTailorId === tProfile.id}
                               className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-bold text-xs rounded-xl flex items-center gap-1.5"
                             >
                               <XCircle className="w-4 h-4" />
@@ -531,7 +573,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = () => {
                           </>
                         ) : (
                           <button
-                            onClick={() => verifyTailor(tProfile.id, false)}
+                            onClick={() => void handleVerifyTailor(tProfile.id, false)}
+                            disabled={verifyingTailorId === tProfile.id}
                             className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs rounded-xl flex items-center gap-1.5"
                           >
                             <Lock className="w-4 h-4 text-stone-500" />

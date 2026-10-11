@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 import { LocationSelectorModal } from './LocationSelectorModal';
+import { ProfilePhotoControl } from './ProfilePhotoControl';
 import { Scissors, Menu, X, LogIn, UserPlus, LogOut, LayoutDashboard, Moon, Sun } from 'lucide-react';
 
 interface NavbarProps {
@@ -94,8 +95,9 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, isDarkM
 
               {isLoggedIn ? (
                 <div className="flex items-center gap-2">
+                  <ProfilePhotoControl className="h-9 w-9" />
                   <button
-                    onClick={() => setActiveTab('dashboard')}
+                    onClick={() => setActiveTab(currentRole === 'tailor' ? 'tailor_dashboard' : 'dashboard')}
                     className="flex items-center gap-1.5 bg-[#FFF1F6] hover:bg-[#FFE7F1] text-[#E91E63] px-3.5 py-1.5 rounded-full text-xs font-extrabold border border-pink-200 transition shadow-sm hover:shadow-md"
                   >
                     <LayoutDashboard className="w-3.5 h-3.5" />
@@ -205,7 +207,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, isDarkM
             {isLoggedIn ? (
               <button
                 onClick={() => {
-                  setActiveTab('dashboard');
+                  setActiveTab(currentRole === 'tailor' ? 'tailor_dashboard' : 'dashboard');
                   setIsMobileMenuOpen(false);
                 }}
                 className="w-full text-left py-2 px-3 bg-pink-50 text-[#E91E63] font-black rounded-xl"

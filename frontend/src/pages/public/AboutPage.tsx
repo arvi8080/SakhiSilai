@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLanguage } from '../../context/LanguageContext';
+import aboutPhoto from '../../assets/ben-issac-RaTn8oODV_M-unsplash.jpg';
 import { ArrowRight, Heart, MapPin, Scissors, ShieldCheck, Sparkles, UserCheck } from 'lucide-react';
 
 interface AboutPageProps {
@@ -37,7 +38,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ setActiveTab }) => {
 
   return (
     <div className="mx-auto max-w-6xl space-y-10 px-4 pb-16 pt-4 animate-fade-in sm:px-6">
-      <section className="grid overflow-hidden rounded-[32px] border border-[#F2D6E1] bg-[#FFF5F8] shadow-[0_20px_60px_rgba(42,27,61,0.07)] md:grid-cols-[1.1fr_0.9fr]">
+      <section className="grid overflow-hidden rounded-4xl border border-[#F2D6E1] bg-[#FFF5F8] shadow-[0_20px_60px_rgba(42,27,61,0.07)] md:grid-cols-[1.1fr_0.9fr]">
         <div className="flex flex-col items-start justify-center p-6 sm:p-10 lg:p-12">
           <div className="inline-flex items-center gap-2 rounded-full border border-[#F7C0D8] bg-white px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#D43A72]">
             <Sparkles className="h-3.5 w-3.5" />
@@ -77,12 +78,12 @@ export const AboutPage: React.FC<AboutPageProps> = ({ setActiveTab }) => {
 
         <div className="relative min-h-64 md:min-h-full">
           <img
-            src="https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1200&auto=format&fit=crop&q=85"
-            alt={lang === 'hi' ? 'भारतीय फैशन और स्थानीय सिलाई का वास्तविक दृश्य' : 'Real Indian fashion and local tailoring scene'}
+            src={aboutPhoto}
+            alt={lang === 'hi' ? 'सिलाई मशीन पर कपड़ा सिलती हुई दर्जी' : 'Tailor sewing fabric on a sewing machine'}
             className="absolute inset-0 h-full w-full object-cover"
             loading="lazy"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#2A1B3D]/45 via-transparent to-transparent md:bg-gradient-to-l md:from-transparent md:to-[#FFF5F8]/10" />
+          <div className="absolute inset-0 bg-linear-to-t from-[#2A1B3D]/45 via-transparent to-transparent md:bg-linear-to-l md:from-transparent md:to-[#FFF5F8]/10" />
           <div className="absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-xl border border-white/70 bg-white/90 px-3 py-2 text-xs font-bold text-[#2A1B3D] shadow-lg backdrop-blur-sm sm:bottom-6 sm:left-6">
             <Heart className="h-4 w-4 text-[#D43A72]" />
             {lang === 'hi' ? 'स्थानीय हुनर, स्थानीय भरोसा' : 'Local craft, local connection'}
@@ -102,7 +103,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ setActiveTab }) => {
 
         <div className="grid gap-4 md:grid-cols-3">
           {benefits.map(({ icon: Icon, title, description, iconClass }) => (
-            <article key={title} className="rounded-[24px] border border-stone-200 bg-white p-5 sm:p-6">
+            <article key={title} className="rounded-3xl border border-stone-200 bg-white p-5 sm:p-6">
               <div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${iconClass}`}>
                 <Icon className="h-5 w-5" />
               </div>

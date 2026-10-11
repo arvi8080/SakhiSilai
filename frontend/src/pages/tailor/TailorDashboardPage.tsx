@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { ProfilePhotoControl } from '../../components/common/ProfilePhotoControl';
+import { imageSource } from '../../utils/imageSource';
+import { profileImageFileToDataUrl } from '../../utils/profileImage';
 
 import {
   Scissors,
@@ -23,36 +26,8 @@ interface TailorDashboardPageProps {
   setActiveTab: (tab: string) => void;
 }
 
-async function imageFileToDataUrl(file: File): Promise<string> {
-  if (!file.type.startsWith('image/')) throw new Error('Choose an image file');
-
-  const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, 900 / Math.max(bitmap.width, bitmap.height));
-  const canvas = document.createElement('canvas');
-  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
-  const context = canvas.getContext('2d');
-  if (!context) throw new Error('Image could not be prepared');
-  context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  bitmap.close();
-
-  let imageBlob: Blob | null = null;
-  for (const quality of [0.78, 0.65, 0.52, 0.4]) {
-    imageBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
-    if (imageBlob && imageBlob.size <= 55 * 1024) break;
-  }
-  if (!imageBlob || imageBlob.size > 55 * 1024) throw new Error('Choose a smaller image');
-
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('Image could not be read'));
-    reader.onerror = () => reject(new Error('Image could not be read'));
-    reader.readAsDataURL(imageBlob);
-  });
-}
-
 export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
-  const { tailors, designs, orders, customRequests, updateOrderStatus, updateTailorAvailability, updateTailorCapacity, updateTailorProfile, addDesign, deleteDesign, submitQuoteOffer } = useData();
+  const { tailors, designs, orders, customRequests, updateOrderStatus, updateTailorAvailability, updateTailorCapacity, updateTailorProfile, addTailorGalleryImage, deleteTailorGalleryImage, addDesign, deleteDesign, submitQuoteOffer } = useData();
   const { currentUser } = useAuth();
   const { lang, t } = useLanguage();
 
@@ -61,9 +36,8 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
   const [showEditProfileModal, setShowEditProfileModal] = useState(false);
   const [quoteModalReqId, setQuoteModalReqId] = useState<string | null>(null);
 
-  const tailor = tailors.find(t => t.userId === currentUser.id)
-    ?? tailors.find(t => t.id === 't_sunita' && currentUser.role === 'tailor')
-    ?? tailors[0]
+  const matchedTailor = tailors.find(t => t.userId === currentUser.id);
+  const tailor = matchedTailor
     ?? {
       id: 't_placeholder',
       userId: currentUser.id,
@@ -87,7 +61,7 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
       estCompletionDays: 3,
       skills: ['Blouse Stitching'],
       galleryImages: [],
-      isVerified: true,
+      isVerified: false,
       joinedDate: new Date().toISOString().split('T')[0]
     };
 
@@ -114,8 +88,13 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
   const [designDays, setDesignDays] = useState<number>(3);
   const [designDesc, setDesignDesc] = useState('');
   const [designCategory, setDesignCategory] = useState('Blouse Stitching');
-  const [designImage, setDesignImage] = useState('https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80');
+  const [designImage, setDesignImage] = useState('');
   const [designImageError, setDesignImageError] = useState('');
+  const [isPreparingDesignImage, setIsPreparingDesignImage] = useState(false);
+  const [designSaveError, setDesignSaveError] = useState('');
+  const [galleryError, setGalleryError] = useState('');
+  const [isSavingGalleryImage, setIsSavingGalleryImage] = useState(false);
+  const [deletingGalleryImageIndex, setDeletingGalleryImageIndex] = useState<number | null>(null);
 
   const tailorOrders = orders.filter(o => o.tailorId === tailor.id);
   const newRequests = tailorOrders.filter(o => o.status === 'requested');
@@ -132,33 +111,92 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
   // Earnings calculations (100% tailor payout model)
   const totalEarned = completedOrders.reduce((sum, o) => sum + o.price, 0);
 
-  const tailorDesigns = designs.filter(d => d.tailorId === tailor.id || d.tailorId === 't_sunita');
+  if (!matchedTailor) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-16 text-center">
+        <h1 className="text-2xl font-black text-[#2A1B3D]">Your tailor profile is loading</h1>
+        <p className="mt-3 text-sm text-stone-600">
+          We could not find a tailor profile linked to this account yet. Please refresh the page or sign in again. If the issue continues, contact the admin who approved your application.
+        </p>
+      </div>
+    );
+  }
 
-  const handleCreateDesign = (e: React.FormEvent) => {
+  const tailorDesigns = designs.filter(d => d.tailorId === tailor.id);
+  const tailorGalleryImages = tailor.galleryImages || [];
+
+  const handleAddGalleryImage = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = '';
+    if (!file) return;
+
+    try {
+      setGalleryError('');
+      setIsSavingGalleryImage(true);
+      const image = await profileImageFileToDataUrl(file);
+      await addTailorGalleryImage(tailor.id, image);
+    } catch (error) {
+      setGalleryError(error instanceof Error ? error.message : 'Could not add the photo to your gallery.');
+    } finally {
+      setIsSavingGalleryImage(false);
+    }
+  };
+
+  const handleDeleteGalleryImage = async (imageIndex: number) => {
+    const confirmed = window.confirm(lang === 'hi'
+      ? 'क्या आप इस फोटो को अपनी सार्वजनिक गैलरी से हटाना चाहते हैं?'
+      : 'Remove this photo from your public tailor gallery?');
+    if (!confirmed) return;
+
+    try {
+      setGalleryError('');
+      setDeletingGalleryImageIndex(imageIndex);
+      await deleteTailorGalleryImage(tailor.id, imageIndex);
+    } catch (error) {
+      setGalleryError(error instanceof Error ? error.message : 'Could not remove the photo from your gallery.');
+    } finally {
+      setDeletingGalleryImageIndex(null);
+    }
+  };
+
+  const handleCreateDesign = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isPreparingDesignImage) return;
+    if (!designImage.trim()) {
+      setDesignImageError(lang === 'hi' ? 'डिज़ाइन फोटो चुनें या उसका URL दर्ज करें।' : 'Choose a design photo or enter its URL.');
+      return;
+    }
+
     const submitter = (e.nativeEvent as SubmitEvent).submitter;
     const keepAdding = submitter instanceof HTMLButtonElement && submitter.dataset.addAnother === 'true';
     const categoryIds: Record<string, string> = {
       'Blouse Stitching': 'blouse',
       'Suit & Salwar Stitching': 'suit',
       'Dress & Kurti': 'dress',
+      Kids: 'kids',
       'Kids Clothing': 'kids',
       Alterations: 'alterations',
       'Custom Design': 'custom'
     };
     const normalizedCategory = designCategory.trim();
-    addDesign({
-      tailorId: tailor.id,
-      tailorName: tailor.name,
-      categoryId: categoryIds[normalizedCategory] || Object.entries(categoryIds).find(([name]) => name.toLowerCase() === normalizedCategory.toLowerCase())?.[1] || 'custom',
-      categoryName: normalizedCategory || 'Custom Design',
-      title: designTitle || (lang === 'hi' ? 'विशेष सिलाई डिज़ाइन' : 'Custom Designer Style'),
-      image: designImage || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80',
-      price: Number(designPrice) || 400,
-      estDays: Number(designDays) || 3,
-      description: designDesc || (lang === 'hi' ? 'उच्च गुणवत्ता सिलाई, परफेक्ट फिटिंग और सुंदर फिनिशिंग।' : 'High quality custom stitching with perfect fitting.'),
-      isAvailable: true
-    });
+    try {
+      setDesignSaveError('');
+      await addDesign({
+        tailorId: tailor.id,
+        tailorName: tailor.name,
+        categoryId: categoryIds[normalizedCategory] || Object.entries(categoryIds).find(([name]) => name.toLowerCase() === normalizedCategory.toLowerCase())?.[1] || 'custom',
+        categoryName: normalizedCategory || 'Custom Design',
+        title: designTitle || (lang === 'hi' ? 'विशेष सिलाई डिज़ाइन' : 'Custom Designer Style'),
+        image: designImage.trim(),
+        price: Number(designPrice) || 400,
+        estDays: Number(designDays) || 3,
+        description: designDesc || (lang === 'hi' ? 'उच्च गुणवत्ता सिलाई, परफेक्ट फिटिंग और सुंदर फिनिशिंग।' : 'High quality custom stitching with perfect fitting.'),
+        isAvailable: true
+      });
+    } catch (error) {
+      setDesignSaveError(error instanceof Error ? error.message : 'Could not save the design. Please try again.');
+      return;
+    }
     setDesignTitle('');
     setDesignDesc('');
     if (!keepAdding) setShowAddDesignModal(false);
@@ -202,10 +240,10 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-8 animate-fade-in pb-16">
       {/* TAILOR WORK CENTER HEADER */}
-      <div className="bg-gradient-to-r from-[#1B4D3E] via-[#133A2E] to-stone-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+      <div className="bg-linear-to-r from-[#1B4D3E] via-[#133A2E] to-stone-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
           <div className="flex items-center gap-4">
-            <img src={tailor.avatar} alt={tailor.name} className="w-20 h-20 rounded-2xl object-cover border-2 border-amber-400 shadow-md bg-stone-100" />
+            <ProfilePhotoControl className="h-20 w-20 rounded-2xl border-amber-400" />
             <div>
               <div className="flex items-center gap-2">
                 <span className="bg-amber-400 text-stone-900 font-extrabold text-[10px] px-2.5 py-0.5 rounded-full uppercase">
@@ -234,6 +272,18 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
             <span className="font-extrabold text-2xl text-emerald-400">₹{totalEarned}</span>
           </div>
         </div>
+
+        <button
+          onClick={() => {
+            setActiveTabSub('catalog');
+            setDesignSaveError('');
+            setShowAddDesignModal(true);
+          }}
+          className="w-full sm:w-auto px-5 py-3 bg-[#E91E63] hover:bg-[#D81B60] text-white font-extrabold text-sm rounded-2xl flex items-center justify-center gap-2 shadow-lg transition active:scale-95"
+        >
+          <PlusCircle className="w-4 h-4" />
+          <span>{lang === 'hi' ? 'नया डिज़ाइन जोड़ें' : 'Add a Design'}</span>
+        </button>
 
         {/* TOUCH-FRIENDLY CONTROLS: AVAILABILITY & CAPACITY */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -425,7 +475,7 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
             {villageRequests.map(req => (
               <div key={req.id} className="bg-white p-5 rounded-3xl border border-amber-200 shadow-md flex flex-col sm:flex-row items-start justify-between gap-4">
                 <div className="flex gap-4">
-                  <img src={req.referenceImage} alt={req.requestTitle} className="w-20 h-24 rounded-2xl object-cover" />
+                  <img src={imageSource(req.referenceImage)} alt={req.requestTitle} className="w-20 h-24 rounded-2xl object-cover" />
                   <div className="space-y-1">
                     <span className="bg-amber-100 text-amber-900 font-bold text-[9px] px-2 py-0.5 rounded uppercase">{req.clothingCategory}</span>
                     <h4 className="font-bold text-sm text-stone-900">{req.requestTitle}</h4>
@@ -571,7 +621,10 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
               </p>
             </div>
             <button
-              onClick={() => setShowAddDesignModal(true)}
+              onClick={() => {
+                setDesignSaveError('');
+                setShowAddDesignModal(true);
+              }}
               className="px-5 py-2.5 bg-[#E91E63] hover:bg-[#D81B60] text-white font-extrabold text-xs rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-pink-500/25 transition active:scale-95"
             >
               <PlusCircle className="w-4 h-4" />
@@ -579,13 +632,71 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
             </button>
           </div>
 
+          <section className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h4 className="font-extrabold text-stone-900">
+                  {lang === 'hi' ? 'मेरे काम की फोटो गैलरी' : 'Portfolio photo gallery'}
+                </h4>
+                <p className="mt-1 text-xs text-stone-500">
+                  {lang === 'hi'
+                    ? 'यहाँ जोड़ी गई तस्वीरें आपकी सार्वजनिक दर्जी प्रोफ़ाइल पर दिखेंगी।'
+                    : 'Photos added here appear in your public tailor profile.'}
+                </p>
+              </div>
+              <label className={`inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-extrabold text-white transition ${
+                isSavingGalleryImage ? 'cursor-wait bg-stone-400' : 'bg-[#1B4D3E] hover:bg-[#133A2E]'
+              }`}>
+                <PlusCircle className="h-4 w-4" />
+                <span>
+                  {isSavingGalleryImage
+                    ? (lang === 'hi' ? 'फोटो जोड़ रहे हैं…' : 'Adding photo…')
+                    : (lang === 'hi' ? 'गैलरी से फोटो चुनें' : 'Choose from gallery')}
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAddGalleryImage}
+                  className="sr-only"
+                  disabled={isSavingGalleryImage}
+                  aria-label={lang === 'hi' ? 'गैलरी से फोटो चुनें' : 'Choose a portfolio photo from your device'}
+                />
+              </label>
+            </div>
+
+            {galleryError && <p role="alert" className="mt-3 text-xs font-semibold text-red-600">{galleryError}</p>}
+            {tailorGalleryImages.length === 0 ? (
+              <p className="mt-4 rounded-xl border border-dashed border-stone-200 bg-stone-50 p-5 text-center text-xs text-stone-500">
+                {lang === 'hi' ? 'अभी कोई फोटो नहीं है। अपने सिलाई के काम की पहली फोटो जोड़ें।' : 'No photos yet. Add a photo of your stitching work to get started.'}
+              </p>
+            ) : (
+              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                {tailorGalleryImages.map((image, index) => (
+                  <div key={`${index}-${image.slice(0, 32)}`} className="group relative aspect-square overflow-hidden rounded-xl bg-stone-100">
+                    <img src={imageSource(image)} alt={`Portfolio work ${index + 1}`} className="h-full w-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteGalleryImage(index)}
+                      disabled={deletingGalleryImageIndex === index}
+                      className="absolute right-2 top-2 inline-flex h-9 w-9 items-center justify-center rounded-full bg-red-600/90 text-white shadow transition hover:bg-red-700 disabled:cursor-wait disabled:opacity-60 sm:opacity-0 sm:group-hover:opacity-100"
+                      aria-label={lang === 'hi' ? `फोटो ${index + 1} हटाएँ` : `Remove portfolio photo ${index + 1}`}
+                      title={lang === 'hi' ? 'फोटो हटाएँ' : 'Remove photo'}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
           {/* DESIGN CATALOG GRID */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {tailorDesigns.map(d => (
               <div key={d.id} className="bg-white rounded-3xl border border-stone-200 shadow-md hover:shadow-xl transition overflow-hidden flex flex-col justify-between group">
                 <div>
                   <div className="relative h-44 overflow-hidden bg-stone-100">
-                    <img src={d.image} alt={d.title} className="w-full h-full object-cover group-hover:scale-105 transition" />
+                    <img src={imageSource(d.image)} alt={d.title} className="w-full h-full object-cover group-hover:scale-105 transition" />
                     <div className="absolute top-3 left-3 bg-[#2A1B3D]/80 backdrop-blur-md text-white font-extrabold text-[10px] px-2.5 py-0.5 rounded-full shadow">
                       {d.categoryName}
                     </div>
@@ -745,7 +856,7 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
                     <option value="Blouse Stitching" />
                     <option value="Suit & Salwar Stitching" />
                     <option value="Dress & Kurti" />
-                    <option value="Kids Clothing" />
+                    <option value="Kids" />
                     <option value="Alterations" />
                     <option value="Custom Design" />
                   </datalist>
@@ -784,7 +895,7 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
                 </div>
 
                 <div>
-                  <label htmlFor="newDesignImage" className="block text-stone-700 mb-1">
+                  <label htmlFor="designImageFile" className="block text-stone-700 mb-1">
                     {lang === 'hi' ? 'डिज़ाइन फोटो' : 'Design photo'}
                   </label>
                   <input
@@ -792,35 +903,59 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
                     name="designImageFile"
                     type="file"
                     accept="image/*"
+                    disabled={isPreparingDesignImage}
                     onChange={async e => {
                       const file = e.currentTarget.files?.[0];
                       if (!file) return;
+                      e.currentTarget.value = '';
                       try {
                         setDesignImageError('');
-                        setDesignImage(await imageFileToDataUrl(file));
+                        setDesignImage('');
+                        setIsPreparingDesignImage(true);
+                        const image = await profileImageFileToDataUrl(file);
+                        setDesignImage(image);
                       } catch (error) {
+                        setDesignImage('');
                         setDesignImageError(error instanceof Error ? error.message : 'Image could not be prepared');
+                      } finally {
+                        setIsPreparingDesignImage(false);
                       }
                     }}
                     className="w-full text-xs text-stone-600 file:mr-2 file:rounded-lg file:border-0 file:bg-pink-50 file:px-3 file:py-2 file:text-xs file:font-bold file:text-[#D43A72]"
                   />
+                  {isPreparingDesignImage && (
+                    <p className="mt-1 text-xs font-semibold text-stone-500">
+                      {lang === 'hi' ? 'फोटो तैयार हो रही है…' : 'Preparing selected photo…'}
+                    </p>
+                  )}
                   <input
                     id="newDesignImage"
                     name="newDesignImage"
                     type="text"
                     value={designImage}
-                    onChange={e => setDesignImage(e.target.value)}
+                    onChange={e => {
+                      setDesignImage(e.target.value);
+                      setDesignImageError('');
+                    }}
+                    disabled={isPreparingDesignImage}
                     className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-xs text-[#2A1B3D]"
                     aria-label={lang === 'hi' ? 'या फोटो URL दर्ज करें' : 'Or enter an image URL'}
                   />
                   {designImageError && <p role="alert" className="mt-1 text-xs font-semibold text-red-600">{designImageError}</p>}
-                  <img
-                    src={designImage}
-                    alt={lang === 'hi' ? 'डिज़ाइन फोटो का पूर्वावलोकन' : 'Design image preview'}
-                    className="mt-2 h-20 w-full rounded-lg border border-stone-200 object-cover"
-                    onError={e => { e.currentTarget.style.visibility = 'hidden'; }}
-                    onLoad={e => { e.currentTarget.style.visibility = 'visible'; }}
-                  />
+                  {designImage ? (
+                    <img
+                      src={designImage}
+                      alt={lang === 'hi' ? 'डिज़ाइन फोटो का पूर्वावलोकन' : 'Design image preview'}
+                      className="mt-2 h-64 w-full rounded-lg border border-stone-200 bg-stone-50 object-contain"
+                      onError={() => {
+                        setDesignImageError(lang === 'hi' ? 'फोटो URL लोड नहीं हो सका।' : 'The selected image could not be loaded.');
+                      }}
+                    />
+                  ) : (
+                    <div className="mt-2 flex h-64 items-center justify-center rounded-lg border border-dashed border-stone-300 bg-stone-50 text-center text-xs font-medium text-stone-500">
+                      {lang === 'hi' ? 'चुनी गई फोटो का पूर्वावलोकन यहां दिखेगा' : 'Your selected photo preview will appear here'}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -832,28 +967,44 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
                 <div className="grid grid-cols-4 gap-2">
                   <button
                     type="button"
-                    onClick={() => setDesignImage('https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80')}
+                    disabled={isPreparingDesignImage}
+                    onClick={() => {
+                      setDesignImageError('');
+                      setDesignImage('https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80');
+                    }}
                     className="p-1 border rounded-xl hover:border-[#E91E63] overflow-hidden text-[10px] text-center"
                   >
                     👚 Blouse
                   </button>
                   <button
                     type="button"
-                    onClick={() => setDesignImage('https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&auto=format&fit=crop&q=80')}
+                    disabled={isPreparingDesignImage}
+                    onClick={() => {
+                      setDesignImageError('');
+                      setDesignImage('https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&auto=format&fit=crop&q=80');
+                    }}
                     className="p-1 border rounded-xl hover:border-[#E91E63] overflow-hidden text-[10px] text-center"
                   >
                     👗 Suit
                   </button>
                   <button
                     type="button"
-                    onClick={() => setDesignImage('https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=600&auto=format&fit=crop&q=80')}
+                    disabled={isPreparingDesignImage}
+                    onClick={() => {
+                      setDesignImageError('');
+                      setDesignImage('https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=600&auto=format&fit=crop&q=80');
+                    }}
                     className="p-1 border rounded-xl hover:border-[#E91E63] overflow-hidden text-[10px] text-center"
                   >
                     👘 Dress
                   </button>
                   <button
                     type="button"
-                    onClick={() => setDesignImage('https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=600&auto=format&fit=crop&q=80')}
+                    disabled={isPreparingDesignImage}
+                    onClick={() => {
+                      setDesignImageError('');
+                      setDesignImage('https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=600&auto=format&fit=crop&q=80');
+                    }}
                     className="p-1 border rounded-xl hover:border-[#E91E63] overflow-hidden text-[10px] text-center"
                   >
                     🧒 Kids
@@ -876,6 +1027,8 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
                 ></textarea>
               </div>
 
+              {designSaveError && <p role="alert" className="text-sm font-semibold text-red-600">{designSaveError}</p>}
+
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
@@ -887,13 +1040,15 @@ export const TailorDashboardPage: React.FC<TailorDashboardPageProps> = () => {
                 <button
                   type="submit"
                   data-add-another="true"
-                  className="flex-1 py-3.5 border border-[#D43A72] text-[#D43A72] font-black rounded-2xl transition hover:bg-pink-50"
+                  disabled={isPreparingDesignImage || !designImage.trim()}
+                  className="flex-1 py-3.5 border border-[#D43A72] text-[#D43A72] font-black rounded-2xl transition hover:bg-pink-50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {lang === 'hi' ? 'सहेजें और अगला जोड़ें' : 'Save & Add Another'}
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3.5 bg-[#E91E63] hover:bg-[#D81B60] text-white font-black rounded-2xl shadow-lg shadow-pink-500/25 transition active:scale-95"
+                  disabled={isPreparingDesignImage || !designImage.trim()}
+                  className="flex-1 py-3.5 bg-[#E91E63] hover:bg-[#D81B60] text-white font-black rounded-2xl shadow-lg shadow-pink-500/25 transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {lang === 'hi' ? 'डिज़ाइन सहेजें (Save Design)' : 'Save Design Catalog'}
                 </button>

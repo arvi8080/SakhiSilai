@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { uploadImageToFirebase } from '../../config/firebase';
+import { imageSource } from '../../utils/imageSource';
 import { PlusCircle, Sparkles, Star, MessageSquare, UploadCloud, Loader2 } from 'lucide-react';
 
 interface CustomDesignRequestPageProps {
@@ -219,7 +220,7 @@ export const CustomDesignRequestPage: React.FC<CustomDesignRequestPageProps> = (
             myRequests.map(req => (
               <div key={req.id} className="bg-white p-5 rounded-3xl border border-stone-200 shadow-md space-y-4">
                 <div className="flex gap-4 items-start">
-                  <img src={req.referenceImage} alt={req.requestTitle} className="w-20 h-24 rounded-2xl object-cover bg-stone-100" />
+                  <img src={imageSource(req.referenceImage)} alt={req.requestTitle} className="w-20 h-24 rounded-2xl object-cover bg-stone-100" />
                   <div>
                     <span className="bg-amber-100 text-amber-800 text-[9px] font-bold px-2 py-0.5 rounded uppercase">
                       {req.clothingCategory}

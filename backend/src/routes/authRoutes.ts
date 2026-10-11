@@ -50,7 +50,38 @@ authRouter.get('/me', requireAuth, (req: Request, res: Response) => {
     return res.status(404).json({ success: false, message: 'User not found' });
   }
   const { password: _password, ...safeUser } = user as User & { password?: string };
-  res.json({ success: true, data: safeUser });
+  res.json({
+    success: true,
+    token: issueAccessToken(user.id, user.role),
+    data: safeUser
+  });
+});
+
+// PATCH /api/auth/profile/avatar
+authRouter.patch('/profile/avatar', requireAuth, (req: Request, res: Response) => {
+  const userId = (req as AuthenticatedRequest).auth!.userId;
+  const user = db.users.find(candidate => candidate.id === userId);
+  if (!user) {
+    return res.status(404).json({ success: false, message: 'User not found' });
+  }
+
+  const avatar = req.body.avatar;
+  if (
+    typeof avatar !== 'string' ||
+    avatar.length > 80_000 ||
+    (avatar !== '' && !/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(avatar))
+  ) {
+    return res.status(400).json({ success: false, message: 'Choose a valid JPEG photo under 55 KB or remove the current photo' });
+  }
+
+  sqlite.transaction(() => {
+    db.updateUserAvatarById(userId, avatar);
+    if (user.role === 'tailor') db.updateTailorAvatarByUserId(userId, avatar);
+  })();
+
+  const updatedUser = db.users.find(candidate => candidate.id === userId)!;
+  const { password: _password, ...safeUser } = updatedUser as User & { password?: string };
+  res.json({ success: true, message: 'Profile photo updated', data: safeUser });
 });
 
 authRouter.get('/customers', requireAuth, requireRole('admin'), (_req: Request, res: Response) => {
@@ -186,4 +217,3 @@ authRouter.post('/register-tailor', requireAuth, requireRole('customer'), (req: 
 
   res.status(201).json({ success: true, message: 'Application submitted for admin approval', data: newTailor });
 });
-

@@ -3,6 +3,7 @@ const { spawn } = require('child_process');
 const { execFileSync } = require('child_process');
 const { once } = require('events');
 const { randomUUID } = require('crypto');
+const Database = require('better-sqlite3');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -86,8 +87,119 @@ async function run() {
   assert.equal(swagger.paths['/api/auth/forgot-password'].post.responses['503'] !== undefined, true);
 
   const first = await registerAccount();
+  const customerAvatar = await request('/api/auth/profile/avatar', {
+    method: 'PATCH',
+    headers: { Authorization: ['Bearer', first.token].join(' '), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ avatar: 'data:image/jpeg;base64,/9j/2Q==' })
+  });
+  assert.equal(customerAvatar.response.status, 200, JSON.stringify(customerAvatar.body));
+  assert.equal(customerAvatar.body.data.avatar, 'data:image/jpeg;base64,/9j/2Q==');
+  const removedCustomerAvatar = await request('/api/auth/profile/avatar', {
+    method: 'PATCH',
+    headers: { Authorization: ['Bearer', first.token].join(' '), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ avatar: '' })
+  });
+  assert.equal(removedCustomerAvatar.response.status, 200, JSON.stringify(removedCustomerAvatar.body));
+  assert.equal(removedCustomerAvatar.body.data.avatar, '');
+  const invalidAvatar = await request('/api/auth/profile/avatar', {
+    method: 'PATCH',
+    headers: { Authorization: ['Bearer', first.token].join(' '), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ avatar: 'javascript:alert(1)' })
+  });
+  assert.equal(invalidAvatar.response.status, 400);
+
   const tailorAccount = await registerAccount();
   const tailor = await registerTailor(tailorAccount.token);
+  const adminAccount = await registerAccount();
+  const testDb = new Database(databasePath);
+  testDb.prepare("UPDATE users SET role = 'admin', isVerified = 1 WHERE id = ?").run(adminAccount.user.id);
+  testDb.close();
+
+  const adminLogin = await request('/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ emailOrPhone: adminAccount.user.email, password: 'Smoke-Test-Passphrase-2026' })
+  });
+  assert.equal(adminLogin.response.status, 200, JSON.stringify(adminLogin.body));
+  const adminAuthorization = ['Bearer', adminLogin.body.token].join(' ');
+  const adminAvatar = await request('/api/auth/profile/avatar', {
+    method: 'PATCH',
+    headers: { Authorization: adminAuthorization, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ avatar: 'data:image/jpeg;base64,/9j/2Q==' })
+  });
+  assert.equal(adminAvatar.response.status, 200, JSON.stringify(adminAvatar.body));
+  assert.equal(adminAvatar.body.data.avatar, 'data:image/jpeg;base64,/9j/2Q==');
+  const removedAdminAvatar = await request('/api/auth/profile/avatar', {
+    method: 'PATCH',
+    headers: { Authorization: adminAuthorization, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ avatar: '' })
+  });
+  assert.equal(removedAdminAvatar.response.status, 200, JSON.stringify(removedAdminAvatar.body));
+  assert.equal(removedAdminAvatar.body.data.avatar, '');
+  const adminTailors = await request('/api/admin/tailors', {
+    headers: { Authorization: adminAuthorization }
+  });
+  assert.equal(adminTailors.response.status, 200, JSON.stringify(adminTailors.body));
+  assert.equal(adminTailors.body.data.some(profile => profile.id === tailor.id && profile.isVerified === false), true);
+  const approval = await request(`/api/admin/tailors/${tailor.id}/verify`, {
+    method: 'POST',
+    headers: { Authorization: adminAuthorization, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ isVerified: true })
+  });
+  assert.equal(approval.response.status, 200, JSON.stringify(approval.body));
+  assert.equal(approval.body.data.isVerified, true);
+
+  const refreshedSession = await request('/api/auth/me', {
+    headers: { Authorization: `Bearer ${tailorAccount.token}` }
+  });
+  assert.equal(refreshedSession.response.status, 200, JSON.stringify(refreshedSession.body));
+  assert.equal(refreshedSession.body.data.role, 'tailor');
+  assert.equal(typeof refreshedSession.body.token, 'string');
+  const tailorDashboardAccess = await request('/api/tailors/me', {
+    headers: { Authorization: `Bearer ${refreshedSession.body.token}` }
+  });
+  assert.equal(tailorDashboardAccess.response.status, 200, JSON.stringify(tailorDashboardAccess.body));
+  assert.equal(tailorDashboardAccess.body.data.id, tailor.id);
+
+  const tailorAuthorization = ['Bearer', refreshedSession.body.token].join(' ');
+  const tailorAvatar = await request('/api/auth/profile/avatar', {
+    method: 'PATCH',
+    headers: { Authorization: tailorAuthorization, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ avatar: 'data:image/jpeg;base64,/9j/2Q==' })
+  });
+  assert.equal(tailorAvatar.response.status, 200, JSON.stringify(tailorAvatar.body));
+  const refreshedTailorProfile = await request('/api/tailors/me', {
+    headers: { Authorization: tailorAuthorization }
+  });
+  assert.equal(refreshedTailorProfile.response.status, 200, JSON.stringify(refreshedTailorProfile.body));
+  assert.equal(refreshedTailorProfile.body.data.avatar, 'data:image/jpeg;base64,/9j/2Q==');
+  const removedTailorAvatar = await request('/api/auth/profile/avatar', {
+    method: 'PATCH',
+    headers: { Authorization: tailorAuthorization, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ avatar: '' })
+  });
+  assert.equal(removedTailorAvatar.response.status, 200, JSON.stringify(removedTailorAvatar.body));
+
+  const galleryStartCount = tailorDashboardAccess.body.data.galleryImages.length;
+  const galleryPhoto = await request('/api/tailors/' + tailor.id + '/gallery', {
+    method: 'POST',
+    headers: { Authorization: tailorAuthorization, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ image: 'data:image/jpeg;base64,/9j/2Q==' })
+  });
+  assert.equal(galleryPhoto.response.status, 201, JSON.stringify(galleryPhoto.body));
+  assert.equal(galleryPhoto.body.data.galleryImages.length, galleryStartCount + 1);
+  const invalidGalleryPhoto = await request('/api/tailors/' + tailor.id + '/gallery', {
+    method: 'POST',
+    headers: { Authorization: tailorAuthorization, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ image: 'javascript:alert(1)' })
+  });
+  assert.equal(invalidGalleryPhoto.response.status, 400);
+  const removedGalleryPhoto = await request('/api/tailors/' + tailor.id + '/gallery/' + galleryStartCount, {
+    method: 'DELETE',
+    headers: { Authorization: tailorAuthorization }
+  });
+  assert.equal(removedGalleryPhoto.response.status, 200, JSON.stringify(removedGalleryPhoto.body));
+  assert.equal(removedGalleryPhoto.body.data.galleryImages.length, galleryStartCount);
 
   const unauthenticated = await request('/api/orders');
   assert.equal(unauthenticated.response.status, 401);
@@ -167,7 +279,7 @@ async function run() {
     cwd: scriptDirectory,
     env: { ...opsEnv, BACKUP_FILE: backupFile }
   });
-  process.stdout.write('API and recovery smoke checks passed: auth, authorization, validation, idempotency, payment fail-closed, CORS, rate limit, backup, restore.\n');
+  process.stdout.write('API and recovery smoke checks passed: auth, admin approval, approval role refresh, avatar update/removal, tailor authorization, gallery upload/delete, validation, idempotency, payment fail-closed, CORS, rate limit, backup, restore.\n');
 }
 
 run().catch(error => {

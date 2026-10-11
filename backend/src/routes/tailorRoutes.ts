@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import { db } from '../data/db';
 import { sqlite } from '../data/database';
 import { computeHyperlocalMatches } from '../services/matchingService';
-import { AuthenticatedRequest, requireRole } from '../middleware/auth';
+import { AuthenticatedRequest, requireAuth, requireRole } from '../middleware/auth';
 import type { DesignCatalogItem } from '../types';
 
 export const tailorRouter = Router();
@@ -15,7 +15,7 @@ tailorRouter.get('/', (_req: Request, res: Response) => {
 });
 
 // GET /api/tailors/me
-tailorRouter.get('/me', requireRole('tailor'), (req: Request, res: Response) => {
+tailorRouter.get('/me', requireAuth, requireRole('tailor'), (req: Request, res: Response) => {
   const auth = (req as AuthenticatedRequest).auth!;
   const tailor = db.tailors.find(item => item.userId === auth.userId);
 
@@ -57,7 +57,7 @@ tailorRouter.get('/:id', (req: Request, res: Response) => {
 // PATCH /api/tailors/:id
 // Tailor can edit their own public profile and service information
 
-tailorRouter.patch('/:id', requireRole('tailor', 'admin'), (req: Request, res: Response) => {
+tailorRouter.patch('/:id', requireAuth, requireRole('tailor', 'admin'), (req: Request, res: Response) => {
   const { id } = req.params;
   const auth = (req as AuthenticatedRequest).auth!;
   const tailor = db.tailors.find(item => item.id === id);
@@ -102,8 +102,58 @@ tailorRouter.patch('/:id', requireRole('tailor', 'admin'), (req: Request, res: R
   res.json({ success: true, message: 'Tailor profile updated', data: updated });
 });
 
+// POST /api/tailors/:id/gallery
+tailorRouter.post('/:id/gallery', requireAuth, requireRole('tailor'), (req: Request, res: Response) => {
+  const { id } = req.params;
+  const auth = (req as AuthenticatedRequest).auth!;
+  const tailor = db.tailors.find(item => item.id === id && item.userId === auth.userId);
+
+  if (!tailor) {
+    return res.status(404).json({ success: false, message: 'Tailor profile not found for this account' });
+  }
+
+  const image = req.body.image;
+  if (
+    typeof image !== 'string' ||
+    image.length > 80_000 ||
+    !/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(image)
+  ) {
+    return res.status(400).json({ success: false, message: 'Choose a valid JPEG photo under 55 KB' });
+  }
+
+  const galleryImages = tailor.galleryImages || [];
+  if (galleryImages.length >= 24) {
+    return res.status(400).json({ success: false, message: 'Gallery can contain up to 24 photos' });
+  }
+
+  db.updateTailorProfile(id, { galleryImages: [...galleryImages, image] });
+  const updated = db.tailors.find(item => item.id === id);
+  res.status(201).json({ success: true, message: 'Photo added to your gallery', data: updated });
+});
+
+// DELETE /api/tailors/:id/gallery/:imageIndex
+tailorRouter.delete('/:id/gallery/:imageIndex', requireAuth, requireRole('tailor'), (req: Request, res: Response) => {
+  const { id } = req.params;
+  const imageIndex = Number(req.params.imageIndex);
+  const auth = (req as AuthenticatedRequest).auth!;
+  const tailor = db.tailors.find(item => item.id === id && item.userId === auth.userId);
+
+  if (!tailor) {
+    return res.status(404).json({ success: false, message: 'Tailor profile not found for this account' });
+  }
+
+  const galleryImages = tailor.galleryImages || [];
+  if (!Number.isInteger(imageIndex) || imageIndex < 0 || imageIndex >= galleryImages.length) {
+    return res.status(404).json({ success: false, message: 'Gallery photo not found' });
+  }
+
+  db.updateTailorProfile(id, { galleryImages: galleryImages.filter((_, index) => index !== imageIndex) });
+  const updated = db.tailors.find(item => item.id === id);
+  res.json({ success: true, message: 'Photo removed from your gallery', data: updated });
+});
+
 // POST /api/tailors/:id/capacity
-tailorRouter.post('/:id/capacity', requireRole('tailor'), (req: Request, res: Response) => {
+tailorRouter.post('/:id/capacity', requireAuth, requireRole('tailor'), (req: Request, res: Response) => {
   const { id } = req.params;
   const auth = (req as AuthenticatedRequest).auth!;
   const tailor = db.tailors.find(item => item.id === id && item.userId === auth.userId);
@@ -123,7 +173,7 @@ tailorRouter.post('/:id/capacity', requireRole('tailor'), (req: Request, res: Re
 });
 
 // POST /api/tailors/:id/designs
-tailorRouter.post('/:id/designs', requireRole('tailor'), (req: Request, res: Response) => {
+tailorRouter.post('/:id/designs', requireAuth, requireRole('tailor'), (req: Request, res: Response) => {
   const { id } = req.params;
   const auth = (req as AuthenticatedRequest).auth!;
   const tailor = db.tailors.find(item => item.id === id && item.userId === auth.userId);
@@ -136,6 +186,13 @@ tailorRouter.post('/:id/designs', requireRole('tailor'), (req: Request, res: Res
   if (typeof title !== 'string' || title.trim().length < 2 || !Number.isFinite(Number(price)) || Number(price) <= 0) {
     return res.status(400).json({ success: false, message: 'Design title and price are required' });
   }
+  if (
+    typeof image !== 'string' ||
+    image.length > 80_000 ||
+    (!/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(image) && !/^https:\/\//i.test(image))
+  ) {
+    return res.status(400).json({ success: false, message: 'Choose a valid image under 55 KB or provide an HTTPS image URL' });
+  }
 
   const newDesign: DesignCatalogItem = {
     id: `d_${randomUUID()}`,
@@ -146,7 +203,7 @@ tailorRouter.post('/:id/designs', requireRole('tailor'), (req: Request, res: Res
       : categoryName?.toString().toLowerCase().includes('blouse') ? 'blouse' : 'custom',
     categoryName: categoryName || 'Custom Design',
     title: title.trim(),
-    image: typeof image === 'string' && image.trim() ? image.trim() : 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80',
+    image: image.trim(),
     price: Number(price),
     estDays: Number(estDays) || 3,
     description: typeof description === 'string' ? description.trim() : '',
@@ -158,7 +215,7 @@ tailorRouter.post('/:id/designs', requireRole('tailor'), (req: Request, res: Res
 });
 
 // DELETE /api/tailors/:id/designs/:designId
-tailorRouter.delete('/:id/designs/:designId', requireRole('tailor'), (req: Request, res: Response) => {
+tailorRouter.delete('/:id/designs/:designId', requireAuth, requireRole('tailor'), (req: Request, res: Response) => {
   const { id, designId } = req.params;
   const auth = (req as AuthenticatedRequest).auth!;
   const tailor = db.tailors.find(item => item.id === id && item.userId === auth.userId);
@@ -173,7 +230,7 @@ tailorRouter.delete('/:id/designs/:designId', requireRole('tailor'), (req: Reque
 });
 
 // POST /api/tailors/availability
-tailorRouter.post('/availability', requireRole('tailor'), (req: Request, res: Response) => {
+tailorRouter.post('/availability', requireAuth, requireRole('tailor'), (req: Request, res: Response) => {
   const { tailorId, availability } = req.body;
   const auth = (req as AuthenticatedRequest).auth!;
   const tailor = db.tailors.find(t => t.id === tailorId);
@@ -184,4 +241,3 @@ tailorRouter.post('/availability', requireRole('tailor'), (req: Request, res: Re
   const updated = db.tailors.find(t => t.id === tailorId);
   res.json({ success: true, message: `Availability status updated to ${availability}`, data: updated });
 });
-

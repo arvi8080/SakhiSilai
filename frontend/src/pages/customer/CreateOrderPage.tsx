@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import type { FabricHandoverMethod } from '../../types';
 import { PaymentModal } from '../../components/PaymentModal';
+import { imageSource } from '../../utils/imageSource';
 import {
   Scissors,
   MapPin,
@@ -173,7 +174,7 @@ export const CreateOrderPage: React.FC<CreateOrderPageProps> = ({
                       : 'bg-stone-50 border-stone-200 hover:bg-stone-100'
                   }`}
                 >
-                  <img src={d.image} alt={d.title} className="w-14 h-16 rounded-xl object-cover" />
+                  <img src={imageSource(d.image)} alt={d.title} className="w-14 h-16 rounded-xl object-cover" />
                   <div className="flex-1">
                     <h4 className="font-bold text-xs text-stone-900">{lang === 'hi' ? (d.titleHi || d.title) : d.title}</h4>
                     <p className="text-[10px] text-stone-500 mt-0.5">₹{d.price} • {d.estDays} Days</p>
@@ -450,4 +451,3 @@ export const CreateOrderPage: React.FC<CreateOrderPageProps> = ({
     </div>
   );
 };
-

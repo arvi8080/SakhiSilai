@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { ProfilePhotoControl } from '../../components/common/ProfilePhotoControl';
+import { imageSource } from '../../utils/imageSource';
 import {
+  ArrowRight,
   MapPin,
   Clock,
   Scissors,
@@ -57,6 +60,7 @@ export const CustomerDashboardPage: React.FC<CustomerDashboardPageProps> = ({ se
   const myOrders = orders.filter(o => o.customerId === currentUser.id);
   const activeOrders = myOrders.filter(o => o.status !== 'completed' && o.status !== 'cancelled');
   const pastOrders = myOrders.filter(o => o.status === 'completed' || o.status === 'cancelled');
+  const myMeasurements = measurements.filter(m => m.userId === currentUser.id);
 
   // Check if current user has applied or is approved as a tailor
   const myTailorProfile = tailors.find(
@@ -115,53 +119,84 @@ export const CustomerDashboardPage: React.FC<CustomerDashboardPageProps> = ({ se
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-8 animate-fade-in pb-16">
-      {/* USER PROFILE HEADER */}
-      <div className="bg-white p-6 sm:p-8 rounded-3xl border border-stone-200 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6">
-        <div className="flex items-center gap-4">
-          <img
-            src={currentUser.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop&q=80'}
-            alt={currentUser.name}
-            className="w-20 h-20 rounded-2xl object-cover border-2 border-[#E91E63] shadow-md shrink-0"
-          />
-          <div>
-            <span className="bg-pink-100 text-[#E91E63] text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase">
-              {myTailorProfile?.isVerified ? 'Approved Tailor & Customer' : 'Customer Account'}
-            </span>
-            <h1 className="text-2xl font-black text-stone-900 mt-0.5">{currentUser.name}</h1>
-            <p className="text-xs text-stone-500 flex items-center gap-1 mt-0.5 font-medium">
-              <MapPin className="w-3.5 h-3.5 text-[#E91E63]" />
-              <span>{selectedVillage}, {selectedDistrict} ({selectedState})</span>
-            </p>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-6 animate-fade-in pb-16">
+      <section className="overflow-hidden rounded-[28px] border border-pink-100 bg-linear-to-br from-white via-[#fff8fb] to-[#f4f0ff] p-5 shadow-sm sm:p-7">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <ProfilePhotoControl className="h-16 w-16 rounded-2xl sm:h-20 sm:w-20" />
+            <div>
+              <span className="text-xs font-bold uppercase tracking-[0.16em] text-[#D9538C]">
+                {lang === 'hi' ? 'आपका डैशबोर्ड' : 'Your dashboard'}
+              </span>
+              <h1 className="mt-1 text-2xl font-black tracking-tight text-[#2A1B3D] sm:text-3xl">
+                {lang === 'hi' ? `नमस्ते, ${currentUser.name}` : `Welcome, ${currentUser.name}`}
+              </h1>
+              <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-stone-500 sm:text-sm">
+                <MapPin className="h-4 w-4 text-[#E91E63]" />
+                <span>{selectedVillage}, {selectedDistrict} · {selectedState}</span>
+                {myTailorProfile?.isVerified && (
+                  <span className="ml-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-extrabold text-emerald-800">
+                    Verified tailor
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button
+              onClick={() => setActiveTab('find_tailors')}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#E91E63] px-5 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-[#D81B60]"
+            >
+              <Scissors className="h-4 w-4" />
+              <span>{lang === 'hi' ? 'डिज़ाइन देखें' : 'Browse designs'}</span>
+              <ArrowRight className="h-4 w-4" />
+            </button>
+            {activeOrders.length > 0 && (
+              <button
+                onClick={() => onTrackOrder(activeOrders[0].id)}
+                className="rounded-xl border border-stone-200 bg-white/80 px-5 py-3 text-sm font-bold text-stone-700 transition hover:border-pink-200 hover:text-[#D9538C]"
+              >
+                {lang === 'hi' ? 'ऑर्डर ट्रैक करें' : 'Track latest order'}
+              </button>
+            )}
           </div>
         </div>
+      </section>
 
-        <div className="flex flex-wrap gap-3 w-full sm:w-auto">
-          <button
-            onClick={() => setActiveTab('find_tailors')}
-            className="flex-1 sm:flex-none px-5 py-3 bg-[#E91E63] text-white font-black text-xs rounded-2xl shadow-md transition hover:bg-[#D81B60] flex items-center justify-center gap-1.5"
-          >
-            <Scissors className="w-4 h-4 rotate-45" />
-            <span>Book New Order</span>
-          </button>
-        </div>
-      </div>
+      <section aria-label="Account summary" className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {[
+          { label: lang === 'hi' ? 'सक्रिय ऑर्डर' : 'Active orders', value: activeOrders.length, icon: Clock, color: 'text-[#D9538C]', bg: 'bg-pink-50' },
+          { label: lang === 'hi' ? 'ऑर्डर इतिहास' : 'Order history', value: pastOrders.length, icon: PackageCheck, color: 'text-emerald-700', bg: 'bg-emerald-50' },
+          { label: lang === 'hi' ? 'माप प्रोफ़ाइल' : 'Saved measurements', value: myMeasurements.length, icon: Ruler, color: 'text-violet-700', bg: 'bg-violet-50' }
+        ].map(({ label, value, icon: Icon, color, bg }) => (
+          <div key={label} className="flex items-center gap-3 rounded-2xl border border-stone-100 bg-white p-4 shadow-sm">
+            <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${bg} ${color}`}>
+              <Icon className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="text-2xl font-black leading-none text-[#2A1B3D]">{value}</p>
+              <p className="mt-1 text-xs font-semibold text-stone-500">{label}</p>
+            </div>
+          </div>
+        ))}
+      </section>
 
       {/* ========================================================================= */}
       {/* BECOME A TAILOR PROMOTION CARD / APPLICATION STATUS */}
       {/* ========================================================================= */}
       {myTailorProfile ? (
         myTailorProfile.isVerified ? (
-          <div className="bg-gradient-to-r from-emerald-800 to-teal-900 text-white p-5 rounded-3xl shadow-xl flex items-center justify-between gap-4">
+          <div className="flex flex-col gap-4 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-2xl">
-                👩🧵
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-emerald-700 shadow-sm">
+                <ShieldCheck className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="font-black text-sm text-amber-300">
+                <h3 className="font-extrabold text-sm text-emerald-900">
                   {lang === 'hi' ? 'आप स्वीकृत सखीसिलाई दर्जी हैं! (Approved Tailor)' : 'You are an Approved SakhiSilai Tailor!'}
                 </h3>
-                <p className="text-xs text-emerald-100 font-medium">
+                <p className="text-xs font-medium text-emerald-800">
                   {lang === 'hi'
                     ? 'आप सिलाई ऑर्डर्स स्वीकार कर सकती हैं और कमाई शुरू कर सकती हैं।'
                     : 'You have full access to tailor dashboard features & customer orders.'}
@@ -170,13 +205,13 @@ export const CustomerDashboardPage: React.FC<CustomerDashboardPageProps> = ({ se
             </div>
             <button
               onClick={() => setActiveTab('tailor_dashboard')}
-              className="px-5 py-2.5 bg-amber-400 text-stone-900 font-black text-xs rounded-xl shadow hover:bg-amber-300 transition shrink-0"
+              className="shrink-0 rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-extrabold text-white transition hover:bg-emerald-800"
             >
               Open Tailor Console ➔
             </button>
           </div>
         ) : (
-          <div className="bg-amber-50 border border-amber-200 p-5 rounded-3xl shadow-md flex items-center justify-between gap-4">
+          <div className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center text-2xl">
                 ⏳
@@ -198,15 +233,15 @@ export const CustomerDashboardPage: React.FC<CustomerDashboardPageProps> = ({ se
           </div>
         )
       ) : (
-        <div className="bg-gradient-to-r from-stone-900 via-stone-800 to-[#2A1B3D] text-white p-6 rounded-3xl shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-stone-700">
+        <div className="flex flex-col items-start justify-between gap-4 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center">
           <div className="space-y-1">
-            <span className="bg-amber-500 text-stone-900 font-extrabold text-[10px] px-3 py-0.5 rounded-full uppercase tracking-wider">
+            <span className="inline-block rounded-full bg-pink-50 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[#D9538C]">
               Earn From Home • घर बैठे सिलाई काम
             </span>
-            <h3 className="font-black text-xl text-amber-400">
+            <h3 className="font-black text-lg text-[#2A1B3D]">
               {lang === 'hi' ? '👩🧵 सखीसिलाई दर्जी बहन बनें (Become a Tailor)' : '👩🧵 Become a SakhiSilai Tailor Partner'}
             </h3>
-            <p className="text-xs text-stone-300 font-medium">
+            <p className="max-w-2xl text-xs font-medium text-stone-500">
               {lang === 'hi'
                 ? 'क्या आप सिलाई जानती हैं? अपना दर्जी आवेदन जमा करें, एडमिन सत्यापन के बाद पास के ग्राहकों से सिलाई ऑर्डर्स पाएं।'
                 : 'Do you stitch clothes? Apply to become a tailor partner and accept custom orders from nearby village customers.'}
@@ -215,7 +250,7 @@ export const CustomerDashboardPage: React.FC<CustomerDashboardPageProps> = ({ se
 
           <button
             onClick={() => setShowTailorModal(true)}
-            className="px-6 py-3.5 bg-[#E91E63] hover:bg-[#D81B60] text-white font-black text-xs rounded-2xl shadow-lg shadow-pink-500/25 transition active:scale-95 shrink-0 flex items-center gap-2"
+            className="flex shrink-0 items-center gap-2 rounded-xl bg-[#E91E63] px-5 py-3 text-xs font-extrabold text-white shadow-sm transition hover:bg-[#D81B60]"
           >
             <UserCheck className="w-4 h-4" />
             <span>{lang === 'hi' ? 'दर्जी के लिए आवेदन करें (Apply Now)' : 'Apply to Become Tailor'}</span>
@@ -224,11 +259,11 @@ export const CustomerDashboardPage: React.FC<CustomerDashboardPageProps> = ({ se
       )}
 
       {/* DASHBOARD TABS */}
-      <div className="flex border-b border-stone-200 text-sm font-bold gap-6">
+      <div className="inline-flex w-full gap-1 rounded-2xl border border-stone-200 bg-white p-1.5 shadow-sm sm:w-auto">
         <button
           onClick={() => setActiveTabSub('orders')}
-          className={`pb-3 border-b-2 transition flex items-center gap-2 ${
-            activeTab === 'orders' ? 'border-[#E91E63] text-[#E91E63]' : 'border-transparent text-stone-500'
+          className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition sm:flex-none ${
+            activeTab === 'orders' ? 'bg-pink-50 text-[#D9538C]' : 'text-stone-500 hover:bg-stone-50'
           }`}
         >
           <PackageCheck className="w-4 h-4" />
@@ -237,12 +272,12 @@ export const CustomerDashboardPage: React.FC<CustomerDashboardPageProps> = ({ se
 
         <button
           onClick={() => setActiveTabSub('measurements')}
-          className={`pb-3 border-b-2 transition flex items-center gap-2 ${
-            activeTab === 'measurements' ? 'border-[#E91E63] text-[#E91E63]' : 'border-transparent text-stone-500'
+          className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition sm:flex-none ${
+            activeTab === 'measurements' ? 'bg-pink-50 text-[#D9538C]' : 'text-stone-500 hover:bg-stone-50'
           }`}
         >
           <Ruler className="w-4 h-4" />
-          <span>Saved Measurements ({measurements.length})</span>
+          <span>Measurements ({myMeasurements.length})</span>
         </button>
       </div>
 
@@ -257,13 +292,17 @@ export const CustomerDashboardPage: React.FC<CustomerDashboardPageProps> = ({ se
             </h3>
 
             {activeOrders.length === 0 ? (
-              <div className="bg-white p-8 rounded-3xl border border-stone-200 text-center space-y-3">
-                <p className="text-sm text-stone-500">No active orders right now.</p>
+              <div className="rounded-2xl border border-dashed border-stone-300 bg-white px-6 py-10 text-center">
+                <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-pink-50 text-[#D9538C]">
+                  <Scissors className="h-5 w-5" />
+                </span>
+                <h4 className="mt-3 font-bold text-stone-800">No active orders yet</h4>
+                <p className="mt-1 text-sm text-stone-500">Find a nearby tailor and start your next outfit.</p>
                 <button
                   onClick={() => setActiveTab('find_tailors')}
-                  className="px-4 py-2 bg-[#E91E63] text-white text-xs font-bold rounded-xl shadow"
+                  className="mt-4 rounded-xl bg-[#E91E63] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#D81B60]"
                 >
-                  Find Nearby Tailor
+                  Find a tailor
                 </button>
               </div>
             ) : (
@@ -271,24 +310,24 @@ export const CustomerDashboardPage: React.FC<CustomerDashboardPageProps> = ({ se
                 {activeOrders.map(ord => (
                   <div
                     key={ord.id}
-                    className="bg-white p-5 rounded-3xl border border-stone-200 shadow-md flex flex-col justify-between space-y-4"
+                    className="flex flex-col justify-between space-y-4 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm transition hover:shadow-md sm:p-5"
                   >
                     <div>
-                      <div className="flex items-center justify-between border-b border-stone-100 pb-2 mb-3">
-                        <span className="font-bold text-xs text-stone-400">{ord.orderNumber}</span>
-                        <span className="bg-pink-100 text-[#E91E63] text-[10px] font-bold px-2 py-0.5 rounded uppercase">
+                      <div className="mb-3 flex items-center justify-between">
+                        <span className="text-xs font-bold text-stone-400">{ord.orderNumber}</span>
+                        <span className="rounded-full bg-pink-50 px-2.5 py-1 text-[10px] font-bold uppercase text-[#D9538C]">
                           {ord.status.replace('_', ' ')}
                         </span>
                       </div>
 
                       <div className="flex gap-3">
                         {ord.designImage && (
-                          <img src={ord.designImage} alt={ord.designTitle} className="w-16 h-18 rounded-xl object-cover bg-stone-100" />
+                          <img src={imageSource(ord.designImage)} alt={ord.designTitle} className="w-16 h-18 rounded-xl object-cover bg-stone-100" />
                         )}
                         <div>
                           <h4 className="font-bold text-sm text-stone-900">{ord.designTitle}</h4>
                           <p className="text-xs text-stone-500">Tailor: <strong>{ord.tailorName}</strong> ({ord.tailorVillage})</p>
-                          <span className="text-[10px] font-extrabold text-[#1B4D3E] bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 inline-block mt-1">
+                          <span className="mt-2 inline-block rounded-md border border-emerald-100 bg-emerald-50 px-2 py-1 text-[10px] font-bold text-[#1B4D3E]">
                             📅 Visit Appt: {ord.appointmentDate || ord.requiredDate} • {ord.appointmentTimeSlot || 'Morning'}
                           </span>
                           <span className="font-extrabold text-sm text-[#E91E63] block mt-1">₹{ord.price}</span>
@@ -298,7 +337,7 @@ export const CustomerDashboardPage: React.FC<CustomerDashboardPageProps> = ({ se
 
                     <button
                       onClick={() => onTrackOrder(ord.id)}
-                      className="w-full py-2.5 bg-[#2A1B3D] hover:bg-[#1f132f] text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-1.5"
+                      className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#2A1B3D] py-2.5 text-xs font-bold text-white transition hover:bg-[#1f132f]"
                     >
                       <span>Track Live Timeline</span>
                       <ChevronRight className="w-4 h-4 text-amber-400" />
@@ -310,29 +349,37 @@ export const CustomerDashboardPage: React.FC<CustomerDashboardPageProps> = ({ se
           </div>
 
           {/* Past Orders Section */}
-          <div className="space-y-4 pt-6 border-t border-stone-200">
+          <div className="space-y-4 border-t border-stone-200 pt-6">
             <h3 className="font-extrabold text-lg text-stone-900 flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-emerald-600" />
-              <span>Completed Order History ({pastOrders.length})</span>
+              <span>Order history ({pastOrders.length})</span>
             </h3>
 
-            {pastOrders.map(ord => (
-              <div key={ord.id} className="bg-white p-4 rounded-2xl border border-stone-200 flex items-center justify-between text-xs">
+            {pastOrders.length === 0 ? (
+              <p className="rounded-2xl border border-stone-100 bg-white p-4 text-sm text-stone-500">
+                Completed orders will appear here.
+              </p>
+            ) : pastOrders.map(ord => (
+              <div key={ord.id} className="flex items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-white p-4 text-xs shadow-sm">
                 <div className="flex items-center gap-3">
-                  <span className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center">
-                    ✓
+                  <span className={`flex h-9 w-9 items-center justify-center rounded-full font-bold ${
+                    ord.status === 'completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-stone-100 text-stone-500'
+                  }`}>
+                    {ord.status === 'completed' ? '✓' : '–'}
                   </span>
                   <div>
                     <h4 className="font-bold text-stone-900">{ord.designTitle}</h4>
-                    <p className="text-stone-500">Completed by {ord.tailorName} • ₹{ord.price}</p>
+                    <p className="text-stone-500">
+                      {ord.status === 'completed' ? 'Completed' : 'Cancelled'} · {ord.tailorName} · ₹{ord.price}
+                    </p>
                   </div>
                 </div>
 
                 <button
                   onClick={() => onTrackOrder(ord.id)}
-                  className="px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold rounded-lg"
+                  className="shrink-0 rounded-lg bg-stone-100 px-3 py-2 font-bold text-stone-700 transition hover:bg-stone-200"
                 >
-                  View Details & Review
+                  View details
                 </button>
               </div>
             ))}
@@ -344,40 +391,59 @@ export const CustomerDashboardPage: React.FC<CustomerDashboardPageProps> = ({ se
       {activeTab === 'measurements' && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="font-extrabold text-lg text-stone-900">Saved Measurement Profiles</h3>
+            <div>
+              <h3 className="font-extrabold text-lg text-stone-900">Saved measurements</h3>
+              <p className="mt-1 text-xs text-stone-500">Keep your sizes ready for quicker bookings.</p>
+            </div>
             <button
               onClick={() => setShowAddM(true)}
               className="px-4 py-2 bg-[#E91E63] text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow"
             >
               <PlusCircle className="w-4 h-4" />
-              <span>Add New Profile</span>
+              <span>Add measurement</span>
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {measurements.map(m => (
-              <div key={m.id} className="bg-white p-5 rounded-3xl border border-stone-200 shadow-sm space-y-3">
-                <div className="flex items-center justify-between border-b border-stone-100 pb-2">
+          {myMeasurements.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-stone-300 bg-white px-6 py-10 text-center">
+              <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-50 text-violet-700">
+                <Ruler className="h-5 w-5" />
+              </span>
+              <h4 className="mt-3 font-bold text-stone-800">No measurements saved</h4>
+              <p className="mt-1 text-sm text-stone-500">Add your sizes once and reuse them for future orders.</p>
+              <button
+                onClick={() => setShowAddM(true)}
+                className="mt-4 rounded-xl bg-[#E91E63] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#D81B60]"
+              >
+                Add your first measurement
+              </button>
+            </div>
+          ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {myMeasurements.map(m => (
+              <div key={m.id} className="space-y-3 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+                <div className="flex items-center justify-between border-b border-stone-100 pb-3">
                   <h4 className="font-bold text-sm text-stone-900">{m.label}</h4>
-                  <span className="bg-pink-100 text-[#E91E63] text-[10px] font-bold px-2 py-0.5 rounded">{m.clothingType}</span>
+                  <span className="rounded-full bg-pink-50 px-2.5 py-1 text-[10px] font-bold text-[#D9538C]">{m.clothingType}</span>
                 </div>
-                <div className="grid grid-cols-3 gap-2 text-center text-xs bg-stone-50 p-3 rounded-2xl">
+                <div className="grid grid-cols-3 gap-2 rounded-xl bg-stone-50 p-3 text-center text-xs">
                   <div>
-                    <span className="font-bold text-stone-800">{m.bustOrChest}</span>
-                    <span className="text-[9px] text-stone-400 block uppercase">Bust</span>
+                    <span className="font-bold text-stone-800">{m.bustOrChest || '—'}</span>
+                    <span className="block text-[9px] uppercase text-stone-400">Bust</span>
                   </div>
                   <div>
-                    <span className="font-bold text-stone-800">{m.waist}</span>
-                    <span className="text-[9px] text-stone-400 block uppercase">Waist</span>
+                    <span className="font-bold text-stone-800">{m.waist || '—'}</span>
+                    <span className="block text-[9px] uppercase text-stone-400">Waist</span>
                   </div>
                   <div>
-                    <span className="font-bold text-stone-800">{m.length}</span>
-                    <span className="text-[9px] text-stone-400 block uppercase">Length</span>
+                    <span className="font-bold text-stone-800">{m.length || '—'}</span>
+                    <span className="block text-[9px] uppercase text-stone-400">Length</span>
                   </div>
                 </div>
               </div>
             ))}
           </div>
+          )}
         </div>
       )}
 

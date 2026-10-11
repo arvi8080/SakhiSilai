@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
+import { imageSource } from '../../utils/imageSource';
 import {
   Star,
   MapPin,
@@ -93,7 +94,7 @@ export const TailorProfilePage: React.FC<TailorProfilePageProps> = ({ tailorId, 
           <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between -mt-16 gap-4 mb-6">
             <div className="flex items-end gap-4">
               <img
-                src={tailor.avatar}
+                src={imageSource(tailor.avatar)}
                 alt={tailor.name}
                 className="w-28 h-28 rounded-2xl object-cover border-4 border-white shadow-xl bg-stone-100"
               />
@@ -192,7 +193,7 @@ export const TailorProfilePage: React.FC<TailorProfilePageProps> = ({ tailorId, 
               key={d.id}
               className="bg-white p-4 rounded-2xl border border-stone-200 shadow-sm hover:shadow-md transition flex gap-4"
             >
-              <img src={d.image} alt={d.title} className="w-24 h-28 rounded-xl object-cover bg-stone-100" />
+              <img src={imageSource(d.image)} alt={d.title} className="w-24 h-28 rounded-xl object-cover bg-stone-100" />
               <div className="flex-1 flex flex-col justify-between">
                 <div>
                   <span className="bg-amber-100 text-amber-800 text-[9px] font-bold px-2 py-0.5 rounded uppercase">
@@ -226,7 +227,7 @@ export const TailorProfilePage: React.FC<TailorProfilePageProps> = ({ tailorId, 
         <h3 className="font-bold text-base text-stone-900">Stitching Work Gallery</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {tailor.galleryImages.map((img, idx) => (
-            <img key={idx} src={img} alt="Stitching Work" className="w-full h-36 rounded-2xl object-cover hover:scale-102 transition shadow-sm" />
+            <img key={idx} src={imageSource(img)} alt="Stitching Work" className="w-full h-36 rounded-2xl object-cover hover:scale-102 transition shadow-sm" />
           ))}
         </div>
       </div>

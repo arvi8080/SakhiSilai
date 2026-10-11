@@ -1,3 +1,5 @@
+import type { TailorProfile, User } from '../types';
+
 const getBaseUrl = () => {
   if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
   if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
@@ -41,7 +43,7 @@ export async function checkBackendHealth() {
 }
 
 // Tailors API
-export async function fetchNearbyTailors(state: string = 'Uttar Pradesh', district: string = 'Lucknow', village: string = 'Mohanlalganj') {
+export async function fetchNearbyTailors(state: string = 'Uttar Pradesh', district: string = 'Lucknow', village: string = 'Mohanlalganj'): Promise<TailorProfile[] | null> {
   try {
     const res = await fetch(
       `${API_BASE_URL}/tailors/nearby?state=${encodeURIComponent(state)}&district=${encodeURIComponent(
@@ -49,12 +51,56 @@ export async function fetchNearbyTailors(state: string = 'Uttar Pradesh', distri
       )}&village=${encodeURIComponent(village)}`
     );
     if (!res.ok) throw new Error('API server unavailable');
-    const data = await res.json();
-    return data.data;
+    const result = await res.json();
+    if (!Array.isArray(result.data)) throw new Error('Nearby tailor response is invalid');
+    return result.data.map((match: unknown) => {
+      if (typeof match !== 'object' || match === null) {
+        throw new Error('Nearby tailor response contains an invalid profile');
+      }
+      const record = match as Record<string, unknown>;
+      const profile = 'tailor' in record ? record.tailor : record;
+      if (typeof profile !== 'object' || profile === null ||
+        typeof (profile as Record<string, unknown>).id !== 'string' ||
+        typeof (profile as Record<string, unknown>).userId !== 'string') {
+        throw new Error('Nearby tailor response contains an invalid profile');
+      }
+      return profile as TailorProfile;
+    });
   } catch (err) {
     console.warn('Backend API connection fallback to local state:', err);
     return null;
   }
+}
+
+export async function fetchAdminTailorsApi(): Promise<TailorProfile[]> {
+  const res = await authenticatedFetch(`${API_BASE_URL}/admin/tailors`);
+  const result = await res.json();
+  if (!res.ok || !result.success || !Array.isArray(result.data)) {
+    throw new Error(result.message || 'Could not load tailor applications');
+  }
+  return result.data as TailorProfile[];
+}
+
+export async function fetchMyTailorProfileApi(): Promise<TailorProfile> {
+  const res = await authenticatedFetch(`${API_BASE_URL}/tailors/me`);
+  const result = await res.json();
+  if (!res.ok || !result.success || !result.data) {
+    throw new Error(result.message || 'Could not load your tailor profile');
+  }
+  return result.data as TailorProfile;
+}
+
+export async function updateUserAvatarApi(avatar: string): Promise<User> {
+  const res = await authenticatedFetch(`${API_BASE_URL}/auth/profile/avatar`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ avatar })
+  });
+  const result = await res.json();
+  if (!res.ok || !result.success || !result.data) {
+    throw new Error(result.message || 'Profile photo update failed');
+  }
+  return result.data as User;
 }
 
 export async function fetchTailorDesignsApi() {
@@ -94,6 +140,34 @@ export async function updateTailorProfileApi(tailorId: string, updates: Record<s
     return result.data;
   } catch (err) {
     throw err instanceof Error ? err : new Error('Profile update failed');
+  }
+}
+
+export async function addTailorGalleryImageApi(tailorId: string, image: string) {
+  try {
+    const res = await authenticatedFetch(`${API_BASE_URL}/tailors/${tailorId}/gallery`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image })
+    });
+    const result = await res.json();
+    if (!res.ok || !result.success) throw new Error(result.message || 'Gallery photo upload failed');
+    return result.data;
+  } catch (err) {
+    throw err instanceof Error ? err : new Error('Gallery photo upload failed');
+  }
+}
+
+export async function deleteTailorGalleryImageApi(tailorId: string, imageIndex: number) {
+  try {
+    const res = await authenticatedFetch(`${API_BASE_URL}/tailors/${tailorId}/gallery/${imageIndex}`, {
+      method: 'DELETE'
+    });
+    const result = await res.json();
+    if (!res.ok || !result.success) throw new Error(result.message || 'Gallery photo deletion failed');
+    return result.data;
+  } catch (err) {
+    throw err instanceof Error ? err : new Error('Gallery photo deletion failed');
   }
 }
 
@@ -243,16 +317,16 @@ export async function acceptApiQuoteOffer(requestId: string, offerId: string) {
 
 // Admin API
 export async function verifyTailorApi(tailorId: string, isVerified: boolean) {
-  try {
-    const res = await authenticatedFetch(`${API_BASE_URL}/admin/tailors/${tailorId}/verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isVerified })
-    });
-    return await res.json();
-  } catch (err) {
-    return null;
+  const res = await authenticatedFetch(`${API_BASE_URL}/admin/tailors/${tailorId}/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ isVerified })
+  });
+  const result = await res.json();
+  if (!res.ok || !result.success || !result.data) {
+    throw new Error(result.message || 'Tailor approval could not be saved');
   }
+  return result.data as TailorProfile;
 }
 
 export async function fetchAdminStats() {
@@ -309,6 +383,15 @@ export async function resolveComplaintApi(complaintId: string, status: 'investig
 }
 
 // Auth API
+export async function fetchCurrentUserApi(): Promise<{ success: true; token: string; data: User }> {
+  const res = await authenticatedFetch(`${API_BASE_URL}/auth/me`);
+  const result = await res.json();
+  if (!res.ok || !result.success || !result.data || typeof result.token !== 'string') {
+    throw new Error(result.message || 'Could not refresh the current user session');
+  }
+  return result;
+}
+
 export async function loginUserApi(emailOrPhone: string, password?: string) {
   try {
     const res = await fetch(`${API_BASE_URL}/auth/login`, {
@@ -514,16 +597,14 @@ export async function fetchNotificationsApi(role?: string, recipientId?: string)
 }
 
 export async function broadcastNotificationApi(notifData: any) {
-  try {
-    const res = await authenticatedFetch(`${API_BASE_URL}/notifications/broadcast`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(notifData)
-    });
-    return await res.json();
-  } catch (err) {
-    return null;
+  const res = await authenticatedFetch(`${API_BASE_URL}/notifications/broadcast`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(notifData)
+  });
+  const result = await res.json();
+  if (!res.ok || !result.success) {
+    throw new Error(result.message || 'Broadcast notification could not be sent');
   }
+  return result.data;
 }
-
-

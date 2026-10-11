@@ -3,6 +3,11 @@ import { db } from '../data/db';
 
 export const adminRouter = Router();
 
+// GET /api/admin/tailors
+adminRouter.get('/tailors', (_req: Request, res: Response) => {
+  res.json({ success: true, count: db.tailors.length, data: db.tailors });
+});
+
 // GET /api/admin/stats
 adminRouter.get('/stats', (_req: Request, res: Response) => {
   const verifiedTailors = db.tailors.filter(t => t.isVerified);
@@ -88,4 +93,3 @@ adminRouter.patch('/tailors/:id/verify', handleVerifyTailor);
 
 // POST /api/admin/tailors/:id/verify (For frontend compatibility)
 adminRouter.post('/tailors/:id/verify', handleVerifyTailor);
-

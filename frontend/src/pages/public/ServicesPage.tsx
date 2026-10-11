@@ -2,6 +2,7 @@ import React from 'react';
 import { useData } from '../../context/DataContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { ArrowRight, Clock3, MapPin, Scissors, Shirt } from 'lucide-react';
+import { imageSource } from '../../utils/imageSource';
 
 interface ServicesPageProps {
   setActiveTab: (tab: string) => void;
@@ -57,7 +58,7 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({ setActiveTab, onSele
               return (
                 <article key={service.id} className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
                   <div className="relative aspect-[4/3] overflow-hidden bg-stone-100">
-                    <img src={service.image} alt={service.title} loading="lazy" className="h-full w-full object-cover" />
+                    <img src={imageSource(service.image)} alt={service.title} loading="lazy" className="h-full w-full object-cover" />
                     <span className="absolute left-3 top-3 rounded-full bg-white/95 px-3 py-1 text-xs font-bold text-[#1B4D3E] shadow-sm">
                       {service.categoryName}
                     </span>

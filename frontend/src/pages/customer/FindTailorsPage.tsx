@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { filterAndRankTailors } from '../../utils/matching';
+import { imageSource } from '../../utils/imageSource';
 import { MapPin, Search, Star, CheckCircle, ArrowRight } from 'lucide-react';
 
 interface FindTailorsPageProps {
@@ -194,7 +195,7 @@ export const FindTailorsPage: React.FC<FindTailorsPageProps> = ({
               >
                 <div>
                   <div className="relative h-48 overflow-hidden bg-stone-100">
-                    <img src={tProfile.avatar} alt={tProfile.name} className="w-full h-full object-cover" />
+                    <img src={imageSource(tProfile.avatar)} alt={tProfile.name} className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent"></div>
 
                     {/* Same Village Badge */}

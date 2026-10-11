@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { User, UserRole } from '../types';
-import { loginUserApi, registerUserApi, forgotPasswordApi, resetPasswordApi } from '../services/api';
+import { fetchCurrentUserApi, loginUserApi, registerUserApi, forgotPasswordApi, resetPasswordApi, updateUserAvatarApi } from '../services/api';
 
 interface AuthContextType {
   currentUser: User;
@@ -17,6 +17,7 @@ interface AuthContextType {
   loginAsGuest: () => void;
   logout: () => void;
   updateUserProfile: (updates: Partial<User>) => void;
+  updateUserAvatar: (avatar: string) => Promise<void>;
   pendingRedirectTab: string | null;
   setPendingRedirectTab: (tab: string | null) => void;
   pendingTailorId: string | null;
@@ -95,6 +96,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     window.addEventListener('sakhisilai-auth-expired', handleExpiredSession);
     return () => window.removeEventListener('sakhisilai-auth-expired', handleExpiredSession);
   }, []);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    let active = true;
+    let refreshing = false;
+    const refreshCurrentUser = async () => {
+      if (refreshing) return;
+      refreshing = true;
+      try {
+        const result = await fetchCurrentUserApi();
+        if (!active) return;
+        localStorage.setItem('sakhisilai_access_token', result.token);
+        setCurrentUser(result.data);
+        setCurrentRoleState(result.data.role);
+      } catch (error) {
+        if (active) console.error('Could not refresh the current user session:', error);
+      } finally {
+        refreshing = false;
+      }
+    };
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') void refreshCurrentUser();
+    };
+
+    void refreshCurrentUser();
+    window.addEventListener('focus', refreshCurrentUser);
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+    const refreshInterval = window.setInterval(refreshWhenVisible, 30_000);
+    return () => {
+      active = false;
+      window.removeEventListener('focus', refreshCurrentUser);
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
+      window.clearInterval(refreshInterval);
+    };
+  }, [isLoggedIn]);
 
   const setRole = (role: UserRole) => {
     setCurrentRoleState(role);
@@ -185,6 +222,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCurrentUser(prev => ({ ...prev, ...updates }));
   };
 
+  const updateUserAvatar = async (avatar: string) => {
+    const updatedUser = await updateUserAvatarApi(avatar);
+    setCurrentUser(updatedUser);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -202,6 +244,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loginAsGuest,
         logout,
         updateUserProfile,
+        updateUserAvatar,
         pendingRedirectTab,
         setPendingRedirectTab,
         pendingTailorId,

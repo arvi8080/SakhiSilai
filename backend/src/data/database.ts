@@ -268,6 +268,7 @@ export function initDatabase() {
   }
 
   removeLegacyDemoRecords();
+  sqlite.prepare("UPDATE categories SET nameEn = 'Kids' WHERE id = 'kids' AND nameEn = 'Kids Clothing'").run();
 
   // Demo records are available only when explicitly requested for local development.
   seedIfEmpty();
@@ -379,7 +380,7 @@ function seedIfEmpty() {
       },
       {
         id: 'kids',
-        nameEn: 'Kids Clothing',
+        nameEn: 'Kids',
         nameHi: 'बच्चों के कपड़े',
         iconName: 'Smile',
         descriptionEn: 'Lehenga choli for girls, kurta pyjama for boys, cute frock stitching.',
@@ -456,7 +457,7 @@ function seedIfEmpty() {
       availability: 'available',
       maxActiveOrders: 4,
       currentActiveOrders: 1,
-      servicesOffered: JSON.stringify(['Blouse Stitching', 'Suit & Salwar Stitching', 'Kids Clothing']),
+      servicesOffered: JSON.stringify(['Blouse Stitching', 'Suit & Salwar Stitching', 'Kids']),
       startingPrice: 280,
       estCompletionDays: 2,
       skills: JSON.stringify(['Bridal Sharara', 'Dori Neckline']),

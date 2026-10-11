@@ -29,6 +29,8 @@ import {
 } from 'firebase/firestore';
 import {
   fetchNearbyTailors,
+  fetchAdminTailorsApi,
+  fetchMyTailorProfileApi,
   fetchTailorDesignsApi,
   fetchOrdersApi,
   fetchCustomRequestsApi,
@@ -40,6 +42,8 @@ import {
   verifyTailorApi,
   updateTailorAvailabilityApi,
   updateTailorProfileApi,
+  addTailorGalleryImageApi,
+  deleteTailorGalleryImageApi,
   updateTailorCapacityApi,
   createTailorDesignApi,
   deleteTailorDesignApi,
@@ -50,7 +54,6 @@ import {
   createCategoryApi,
   deleteCategoryApi,
   addVillageApi,
-  broadcastNotificationApi,
   fetchComplaintsApi,
   blockUserApi,
   resolveComplaintApi
@@ -82,8 +85,10 @@ interface DataContextType {
   updateTailorAvailability: (tailorId: string, status: TailorAvailability) => void;
   updateTailorCapacity: (tailorId: string, maxOrders: number) => void;
   updateTailorProfile: (tailorId: string, updates: Partial<TailorProfile>) => void;
+  addTailorGalleryImage: (tailorId: string, image: string) => Promise<void>;
+  deleteTailorGalleryImage: (tailorId: string, imageIndex: number) => Promise<void>;
   
-  addDesign: (design: Omit<DesignCatalogItem, 'id'>) => void;
+  addDesign: (design: Omit<DesignCatalogItem, 'id'>) => Promise<void>;
   updateDesign: (id: string, updates: Partial<DesignCatalogItem>) => void;
   deleteDesign: (id: string) => void;
 
@@ -99,7 +104,7 @@ interface DataContextType {
   submitQuoteOffer: (requestId: string, offer: Omit<QuoteOffer, 'id' | 'createdAt'>) => void;
   acceptQuoteOffer: (requestId: string, offerId: string) => Promise<Order | undefined>;
 
-  verifyTailor: (tailorId: string, isVerified: boolean) => void;
+  verifyTailor: (tailorId: string, isVerified: boolean) => Promise<void>;
   registerTailor: (tailorData: Omit<TailorProfile, 'id' | 'rating' | 'reviewCount' | 'completedOrdersCount' | 'currentActiveOrders' | 'joinedDate'>) => Promise<void>;
 
   saveMeasurement: (m: Omit<MeasurementProfile, 'id'>) => void;
@@ -170,36 +175,79 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Fetch from persistent SQLite backend API and Cloud Firestore
   useEffect(() => {
+    let active = true;
+    let currentTailorProfile: TailorProfile | undefined;
+
     // 1. Initial sync with Express SQLite Backend API
-    fetchNearbyTailors(selectedState, selectedDistrict, selectedVillage).then(data => {
-      if (Array.isArray(data)) {
-        setTailors(data);
+    const syncTailors = async (): Promise<boolean> => {
+      let profiles: TailorProfile[] | null;
+      if (isLoggedIn && currentUser.role === 'admin') {
+        try {
+          profiles = await fetchAdminTailorsApi();
+        } catch (error) {
+          console.error('Could not load tailor applications for admin:', error);
+          return false;
+        }
+      } else {
+        profiles = await fetchNearbyTailors(selectedState, selectedDistrict, selectedVillage);
       }
-    });
+      if (!active) return false;
+
+      if (isLoggedIn && currentUser.role === 'tailor') {
+        try {
+          currentTailorProfile = await fetchMyTailorProfileApi();
+        } catch (error) {
+          console.error('Could not load the signed-in tailor profile:', error);
+          return false;
+        }
+      }
+
+      if (!profiles && currentTailorProfile) profiles = [currentTailorProfile];
+      if (!profiles) return false;
+      setTailors(previous => {
+        const ownTailor = currentTailorProfile
+          ?? profiles.find(tailor => tailor.userId === currentUser.id)
+          ?? previous.find(tailor => tailor.userId === currentUser.id);
+        return ownTailor
+          ? [ownTailor, ...profiles.filter(tailor => tailor.id !== ownTailor.id)]
+          : profiles;
+      });
+      return currentUser.role !== 'tailor' || Boolean(currentTailorProfile);
+    };
+    const tailorsReady = syncTailors();
 
     fetchTailorDesignsApi().then(data => {
       if (Array.isArray(data)) setDesigns(data);
     });
 
     if (isLoggedIn) {
-      fetchOrdersApi().then(data => {
-        setOrders(Array.isArray(data) ? data : []);
-      });
+      void (async () => {
+        if (currentUser.role === 'tailor' && !(await tailorsReady)) {
+          if (active) {
+            setOrders([]);
+            setCustomRequests([]);
+            setNotifications([]);
+          }
+          return;
+        }
 
-      fetchCustomRequestsApi().then(data => {
-        setCustomRequests(Array.isArray(data) ? data : []);
-      });
+        const [ordersData, requestsData, notificationsData] = await Promise.all([
+          fetchOrdersApi(),
+          fetchCustomRequestsApi(),
+          fetchNotificationsApi()
+        ]);
+        if (!active) return;
+        setOrders(Array.isArray(ordersData) ? ordersData : []);
+        setCustomRequests(Array.isArray(requestsData) ? requestsData : []);
+        setNotifications(Array.isArray(notificationsData) ? notificationsData : []);
 
-      fetchNotificationsApi().then(data => {
-        setNotifications(Array.isArray(data) ? data : []);
-      });
-
-      if (currentUser.role === 'admin') {
-        fetchComplaintsApi().then(data => {
-          setComplaints(Array.isArray(data) ? data : []);
-        });
-      }
+        if (currentUser.role === 'admin') {
+          const complaintsData = await fetchComplaintsApi();
+          if (active) setComplaints(Array.isArray(complaintsData) ? complaintsData : []);
+        }
+      })().catch(error => console.error('Could not load account data:', error));
     } else {
+      setComplaints([]);
       setOrders([]);
       setCustomRequests([]);
       setNotifications([]);
@@ -227,13 +275,23 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         snapshot.forEach(docSnap => {
           fetched.push({ id: docSnap.id, ...docSnap.data() } as TailorProfile);
         });
-        setTailors(fetched);
+        setTailors(previous => {
+          const ownTailor = currentTailorProfile ?? previous.find(tailor => tailor.userId === currentUser.id);
+          return ownTailor
+            ? [ownTailor, ...fetched.filter(tailor => tailor.id !== ownTailor.id)]
+            : fetched;
+        });
       }, err => console.warn('Firestore tailors listener notice:', err));
 
       return () => {
+        active = false;
         unsubTailors();
       };
     }
+
+    return () => {
+      active = false;
+    };
   }, [selectedState, selectedDistrict, selectedVillage, isLoggedIn, currentUser.id, currentUser.role]);
 
   const setSelectedLocation = (state: string, district: string, village: string) => {
@@ -415,22 +473,27 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const addTailorGalleryImage = async (tailorId: string, image: string) => {
+    const updated = await addTailorGalleryImageApi(tailorId, image);
+    setTailors(prev => prev.map(tailor => (tailor.id === tailorId ? { ...tailor, ...updated } : tailor)));
+  };
+
+  const deleteTailorGalleryImage = async (tailorId: string, imageIndex: number) => {
+    const updated = await deleteTailorGalleryImageApi(tailorId, imageIndex);
+    setTailors(prev => prev.map(tailor => (tailor.id === tailorId ? { ...tailor, ...updated } : tailor)));
+  };
+
   const addDesign = async (design: Omit<DesignCatalogItem, 'id'>) => {
-    try {
-      const saved = await createTailorDesignApi(design.tailorId, {
-        title: design.title,
-        categoryId: design.categoryId,
-        categoryName: design.categoryName,
-        image: design.image,
-        price: design.price,
-        estDays: design.estDays,
-        description: design.description
-      });
-      setDesigns(prev => [saved, ...prev.filter(item => item.id !== saved.id)]);
-    } catch {
-      const fallback: DesignCatalogItem = { ...design, id: 'd_' + Date.now() };
-      setDesigns(prev => [fallback, ...prev]);
-    }
+    const saved = await createTailorDesignApi(design.tailorId, {
+      title: design.title,
+      categoryId: design.categoryId,
+      categoryName: design.categoryName,
+      image: design.image,
+      price: design.price,
+      estDays: design.estDays,
+      description: design.description
+    });
+    setDesigns(prev => [saved, ...prev.filter(item => item.id !== saved.id)]);
   };
 
   const updateDesign = (id: string, updates: Partial<DesignCatalogItem>) => {
@@ -581,9 +644,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return createdOrder;
   };
 
-  const verifyTailor = (tailorId: string, isVerified: boolean) => {
-    setTailors(prev => prev.map(t => (t.id === tailorId ? { ...t, isVerified } : t)));
-    verifyTailorApi(tailorId, isVerified);
+  const verifyTailor = async (tailorId: string, isVerified: boolean) => {
+    const updatedTailor = await verifyTailorApi(tailorId, isVerified);
+    setTailors(prev => prev.map(t => (t.id === tailorId ? updatedTailor : t)));
   };
 
   const registerTailor = async (
@@ -655,7 +718,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isRead: false
     };
     setNotifications(prev => [newNotif, ...prev]);
-    broadcastNotificationApi(newNotif);
   };
 
   const markNotificationRead = (id: string) => {
@@ -714,6 +776,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateTailorAvailability,
         updateTailorCapacity,
         updateTailorProfile,
+        addTailorGalleryImage,
+        deleteTailorGalleryImage,
 
         addDesign,
         updateDesign,

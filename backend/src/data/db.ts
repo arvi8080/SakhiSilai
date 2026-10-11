@@ -162,6 +162,14 @@ class SQLiteDatabaseProxy {
     sqlite.prepare('UPDATE users SET password = ? WHERE id = ?').run(passwordHash, userId);
   }
 
+  updateUserAvatarById(userId: string, avatar: string) {
+    sqlite.prepare('UPDATE users SET avatar = ? WHERE id = ?').run(avatar, userId);
+  }
+
+  updateTailorAvatarByUserId(userId: string, avatar: string) {
+    sqlite.prepare('UPDATE tailors SET avatar = ? WHERE userId = ?').run(avatar, userId);
+  }
+
   getIdempotencyRecord(scope: string, key: string) {
     return sqlite.prepare(
       'SELECT ownerId, responseJson FROM idempotency_records WHERE scope = ? AND idempotencyKey = ?'

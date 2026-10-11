@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import { LanguageProvider } from './context/LanguageContext';
@@ -27,6 +27,7 @@ const AppContent: React.FC = () => {
   const { currentRole, isLoggedIn, setPendingRedirectTab, setPendingTailorId, setRedirectNotice } = useAuth();
 
   const [activeTab, setActiveTab] = useState<string>('home');
+  const previousRole = useRef(currentRole);
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('sakhisilai-theme') === 'dark');
   const [selectedTailorId, setSelectedTailorId] = useState<string>('');
   const [selectedDesignId, setSelectedDesignId] = useState<string | undefined>(undefined);
@@ -37,6 +38,13 @@ const AppContent: React.FC = () => {
     document.documentElement.classList.toggle('dark', isDarkMode);
     localStorage.setItem('sakhisilai-theme', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
+
+  useEffect(() => {
+    if (previousRole.current === 'customer' && currentRole === 'tailor') {
+      setActiveTab('tailor_dashboard');
+    }
+    previousRole.current = currentRole;
+  }, [currentRole]);
 
   const handleNavigate = (tab: string, extraData?: { tailorId?: string; designId?: string; orderId?: string }) => {
     // Unified Join / Become a Tailor routing logic
