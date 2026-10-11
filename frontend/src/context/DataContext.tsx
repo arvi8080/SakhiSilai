@@ -59,12 +59,16 @@ import {
   resolveComplaintApi
 } from '../services/api';
 
-const normalizeCategories = (categories: ServiceCategory[]): ServiceCategory[] =>
-  categories.map(category =>
-    category.id === 'kids' && category.nameEn === 'Kids Clothing'
+const normalizeCategories = (categories: ServiceCategory[]): ServiceCategory[] => {
+  const merged = new Map(INITIAL_CATEGORIES.map(category => [category.id, category]));
+  categories.forEach(category => {
+    const normalized = category.id === 'kids' && category.nameEn === 'Kids Clothing'
       ? { ...category, nameEn: 'Kids' }
-      : category
-  );
+      : category;
+    merged.set(normalized.id, normalized);
+  });
+  return [...merged.values()];
+};
 
 interface DataContextType {
   locations: StateLocation[];

@@ -75,6 +75,14 @@ async function registerTailor(token) {
 
 async function run() {
   await waitForServer();
+  const { response: categoriesResponse, body: categoriesResult } = await request('/api/categories');
+  assert.equal(categoriesResponse.status, 200);
+  assert.deepEqual(
+    categoriesResult.data.map(category => category.id).sort(),
+    ['alterations', 'anarkali', 'blouse', 'custom', 'dress', 'kids', 'suit']
+  );
+  assert.equal(categoriesResult.data.find(category => category.id === 'kids').nameEn, 'Kids');
+
   const { response: swaggerResponse, body: swagger } = await request('/api-docs.json');
   assert.equal(swaggerResponse.status, 200);
   const loginSchema = swagger.paths['/api/auth/login'].post.requestBody.content['application/json'].schema;

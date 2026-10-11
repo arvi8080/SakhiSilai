@@ -15,6 +15,82 @@ import type {
 
 dotenv.config();
 
+const DEFAULT_CATEGORIES: ServiceCategory[] = [
+  {
+    id: 'blouse',
+    nameEn: 'Blouse Stitching',
+    nameHi: 'ब्लाउज सिलाई',
+    iconName: 'Scissors',
+    descriptionEn: 'Princess cut, padded, heavy bridal, padded & boat neck blouses with custom lining.',
+    descriptionHi: 'प्रिंसेस कट, पैडेड, हैवी ब्राइडल, बोट नेक और डिज़ाइनर बैक ब्लाउज।',
+    startingPrice: 300,
+    estDays: 3,
+    popular: true
+  },
+  {
+    id: 'suit',
+    nameEn: 'Suit & Salwar Stitching',
+    nameHi: 'सूट एवं सलवार सिलाई',
+    iconName: 'Shirt',
+    descriptionEn: 'Anarkali, Punjabi suit, Sharara, Palazzo suit with piping and design necklines.',
+    descriptionHi: 'अनारकली, पंजाबी सूट, शरारा, प्लाजो सूट एवं डिज़ाइनर नेक सिलाई।',
+    startingPrice: 450,
+    estDays: 4,
+    popular: true
+  },
+  {
+    id: 'dress',
+    nameEn: 'Dress & Kurti',
+    nameHi: 'ड्रेस एवं कुर्ती',
+    iconName: 'Sparkles',
+    descriptionEn: 'Long ethnic gowns, Indo-western dresses, casual daily wear kurtis.',
+    descriptionHi: 'लॉन्ग एथनिक गाउन, इंडो-वेस्टर्न ड्रेसेस और कैज़ुअल कुर्तियां।',
+    startingPrice: 500,
+    estDays: 4
+  },
+  {
+    id: 'kids',
+    nameEn: 'Kids',
+    nameHi: 'बच्चों के कपड़े',
+    iconName: 'Smile',
+    descriptionEn: 'Lehenga choli for girls, kurta pyjama for boys, cute frock stitching.',
+    descriptionHi: 'बच्चों की फ्रॉक, लहंगा चोली और कुर्ता पायजामा।',
+    startingPrice: 250,
+    estDays: 2
+  },
+  {
+    id: 'anarkali',
+    nameEn: 'Anarkali Dress',
+    nameHi: 'अनारकली ड्रेस',
+    iconName: 'Sparkles',
+    descriptionEn: 'Get a graceful Anarkali dress tailored to your measurements and personal style.',
+    descriptionHi: 'अपनी नाप और पसंद के अनुसार खूबसूरत अनारकली ड्रेस सिलवाएं।',
+    startingPrice: 500,
+    estDays: 5
+  },
+  {
+    id: 'alterations',
+    nameEn: 'Alterations & Fitting',
+    nameHi: 'अल्टरेशन एवं फिटिंग',
+    iconName: 'Ruler',
+    descriptionEn: 'Size adjustment, length shortening, zipper replacement, tight/loose fitting.',
+    descriptionHi: 'कपड़ों की फिटिंग, लंबाई छोटी करना, जिप बदलना व अल्टरेशन।',
+    startingPrice: 80,
+    estDays: 1
+  },
+  {
+    id: 'custom',
+    nameEn: 'Custom Design',
+    nameHi: 'कस्टम डिज़ाइन (मनपसंद)',
+    iconName: 'Palette',
+    descriptionEn: 'Upload photo from Pinterest/Instagram and get exact custom stitching.',
+    descriptionHi: 'अपनी पसंद का फोटो अपलोड करें और दर्जियों से मनपसंद दर पाएं।',
+    startingPrice: 600,
+    estDays: 5,
+    popular: true
+  }
+];
+
 // Ensure data directory exists
 const dataDir = path.join(__dirname, '../../data');
 const dbPath = process.env.SQLITE_DB_PATH || path.join(dataDir, 'sakhisilai.db');
@@ -269,6 +345,19 @@ export function initDatabase() {
 
   removeLegacyDemoRecords();
   sqlite.prepare("UPDATE categories SET nameEn = 'Kids' WHERE id = 'kids' AND nameEn = 'Kids Clothing'").run();
+  const insertDefaultCategory = sqlite.prepare(`
+    INSERT OR IGNORE INTO categories (id, nameEn, nameHi, iconName, descriptionEn, descriptionHi, startingPrice, estDays, popular)
+    VALUES (@id, @nameEn, @nameHi, @iconName, @descriptionEn, @descriptionHi, @startingPrice, @estDays, @popular)
+  `);
+  const addMissingDefaultCategories = sqlite.transaction(() => {
+    for (const category of DEFAULT_CATEGORIES) {
+      insertDefaultCategory.run({
+        ...category,
+        popular: category.popular ? 1 : 0
+      });
+    }
+  });
+  addMissingDefaultCategories();
 
   // Demo records are available only when explicitly requested for local development.
   seedIfEmpty();
@@ -341,56 +430,11 @@ function seedIfEmpty() {
 
     // 2. Categories
     const insertCat = sqlite.prepare(`
-      INSERT INTO categories (id, nameEn, nameHi, iconName, descriptionEn, descriptionHi, startingPrice, estDays, popular)
+      INSERT OR IGNORE INTO categories (id, nameEn, nameHi, iconName, descriptionEn, descriptionHi, startingPrice, estDays, popular)
       VALUES (@id, @nameEn, @nameHi, @iconName, @descriptionEn, @descriptionHi, @startingPrice, @estDays, @popular)
     `);
 
-    const categories: ServiceCategory[] = [
-      {
-        id: 'blouse',
-        nameEn: 'Blouse Stitching',
-        nameHi: 'ब्लाउज सिलाई',
-        iconName: 'Scissors',
-        descriptionEn: 'Princess cut, padded, heavy bridal, padded & boat neck blouses with custom lining.',
-        descriptionHi: 'प्रिंसेस कट, पैडेड, हैवी ब्राइडल, बोट नेक और डिज़ाइनर बैक ब्लाउज।',
-        startingPrice: 300,
-        estDays: 3,
-        popular: true
-      },
-      {
-        id: 'suit',
-        nameEn: 'Suit & Salwar Stitching',
-        nameHi: 'सूट एवं सलवार सिलाई',
-        iconName: 'Shirt',
-        descriptionEn: 'Anarkali, Punjabi suit, Sharara, Palazzo suit with piping and design necklines.',
-        descriptionHi: 'अनारकली, पंजाबी सूट, शरारा, प्लाजो सूट एवं डिज़ाइनर नेक सिलाई।',
-        startingPrice: 450,
-        estDays: 4,
-        popular: true
-      },
-      {
-        id: 'dress',
-        nameEn: 'Dress & Kurti',
-        nameHi: 'ड्रेस एवं कुर्ती',
-        iconName: 'Sparkles',
-        descriptionEn: 'Long ethnic gowns, Indo-western dresses, casual daily wear kurtis.',
-        descriptionHi: 'लॉन्ग एथनिक गाउन, इंडो-वेस्टर्न ड्रेसेस और कैज़ुअल कुर्तियां।',
-        startingPrice: 500,
-        estDays: 4
-      },
-      {
-        id: 'kids',
-        nameEn: 'Kids',
-        nameHi: 'बच्चों के कपड़े',
-        iconName: 'Smile',
-        descriptionEn: 'Lehenga choli for girls, kurta pyjama for boys, cute frock stitching.',
-        descriptionHi: 'बच्चों की फ्रॉक, लहंगा चोली और कुर्ता पायजामा।',
-        startingPrice: 250,
-        estDays: 2
-      }
-    ];
-
-    for (const cat of categories) {
+    for (const cat of DEFAULT_CATEGORIES) {
       insertCat.run({
         ...cat,
         popular: cat.popular ? 1 : 0

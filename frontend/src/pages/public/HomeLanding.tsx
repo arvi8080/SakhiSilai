@@ -95,7 +95,7 @@ export const HomeLanding: React.FC<HomeProps> = ({ setActiveTab, onSelectTailor,
     userDistrict: selectedDistrict,
     userVillage: selectedVillage,
   }).slice(0, 3);
-  const featuredServices = categories.slice(0, 6);
+  const featuredServices = categories;
 
   return (
     <div className="animate-fade-in pb-16">

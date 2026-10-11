@@ -111,6 +111,16 @@ export const INITIAL_CATEGORIES: ServiceCategory[] = [
     estDays: 2
   },
   {
+    id: 'anarkali',
+    nameEn: 'Anarkali Dress',
+    nameHi: 'अनारकली ड्रेस',
+    iconName: 'Sparkles',
+    descriptionEn: 'Get a graceful Anarkali dress tailored to your measurements and personal style.',
+    descriptionHi: 'अपनी नाप और पसंद के अनुसार खूबसूरत अनारकली ड्रेस सिलवाएं।',
+    startingPrice: 500,
+    estDays: 5
+  },
+  {
     id: 'alterations',
     nameEn: 'Alterations & Fitting',
     nameHi: 'अल्टरेशन एवं फिटिंग',
