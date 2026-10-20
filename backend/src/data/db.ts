@@ -118,6 +118,13 @@ class SQLiteDatabaseProxy {
     return sqlite.prepare('SELECT * FROM reviews').all() as Review[];
   }
 
+  listReviews(customerId?: string): Review[] {
+    if (customerId) {
+      return sqlite.prepare('SELECT * FROM reviews WHERE customerId = ? ORDER BY date DESC').all(customerId) as Review[];
+    }
+    return sqlite.prepare('SELECT * FROM reviews ORDER BY date DESC').all() as Review[];
+  }
+
   get notifications(): SystemNotification[] {
     const rows = sqlite.prepare('SELECT * FROM notifications ORDER BY timestamp DESC').all() as any[];
     return rows.map(r => ({
@@ -133,6 +140,10 @@ class SQLiteDatabaseProxy {
       name: r.name,
       districts: r.districts ? JSON.parse(r.districts) : []
     }));
+  }
+
+  listMeasurements(userId: string) {
+    return sqlite.prepare('SELECT * FROM measurement_profiles WHERE userId = ? ORDER BY createdAt DESC').all(userId);
   }
 
   // ------------------------------------------------------------------
@@ -242,7 +253,7 @@ class SQLiteDatabaseProxy {
   }
 
   updateOrderStatus(orderId: string, status: string, historyEntry?: any) {
-    const order = sqlite.prepare('SELECT statusHistory FROM orders WHERE id = ?').get(orderId) as any;
+    const order = sqlite.prepare('SELECT status, statusHistory, tailorId FROM orders WHERE id = ?').get(orderId) as any;
     if (!order) return;
 
     let history = order.statusHistory ? JSON.parse(order.statusHistory) : [];
@@ -255,6 +266,17 @@ class SQLiteDatabaseProxy {
       SET status = ?, updatedAt = ?, statusHistory = ?
       WHERE id = ?
     `).run(status, new Date().toISOString(), JSON.stringify(history), orderId);
+
+    const wasActive = order.status !== 'completed' && order.status !== 'cancelled';
+    const isActive = status !== 'completed' && status !== 'cancelled';
+    if (wasActive !== isActive) {
+      sqlite.prepare(`
+        UPDATE tailors
+        SET currentActiveOrders = MAX(0, currentActiveOrders + ?),
+            completedOrdersCount = completedOrdersCount + ?
+        WHERE id = ?
+      `).run(isActive ? 1 : -1, status === 'completed' ? 1 : 0, order.tailorId);
+    }
   }
 
   addCustomRequest(req: CustomDesignRequest) {
@@ -322,6 +344,15 @@ class SQLiteDatabaseProxy {
     sqlite.prepare('UPDATE tailors SET maxActiveOrders = ? WHERE id = ?').run(maxActiveOrders, tailorId);
   }
 
+  updateDesign(id: string, updates: Partial<DesignCatalogItem>) {
+    const allowed = ['title', 'titleHi', 'categoryId', 'categoryName', 'image', 'price', 'estDays', 'description', 'isAvailable'];
+    const entries = Object.entries(updates).filter(([key, value]) => allowed.includes(key) && value !== undefined);
+    if (!entries.length) return;
+    const patch = Object.fromEntries(entries.map(([key, value]) => [key, key === 'isAvailable' ? (value ? 1 : 0) : value]));
+    const columns = Object.keys(patch).map(key => `${key} = @${key}`).join(', ');
+    sqlite.prepare(`UPDATE designs SET ${columns} WHERE id = @id`).run({ ...patch, id });
+  }
+
   toggleUserBlock(userId: string, isBlocked: boolean) {
     sqlite.prepare('UPDATE users SET isBlocked = ? WHERE id = ?').run(isBlocked ? 1 : 0, userId);
   }
@@ -377,6 +408,15 @@ class SQLiteDatabaseProxy {
     });
   }
 
+  updateCategory(id: string, updates: Partial<ServiceCategory>) {
+    const allowed = ['nameEn', 'nameHi', 'iconName', 'descriptionEn', 'descriptionHi', 'startingPrice', 'estDays', 'popular'];
+    const entries = Object.entries(updates).filter(([key, value]) => allowed.includes(key) && value !== undefined);
+    if (!entries.length) return;
+    const patch = Object.fromEntries(entries.map(([key, value]) => [key, key === 'popular' ? (value ? 1 : 0) : value]));
+    const columns = Object.keys(patch).map(key => `${key} = @${key}`).join(', ');
+    sqlite.prepare(`UPDATE categories SET ${columns} WHERE id = @id`).run({ ...patch, id });
+  }
+
   deleteCategory(id: string) {
     sqlite.prepare('DELETE FROM categories WHERE id = ?').run(id);
   }
@@ -390,11 +430,85 @@ class SQLiteDatabaseProxy {
     if (!targetDist) return false;
 
     if (!targetDist.villages.includes(villageName)) {
-      targetDist.villages.push(villageName);
-      sqlite.prepare('UPDATE locations SET districts = ? WHERE id = ? OR name = ?').run(JSON.stringify(districts), stateId, stateId);
+  targetDist.villages.push(villageName);
+  sqlite.prepare('UPDATE locations SET districts = ? WHERE id = ? OR name = ?')
+    .run(JSON.stringify(districts), stateId, stateId);
+}
+
+return true;
+}
+
+    addDistrict(stateId: string, districtName: string): boolean {
+      const row = sqlite.prepare('SELECT id, districts FROM locations WHERE id = ? OR name = ?').get(stateId, stateId) as any;
+      if (!row) return false;
+      const districts = row.districts ? JSON.parse(row.districts) : [];
+      if (districts.some((district: any) => district.name.toLowerCase() === districtName.toLowerCase())) return true;
+      const id = districtName.toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+      districts.push({ id, name: districtName, villages: [] });
+      sqlite.prepare('UPDATE locations SET districts = ? WHERE id = ?').run(JSON.stringify(districts), row.id);
+      return true;
     }
-    return true;
-  }
+
+    addState(stateName: string): boolean {
+      const existing = sqlite.prepare('SELECT id FROM locations WHERE LOWER(name) = LOWER(?)').get(stateName);
+      if (existing) return true;
+      const id = stateName.toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+      sqlite.prepare('INSERT INTO locations (id, name, districts) VALUES (?, ?, ?)').run(id, stateName, JSON.stringify([]));
+      return true;
+    }
+
+    addMeasurement(measurement: { id: string; userId: string; label: string; clothingType: string; [key: string]: unknown }) {
+      sqlite.prepare(`
+        INSERT INTO measurement_profiles
+          (id, userId, label, clothingType, bustOrChest, waist, hips, length, shoulder, sleeveLength, neckDepth, additionalNotes, createdAt)
+        VALUES
+          (@id, @userId, @label, @clothingType, @bustOrChest, @waist, @hips, @length, @shoulder, @sleeveLength, @neckDepth, @additionalNotes, @createdAt)
+      `).run({
+        ...measurement,
+        bustOrChest: measurement.bustOrChest || '',
+        waist: measurement.waist || '',
+        hips: measurement.hips || '',
+        length: measurement.length || '',
+        shoulder: measurement.shoulder || '',
+        sleeveLength: measurement.sleeveLength || '',
+        neckDepth: measurement.neckDepth || '',
+        additionalNotes: measurement.additionalNotes || '',
+        createdAt: new Date().toISOString()
+      });
+    }
+
+    deleteMeasurement(id: string, userId: string) {
+      return sqlite.prepare('DELETE FROM measurement_profiles WHERE id = ? AND userId = ?').run(id, userId).changes === 1;
+    }
+
+    addReview(review: Review) {
+      sqlite.prepare(`
+        INSERT INTO reviews (id, orderId, tailorId, customerId, customerName, customerVillage, rating, comment, date)
+        VALUES (@id, @orderId, @tailorId, @customerId, @customerName, @customerVillage, @rating, @comment, @date)
+      `).run(review);
+      this.refreshTailorRating(review.tailorId);
+    }
+
+    deleteReview(reviewId: string) {
+      const review = sqlite.prepare('SELECT tailorId FROM reviews WHERE id = ?').get(reviewId) as { tailorId: string } | undefined;
+      if (!review) return false;
+      sqlite.prepare('DELETE FROM reviews WHERE id = ?').run(reviewId);
+      this.refreshTailorRating(review.tailorId);
+      return true;
+    }
+
+    private refreshTailorRating(tailorId: string) {
+      const stats = sqlite.prepare('SELECT AVG(rating) AS rating, COUNT(*) AS reviewCount FROM reviews WHERE tailorId = ?').get(tailorId) as { rating: number | null; reviewCount: number };
+      sqlite.prepare('UPDATE tailors SET rating = ?, reviewCount = ? WHERE id = ?')
+        .run(stats.rating === null ? 5 : Number(stats.rating.toFixed(1)), stats.reviewCount, tailorId);
+    }
+
+    markNotificationRead(notificationId: string, userId: string, role: string) {
+  return sqlite.prepare(`
+    UPDATE notifications SET isRead = 1
+    WHERE id = ? AND (targetRole = 'all' OR targetRole = ? OR recipientId = ?)
+  `).run(notificationId, role, userId).changes === 1;
+}
 
   addNotification(notif: SystemNotification) {
     const stmt = sqlite.prepare(`

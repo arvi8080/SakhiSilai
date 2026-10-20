@@ -202,9 +202,12 @@ export function initDatabase() {
       requiredDate TEXT,
       appointmentDate TEXT,
       appointmentTimeSlot TEXT,
+      appointmentNotes TEXT,
       createdAt TEXT NOT NULL,
       updatedAt TEXT NOT NULL,
-      statusHistory TEXT
+      statusHistory TEXT,
+      rating INTEGER,
+      reviewText TEXT
     );
 
     CREATE TABLE IF NOT EXISTS custom_requests (
@@ -227,13 +230,31 @@ export function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS reviews (
       id TEXT PRIMARY KEY,
+      orderId TEXT,
       tailorId TEXT NOT NULL,
       customerId TEXT NOT NULL,
       customerName TEXT NOT NULL,
       customerVillage TEXT NOT NULL,
       rating INTEGER NOT NULL,
       comment TEXT,
-      date TEXT NOT NULL
+      date TEXT NOT NULL,
+      UNIQUE(orderId)
+    );
+
+    CREATE TABLE IF NOT EXISTS measurement_profiles (
+      id TEXT PRIMARY KEY,
+      userId TEXT NOT NULL,
+      label TEXT NOT NULL,
+      clothingType TEXT NOT NULL,
+      bustOrChest TEXT,
+      waist TEXT,
+      hips TEXT,
+      length TEXT,
+      shoulder TEXT,
+      sleeveLength TEXT,
+      neckDepth TEXT,
+      additionalNotes TEXT,
+      createdAt TEXT NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS notifications (
@@ -309,7 +330,11 @@ export function initDatabase() {
   for (const statement of [
     'ALTER TABLE orders ADD COLUMN appointmentDate TEXT',
     'ALTER TABLE orders ADD COLUMN appointmentTimeSlot TEXT',
+    'ALTER TABLE orders ADD COLUMN appointmentNotes TEXT',
+    'ALTER TABLE orders ADD COLUMN rating INTEGER',
+    'ALTER TABLE orders ADD COLUMN reviewText TEXT',
     'ALTER TABLE custom_requests ADD COLUMN acceptedQuoteId TEXT'
+    ,'ALTER TABLE reviews ADD COLUMN orderId TEXT'
   ]) {
     try {
       sqlite.exec(statement);
@@ -322,6 +347,8 @@ export function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_orders_customer_created ON orders(customerId, createdAt DESC);
     CREATE INDEX IF NOT EXISTS idx_orders_tailor_created ON orders(tailorId, createdAt DESC);
     CREATE INDEX IF NOT EXISTS idx_orders_created ON orders(createdAt DESC);
+    CREATE INDEX IF NOT EXISTS idx_measurement_profiles_user ON measurement_profiles(userId, createdAt DESC);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_reviews_order ON reviews(orderId) WHERE orderId IS NOT NULL;
   `);
 
   try {
