@@ -527,8 +527,10 @@ return true;
   }
 
   getPaymentsByOrder(orderId: string): PaymentRecord[] {
-    return sqlite.prepare('SELECT * FROM payments WHERE orderId = ? ORDER BY timestamp DESC').all(orderId) as PaymentRecord[];
-  }
+  return sqlite
+    .prepare('SELECT * FROM payments WHERE orderId = ? ORDER BY timestamp DESC')
+    .all(orderId) as PaymentRecord[];
+}
 
   addPayment(payment: PaymentRecord) {
     const stmt = sqlite.prepare(`
